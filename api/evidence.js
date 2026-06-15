@@ -46,6 +46,7 @@ function generateId() {
 
 const VALID_TYPES = ['LINK', 'FILE_NAME', 'AUTO_DETECTED', 'SCREENSHOT'];
 const VALID_SOURCES = ['MANUAL', 'GITHUB', 'GOOGLE_DRIVE', 'AWS'];
+const VALID_DOC_TYPES = ['POLICY', 'CERTIFICATE', 'REPORT', 'CONTRACT', 'TRAINING', 'SCREENSHOT', 'OTHER'];
 const MAX_EVIDENCE_PER_CONTROL = 10;
 
 // ── URL validation ────────────────────────────────────────────
@@ -91,9 +92,45 @@ export default async function handler(req, res) {
   const userId = await getUserId(req.headers.authorization);
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-  // ── GET: Fetch all evidence for a control ─────────────────────
+  // ── GET: Fetch evidence (by control or expiring within N days) ───
   if (req.method === 'GET') {
-    const { controlId } = req.query;
+    const { controlId, expiring } = req.query;
+
+    // GET ?expiring=30 — all evidence expiring within N days across controls
+    if (expiring) {
+      const days = parseInt(expiring, 10);
+      if (isNaN(days) || days < 1) return res.status(400).json({ error: 'expiring must be a positive integer' });
+      try {
+        const ALL_CONTROLS = [
+          'CC1.1','CC1.2','CC1.3','CC1.4',
+          'CC2.1','CC2.2','CC2.3',
+          'CC3.1','CC3.2','CC3.3',
+          'CC4.1','CC4.2',
+          'CC5.1','CC5.2','CC5.3','CC5.4','CC5.5',
+          'CC6.1','CC6.2','CC6.3','CC6.4','CC6.5','CC6.6','CC6.7','CC6.8','CC6.9',
+          'CC7.1','CC7.2','CC7.3','CC7.4','CC7.5','CC7.6',
+          'CC8.1','CC8.2','CC8.3','CC8.4','CC8.5','CC8.6',
+          'CC9.1','CC9.2','CC9.3','CC9.4','CC9.5','CC9.6','CC9.7','CC9.8','CC9.9','CC9.10','CC9.11',
+        ];
+        const cutoff = Date.now() + days * 24 * 60 * 60 * 1000;
+        const expiring_items = [];
+        for (const cid of ALL_CONTROLS) {
+          const raw = await redis.get(`user:${userId}:evidence:${cid}`);
+          if (!raw) continue;
+          const items = typeof raw === 'object' ? raw : JSON.parse(raw);
+          for (const item of items) {
+            if (item.expiryDate && new Date(item.expiryDate).getTime() <= cutoff) {
+              expiring_items.push({ ...item, controlId: cid });
+            }
+          }
+        }
+        expiring_items.sort((a, b) => new Date(a.expiryDate) - new Date(b.expiryDate));
+        return res.status(200).json({ items: expiring_items, count: expiring_items.length });
+      } catch (err) {
+        return res.status(500).json({ error: err.message });
+      }
+    }
+
     if (!controlId) return res.status(400).json({ error: 'Missing controlId' });
 
     try {
@@ -108,7 +145,7 @@ export default async function handler(req, res) {
 
   // ── POST: Add evidence item to a control ──────────────────────
   if (req.method === 'POST') {
-    const { controlId, type, value, source, note } = req.body || {};
+    const { controlId, type, value, source, note, expiryDate, documentType } = req.body || {};
 
     if (!controlId) return res.status(400).json({ error: 'Missing controlId' });
     if (!type || !VALID_TYPES.includes(type)) {
@@ -143,6 +180,16 @@ export default async function handler(req, res) {
         });
       }
 
+      // ── Validate expiryDate if provided ───────────────────────
+      let effectiveExpiry = null;
+      if (expiryDate) {
+        const d = new Date(expiryDate);
+        if (isNaN(d.getTime())) return res.status(400).json({ error: 'Invalid expiryDate — use ISO 8601 format (YYYY-MM-DD)' });
+        effectiveExpiry = d.toISOString();
+      }
+
+      const effectiveDocType = (documentType && VALID_DOC_TYPES.includes(documentType)) ? documentType : 'OTHER';
+
       // ── Build evidence item per Section D3 schema ──────────────
       const now = new Date().toISOString();
       const quality = computeQuality(type, effectiveNote);
@@ -156,6 +203,8 @@ export default async function handler(req, res) {
         updatedAt: now,
         note: effectiveNote,
         quality,
+        documentType: effectiveDocType,
+        expiryDate: effectiveExpiry,
       };
 
       items.push(item);

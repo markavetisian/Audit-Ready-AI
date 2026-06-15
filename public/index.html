@@ -486,6 +486,10 @@ header{
 .pay-secure{font-size:11px;color:var(--muted);text-align:center;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:4px}
 .upgrade-btn{width:100%;padding:9px 16px;border-radius:var(--r);background:linear-gradient(135deg,var(--accent),#1d4ed8);color:#fff;font-size:12px;font-weight:600;border:none;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .15s}
 .upgrade-btn:hover{opacity:.9}
+/* ── Trust grid responsive ─────────── */
+@media(max-width:720px){.trust-grid{grid-template-columns:1fr!important}}
+/* ── Locker / reminders / vendor table ─ */
+.locker-item{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 10px;display:flex;align-items:center;gap:8px;margin-bottom:4px}
 </style>
 </head>
 <body>
@@ -501,6 +505,9 @@ header{
     <div class="hn" id="hn-dashboard" onclick="nav('dashboard')">Dashboard</div>
     <div class="hn" id="hn-controls" onclick="nav('controls')">Controls</div>
     <div class="hn" id="hn-integrations" onclick="nav('integrations')">Integrations</div>
+    <div class="hn" id="hn-locker" onclick="nav('locker')">Evidence Locker</div>
+    <div class="hn" id="hn-trust" onclick="nav('trust')">Trust Page</div>
+    <div class="hn" id="hn-platform" onclick="nav('platform')">Vendors & Alerts</div>
   </nav>
   <div class="hdr-right">
     <div class="user-chip" id="userChip" onclick="toggleDD()">
@@ -514,6 +521,9 @@ header{
         <div class="dd-item" onclick="nav('dashboard')">📊 Dashboard</div>
         <div class="dd-item" onclick="nav('controls')">✅ Controls</div>
         <div class="dd-item" onclick="nav('integrations')">🔌 Integrations</div>
+        <div class="dd-item" onclick="nav('locker')">🗄 Evidence Locker</div>
+        <div class="dd-item" onclick="nav('trust')">🛡 Trust Page</div>
+        <div class="dd-item" onclick="nav('platform')">📋 Vendors & Alerts</div>
         <div class="dd-item danger" onclick="logout()">↩ Sign out</div>
       </div>
     </div>
@@ -816,6 +826,180 @@ header{
   </div>
 </div>
 
+<!-- ── Evidence Locker ────────────────────────────────────────── -->
+<div class="page" id="pg-locker">
+  <div class="page-inner-narrow" style="padding-top:24px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+      <div>
+        <h1 style="font-size:20px;font-weight:600;letter-spacing:-.03em">Evidence Locker</h1>
+        <p style="font-size:13px;color:var(--muted);margin-top:2px">All your compliance evidence in one place — organized, tracked, expiry-aware</p>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <select id="lockerFilter" class="ev-input" style="width:auto;padding:6px 10px;font-size:12px" onchange="filterLocker(this.value)">
+          <option value="ALL">All Evidence</option>
+          <option value="EXPIRING">Expiring (60 days)</option>
+          <option value="POLICY">Policy Docs</option>
+          <option value="CERTIFICATE">Certificates</option>
+          <option value="REPORT">Reports</option>
+          <option value="CONTRACT">Contracts</option>
+          <option value="TRAINING">Training Records</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" onclick="loadLocker()">↺ Refresh</button>
+      </div>
+    </div>
+    <div id="lockerStats" style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap"></div>
+    <div id="lockerContent"><div style="color:var(--muted);font-size:12px;text-align:center;padding:48px 0"><span class="spinner"></span> Loading evidence...</div></div>
+  </div>
+</div>
+
+<!-- ── Trust Page ─────────────────────────────────────────────── -->
+<div class="page" id="pg-trust">
+  <div class="page-inner" style="padding-top:24px;max-width:1100px">
+    <div style="margin-bottom:20px">
+      <h1 style="font-size:20px;font-weight:600;letter-spacing:-.03em">Trust Page</h1>
+      <p style="font-size:13px;color:var(--muted);margin-top:2px">Your public-facing compliance profile — share with prospects and customers to accelerate deals</p>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start" class="trust-grid">
+      <!-- Left: Company profile editor -->
+      <div class="card">
+        <div class="section-heading" style="margin-bottom:14px">COMPANY PROFILE</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div>
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Company Name</label>
+            <input class="ev-input" id="tpCompanyName" placeholder="Acme Corp" style="width:100%;box-sizing:border-box"/>
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Short Description</label>
+            <textarea class="ev-input" id="tpDescription" placeholder="We build secure cloud infrastructure for healthcare companies..." style="width:100%;box-sizing:border-box;height:72px;resize:vertical"></textarea>
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Website</label>
+            <input class="ev-input" id="tpWebsite" placeholder="https://acmecorp.com" style="width:100%;box-sizing:border-box"/>
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Logo URL (optional)</label>
+            <input class="ev-input" id="tpLogoUrl" placeholder="https://..." style="width:100%;box-sizing:border-box"/>
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Frameworks</label>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:2px">
+              <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="fw-soc2t1" value="SOC 2 Type 1" checked onchange="updateFrameworks()"/> SOC 2 Type 1</label>
+              <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="fw-soc2t2" value="SOC 2 Type 2" onchange="updateFrameworks()"/> SOC 2 Type 2</label>
+              <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="fw-iso27001" value="ISO 27001" onchange="updateFrameworks()"/> ISO 27001</label>
+              <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="fw-hipaa" value="HIPAA" onchange="updateFrameworks()"/> HIPAA</label>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="saveProfile()" id="saveProfileBtn">Save Profile</button>
+        </div>
+      </div>
+      <!-- Right: Trust page preview + share -->
+      <div>
+        <div class="card" id="trustPreview" style="margin-bottom:14px">
+          <div class="section-heading" style="margin-bottom:14px">LIVE PREVIEW</div>
+          <div id="trustPreviewContent">
+            <div style="color:var(--muted);font-size:12px">Save your profile to see the preview</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="section-heading" style="margin-bottom:12px">SHARE YOUR TRUST PAGE</div>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6">Generate a shareable link that shows your compliance score, category breakdown, and company profile — perfect for security questionnaires and vendor reviews.</p>
+          <div id="trustShareLinks" style="margin-bottom:12px"></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary btn-sm" style="flex:1" onclick="createTrustLink()">🔗 Generate Trust Link</button>
+            <button class="btn btn-secondary btn-sm" onclick="loadTrustLinks()">↺ Refresh Links</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Vendors & Alerts Platform ──────────────────────────────── -->
+<div class="page" id="pg-platform">
+  <div class="page-inner-narrow" style="padding-top:24px">
+    <div style="margin-bottom:20px">
+      <h1 style="font-size:20px;font-weight:600;letter-spacing:-.03em">Vendors & Alerts</h1>
+      <p style="font-size:13px;color:var(--muted);margin-top:2px">Track third-party vendor risk and stay on top of upcoming compliance renewals</p>
+    </div>
+
+    <!-- Reminders / Alerts section -->
+    <div class="card" style="margin-bottom:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="section-heading" style="margin-bottom:0">UPCOMING RENEWALS & EXPIRIES</div>
+        <button class="btn btn-secondary btn-sm" onclick="loadReminders()">↺ Refresh</button>
+      </div>
+      <div id="remindersList"><div style="color:var(--muted);font-size:12px;text-align:center;padding:24px 0"><span class="spinner"></span> Loading...</div></div>
+    </div>
+
+    <!-- Vendor tracker -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="section-heading" style="margin-bottom:0">VENDOR RISK TRACKER</div>
+        <button class="btn btn-primary btn-sm" onclick="openAddVendor()">+ Add Vendor</button>
+      </div>
+      <div id="vendorsList"><div style="color:var(--muted);font-size:12px;text-align:center;padding:24px 0"><span class="spinner"></span> Loading vendors...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Add Vendor Modal ───────────────────────────────────────── -->
+<div id="addVendorModal" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeAddVendor()">
+  <div class="modal-box" style="max-width:480px">
+    <h3 style="margin-bottom:14px">Add Vendor</h3>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div>
+        <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Vendor Name *</label>
+        <input class="ev-input" id="vendorName" placeholder="e.g. AWS, Stripe, Notion" style="width:100%;box-sizing:border-box"/>
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Website</label>
+        <input class="ev-input" id="vendorWebsite" placeholder="https://..." style="width:100%;box-sizing:border-box"/>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Category</label>
+          <select class="ev-input" id="vendorCategory" style="width:100%">
+            <option>Cloud Infrastructure</option>
+            <option>Payment Processing</option>
+            <option>Identity & Auth</option>
+            <option>Communication</option>
+            <option>Analytics</option>
+            <option>CRM</option>
+            <option>Security</option>
+            <option>HR & Payroll</option>
+            <option>Data Storage</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Risk Level</label>
+          <select class="ev-input" id="vendorRisk" style="width:100%">
+            <option value="HIGH">HIGH — stores your data</option>
+            <option value="MEDIUM" selected>MEDIUM — SaaS tool</option>
+            <option value="LOW">LOW — minimal access</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">SOC 2 Report URL (optional)</label>
+        <input class="ev-input" id="vendorSoc2Url" placeholder="https://trust.vendor.com/soc2.pdf" style="width:100%;box-sizing:border-box"/>
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">SOC 2 Report Expiry Date</label>
+        <input class="ev-input" type="date" id="vendorSoc2Expiry" style="width:100%;box-sizing:border-box"/>
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Notes</label>
+        <textarea class="ev-input" id="vendorNotes" placeholder="e.g. Data processor agreement signed, DPA attached" style="width:100%;box-sizing:border-box;height:56px;resize:vertical"></textarea>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-primary" style="flex:1" onclick="addVendor()" id="addVendorBtn">Add Vendor</button>
+      <button class="btn btn-secondary" onclick="closeAddVendor()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 </div><!-- #app -->
 
 <script>
@@ -903,6 +1087,9 @@ function nav(page) {
   if (page === 'dashboard') loadDashboard();
   if (page === 'controls') loadControls();
   if (page === 'integrations') loadIntegrations();
+  if (page === 'locker') loadLocker();
+  if (page === 'trust') loadTrustPage();
+  if (page === 'platform') { loadReminders(); loadVendors(); }
   window.scrollTo(0, 0);
 }
 
@@ -936,7 +1123,7 @@ document.addEventListener('click', e => {
 
 async function loadDashboard() {
   if (!ST.user) return;
-  await Promise.all([loadScore(), loadLatestReport()]);
+  await Promise.all([loadScore(), loadLatestReport(), loadDashboardReminders()]);
   // Load score history for trend display
   try {
     const hr = await fetch('/api/score?history=true', { headers: authHeaders() });
@@ -1684,6 +1871,440 @@ async function submitPricingPayment() {
     btn.disabled = false;
     txtEl.innerHTML = '🔒 Pay & Activate';
   }
+}
+
+// ── Evidence Locker ───────────────────────────────────────────
+
+const DOC_TYPE_ICONS = {
+  POLICY: '📋', CERTIFICATE: '🏆', REPORT: '📊', CONTRACT: '📝',
+  TRAINING: '🎓', SCREENSHOT: '🖼', OTHER: '📎',
+};
+
+let _lockerFilter = 'ALL';
+let _lockerAllItems = [];
+
+async function loadLocker() {
+  if (!ST.user) return;
+  const el = document.getElementById('lockerContent');
+  el.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:48px 0"><span class="spinner"></span></div>';
+
+  try {
+    // Fetch all evidence across controls — use expiring=9999 to get all
+    const r = await fetch('/api/evidence?expiring=9999', { headers: authHeaders() });
+    if (!r.ok) throw new Error('Failed');
+    const d = await r.json();
+
+    // Build stats
+    const allItems = d.items || [];
+    _lockerAllItems = allItems;
+
+    renderLockerStats(allItems);
+    renderLockerItems(allItems, _lockerFilter);
+  } catch (err) {
+    el.innerHTML = '<div style="color:var(--red);font-size:13px">' + esc(err.message) + '</div>';
+  }
+}
+
+function renderLockerStats(items) {
+  const el = document.getElementById('lockerStats');
+  const now = Date.now();
+  const expiring30 = items.filter(i => i.expiryDate && (new Date(i.expiryDate) - now) < 30*86400000).length;
+  const expiring60 = items.filter(i => i.expiryDate && (new Date(i.expiryDate) - now) < 60*86400000).length;
+  const byType = {};
+  items.forEach(i => { byType[i.documentType || 'OTHER'] = (byType[i.documentType || 'OTHER'] || 0) + 1; });
+
+  el.innerHTML =
+    statChip(items.length + '', 'Total Items', '#3b82f6') +
+    statChip(expiring30 + '', 'Expiring 30d', expiring30 > 0 ? '#ef4444' : '#6b7280') +
+    statChip(expiring60 + '', 'Expiring 60d', expiring60 > 0 ? '#f59e0b' : '#6b7280') +
+    statChip((byType.POLICY || 0) + '', 'Policies', '#10b981');
+}
+
+function statChip(num, label, color) {
+  return '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;min-width:90px">' +
+    '<div style="font-size:22px;font-weight:700;color:' + color + ';font-family:var(--mono)">' + esc(num) + '</div>' +
+    '<div style="font-size:11px;color:var(--muted);margin-top:2px">' + esc(label) + '</div></div>';
+}
+
+function filterLocker(val) {
+  _lockerFilter = val;
+  renderLockerItems(_lockerAllItems, val);
+}
+
+function renderLockerItems(items, filter) {
+  const el = document.getElementById('lockerContent');
+  const now = Date.now();
+  let filtered = items;
+
+  if (filter === 'EXPIRING') {
+    filtered = items.filter(i => i.expiryDate && (new Date(i.expiryDate) - now) < 60*86400000);
+  } else if (filter !== 'ALL') {
+    filtered = items.filter(i => (i.documentType || 'OTHER') === filter);
+  }
+
+  if (!filtered.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:48px 0">' +
+      (filter === 'EXPIRING' ? '✓ No evidence expiring in the next 60 days' : 'No evidence found for this filter') + '</div>';
+    return;
+  }
+
+  // Group by controlId
+  const byControl = {};
+  filtered.forEach(i => {
+    const k = i.controlId || 'Unknown';
+    if (!byControl[k]) byControl[k] = [];
+    byControl[k].push(i);
+  });
+
+  let html = '';
+  for (const [controlId, controlItems] of Object.entries(byControl)) {
+    html += '<div style="margin-bottom:16px">';
+    html += '<div style="font-size:11px;font-family:var(--mono);color:var(--accent);font-weight:600;margin-bottom:6px">' + esc(controlId) + '</div>';
+    html += '<div style="display:flex;flex-direction:column;gap:6px">';
+    for (const item of controlItems) {
+      const expDays = item.expiryDate ? Math.round((new Date(item.expiryDate) - now) / 86400000) : null;
+      const expBadge = expDays !== null
+        ? '<span style="font-size:10px;padding:2px 6px;border-radius:4px;font-family:var(--mono);background:' + (expDays < 14 ? 'rgba(239,68,68,.15);color:#ef4444' : expDays < 30 ? 'rgba(245,158,11,.15);color:#f59e0b' : 'rgba(107,114,128,.12);color:var(--muted)') + '">' +
+          (expDays < 0 ? 'EXPIRED' : expDays + 'd left') + '</span>'
+        : '';
+      const icon = DOC_TYPE_ICONS[item.documentType || 'OTHER'] || '📎';
+      const isLink = item.type === 'LINK' && item.value?.startsWith('http');
+      const valEl = isLink
+        ? '<a href="' + esc(item.value) + '" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;font-size:12px">' + esc(item.value.slice(0, 70)) + '…</a>'
+        : '<span style="font-size:12px">' + esc(item.value.slice(0, 80)) + '</span>';
+
+      html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 10px;display:flex;align-items:center;gap:8px">' +
+        '<span style="font-size:15px;flex-shrink:0">' + icon + '</span>' +
+        '<div style="flex:1;min-width:0">' + valEl +
+        (item.note ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">' + esc(item.note) + '</div>' : '') +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">' + expBadge +
+        '<span style="font-size:10px;color:var(--muted);font-family:var(--mono)">' + esc(item.quality || '') + '</span>' +
+        '</div></div>';
+    }
+    html += '</div></div>';
+  }
+  el.innerHTML = html;
+}
+
+// ── Trust Page ────────────────────────────────────────────────
+
+let _profile = {};
+
+async function loadTrustPage() {
+  if (!ST.user) return;
+  try {
+    const r = await fetch('/api/platform?type=profile', { headers: authHeaders() });
+    if (r.ok) {
+      const d = await r.json();
+      _profile = d.profile || {};
+      populateProfileForm(_profile);
+      renderTrustPreview(_profile);
+    }
+    loadTrustLinks();
+  } catch {}
+}
+
+function populateProfileForm(p) {
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+  set('tpCompanyName', p.companyName);
+  set('tpDescription', p.description);
+  set('tpWebsite', p.website);
+  set('tpLogoUrl', p.logoUrl);
+  const fws = p.frameworks || ['SOC 2 Type 1'];
+  ['fw-soc2t1','fw-soc2t2','fw-iso27001','fw-hipaa'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.checked = fws.includes(el.value);
+  });
+}
+
+function updateFrameworks() {}
+
+function getFormFrameworks() {
+  const fws = [];
+  ['fw-soc2t1','fw-soc2t2','fw-iso27001','fw-hipaa'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el?.checked) fws.push(el.value);
+  });
+  return fws.length ? fws : ['SOC 2 Type 1'];
+}
+
+async function saveProfile() {
+  const btn = document.getElementById('saveProfileBtn');
+  btn.textContent = 'Saving...';
+  btn.disabled = true;
+  try {
+    const body = {
+      type: 'profile',
+      companyName: document.getElementById('tpCompanyName')?.value.trim() || '',
+      description: document.getElementById('tpDescription')?.value.trim() || '',
+      website: document.getElementById('tpWebsite')?.value.trim() || '',
+      logoUrl: document.getElementById('tpLogoUrl')?.value.trim() || '',
+      frameworks: getFormFrameworks(),
+    };
+    const r = await fetch('/api/platform', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify(body),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Failed');
+    _profile = d.profile;
+    renderTrustPreview(_profile);
+    toast('Profile saved', 'success');
+  } catch (err) { toast(err.message, 'error'); }
+  btn.textContent = 'Save Profile';
+  btn.disabled = false;
+}
+
+function renderTrustPreview(p) {
+  const el = document.getElementById('trustPreviewContent');
+  if (!el) return;
+  const score = ST.score?.score || 0;
+  const label = ST.score?.label || 'Not Assessed';
+  const color = ST.score?.color || '#6b7280';
+  const fws = (p.frameworks || ['SOC 2 Type 1']).map(f => '<span style="background:rgba(37,99,235,.12);color:var(--accent);font-size:10px;padding:2px 7px;border-radius:4px;font-family:var(--mono)">' + esc(f) + '</span>').join(' ');
+
+  el.innerHTML =
+    '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">' +
+    (p.logoUrl ? '<img src="' + esc(p.logoUrl) + '" style="width:40px;height:40px;border-radius:8px;object-fit:cover"/>' : '<div style="width:40px;height:40px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px">' + esc((p.companyName || 'C')[0]) + '</div>') +
+    '<div>' +
+    '<div style="font-size:15px;font-weight:600">' + esc(p.companyName || 'Your Company') + '</div>' +
+    (p.website ? '<a href="' + esc(p.website) + '" target="_blank" style="font-size:11px;color:var(--accent)">' + esc(p.website) + '</a>' : '') +
+    '</div></div>' +
+    (p.description ? '<p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6">' + esc(p.description) + '</p>' : '') +
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">' + fws + '</div>' +
+    '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;display:flex;align-items:center;justify-content:space-between">' +
+    '<div><div style="font-size:11px;color:var(--muted);margin-bottom:2px">SOC 2 Readiness Score</div>' +
+    '<div style="font-size:26px;font-weight:700;color:' + color + ';font-family:var(--mono)">' + score + '%</div>' +
+    '<div style="font-size:11px;color:' + color + '">' + esc(label) + '</div></div>' +
+    '<div style="text-align:right"><div style="font-size:10px;color:var(--muted);line-height:1.5">Self-reported<br/>AuditReady AI<br/>' + new Date().toLocaleDateString('en-US',{month:'short',year:'numeric'}) + '</div></div>' +
+    '</div>' +
+    '<div style="font-size:10px;color:var(--muted);margin-top:10px;line-height:1.5">⚠ Self-reported score — not a certified SOC 2 audit. Provided for transparency only.</div>';
+}
+
+async function loadTrustLinks() {
+  const el = document.getElementById('trustShareLinks');
+  if (!el) return;
+  try {
+    const r = await fetch('/api/share?list=true', { headers: authHeaders() });
+    if (!r.ok) return;
+    const d = await r.json();
+    const shares = d.shares || [];
+    if (!shares.length) { el.innerHTML = '<div style="font-size:12px;color:var(--muted)">No active trust links. Generate one below.</div>'; return; }
+    el.innerHTML = shares.map(s => {
+      const url = location.origin + '/?share=' + s.token;
+      const exp = new Date(s.expiresAt).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+      return '<div style="display:flex;align-items:center;gap:8px;padding:7px 9px;background:var(--surface);border:1px solid var(--border);border-radius:6px;margin-bottom:6px">' +
+        '<div style="flex:1;min-width:0"><div style="font-size:11px;color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(url) + '</div>' +
+        '<div style="font-size:10px;color:var(--muted);margin-top:1px">Expires ' + exp + ' · ' + (s.viewCount || 0) + ' views</div></div>' +
+        '<button class="btn btn-secondary btn-sm" onclick="copyText(\'' + esc(url) + '\')">Copy</button>' +
+        '</div>';
+    }).join('');
+  } catch {}
+}
+
+async function createTrustLink() {
+  try {
+    const companyName = document.getElementById('tpCompanyName')?.value.trim() || _profile.companyName || 'Company';
+    const r = await fetch('/api/share', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ companyName, ttlDays: 30 }),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Failed');
+    toast('Trust link created', 'success');
+    copyText(d.shareUrl);
+    loadTrustLinks();
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+function copyText(text) {
+  navigator.clipboard?.writeText(text).catch(() => {});
+  toast('Copied to clipboard', 'success');
+}
+
+// ── Vendors & Reminders ────────────────────────────────────────
+
+async function loadReminders() {
+  const el = document.getElementById('remindersList');
+  if (!el) return;
+  try {
+    const r = await fetch('/api/platform?type=reminders', { headers: authHeaders() });
+    if (!r.ok) throw new Error('Failed');
+    const d = await r.json();
+    renderReminders(d.reminders || [], d.urgent || 0);
+  } catch (err) {
+    el.innerHTML = '<div style="color:var(--red);font-size:12px">' + esc(err.message) + '</div>';
+  }
+}
+
+function renderReminders(reminders, urgentCount) {
+  const el = document.getElementById('remindersList');
+  if (!el) return;
+  if (!reminders.length) {
+    el.innerHTML = '<div style="color:var(--green);font-size:13px;text-align:center;padding:16px">✓ No upcoming renewals or expiries in the next 60 days</div>';
+    return;
+  }
+
+  const badge = urgentCount > 0
+    ? '<span style="background:rgba(239,68,68,.15);color:#ef4444;font-size:10px;padding:2px 7px;border-radius:4px;font-family:var(--mono);margin-left:8px">' + urgentCount + ' URGENT</span>'
+    : '';
+
+  let html = '<div style="font-size:12px;color:var(--muted);margin-bottom:10px">' + reminders.length + ' upcoming item' + (reminders.length !== 1 ? 's' : '') + badge + '</div>';
+  html += '<div style="display:flex;flex-direction:column;gap:6px">';
+
+  for (const r of reminders) {
+    const isUrgent = r.urgent;
+    const daysText = r.daysUntilDue < 0 ? 'OVERDUE' : r.daysUntilDue === 0 ? 'TODAY' : r.daysUntilDue + 'd';
+    const daysColor = r.daysUntilDue < 0 ? '#ef4444' : isUrgent ? '#f59e0b' : 'var(--muted)';
+    const typeIcons = { control_renewal: '🔄', evidence_expiry: '📄', vendor_report_expiry: '🏢' };
+    const icon = typeIcons[r.type] || '⚡';
+
+    html += '<div style="background:var(--surface2);border:1px solid ' + (isUrgent ? 'rgba(239,68,68,.3)' : 'var(--border)') + ';border-radius:6px;padding:9px 11px;display:flex;align-items:center;gap:10px">' +
+      '<span style="font-size:15px;flex-shrink:0">' + icon + '</span>' +
+      '<div style="flex:1;min-width:0">' +
+      '<div style="font-size:12px;font-weight:500">' + esc(r.label) + '</div>' +
+      (r.controlId ? '<div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:1px">' + esc(r.controlId) + '</div>' : '') +
+      (r.vendorName ? '<div style="font-size:10px;color:var(--muted);margin-top:1px">' + esc(r.vendorName) + '</div>' : '') +
+      '</div>' +
+      '<div style="text-align:right;flex-shrink:0">' +
+      '<div style="font-size:13px;font-weight:700;font-family:var(--mono);color:' + daysColor + '">' + esc(daysText) + '</div>' +
+      '<div style="font-size:10px;color:var(--muted)">' + new Date(r.dueDate).toLocaleDateString('en-US',{month:'short',day:'numeric'}) + '</div>' +
+      '</div></div>';
+  }
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+async function loadVendors() {
+  const el = document.getElementById('vendorsList');
+  if (!el) return;
+  try {
+    const r = await fetch('/api/platform?type=vendors', { headers: authHeaders() });
+    if (!r.ok) throw new Error('Failed');
+    const d = await r.json();
+    renderVendors(d.vendors || []);
+  } catch (err) {
+    el.innerHTML = '<div style="color:var(--red);font-size:12px">' + esc(err.message) + '</div>';
+  }
+}
+
+const RISK_COLORS = { HIGH: '#ef4444', MEDIUM: '#f59e0b', LOW: '#10b981' };
+
+function renderVendors(vendors) {
+  const el = document.getElementById('vendorsList');
+  if (!vendors.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:24px 0">No vendors added yet. Add your key third-party tools to track their SOC 2 compliance.</div>';
+    return;
+  }
+
+  const now = Date.now();
+  let html = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">' +
+    '<thead><tr style="border-bottom:1px solid var(--border)">' +
+    '<th style="text-align:left;padding:6px 8px;color:var(--muted);font-weight:500">Vendor</th>' +
+    '<th style="text-align:left;padding:6px 8px;color:var(--muted);font-weight:500">Category</th>' +
+    '<th style="text-align:left;padding:6px 8px;color:var(--muted);font-weight:500">Risk</th>' +
+    '<th style="text-align:left;padding:6px 8px;color:var(--muted);font-weight:500">SOC 2 Report</th>' +
+    '<th style="text-align:left;padding:6px 8px;color:var(--muted);font-weight:500">Expiry</th>' +
+    '<th style="padding:6px 8px"></th>' +
+    '</tr></thead><tbody>';
+
+  for (const v of vendors) {
+    const expDays = v.soc2ReportExpiry ? Math.round((new Date(v.soc2ReportExpiry) - now) / 86400000) : null;
+    const expCell = expDays !== null
+      ? '<span style="color:' + (expDays < 30 ? '#ef4444' : expDays < 90 ? '#f59e0b' : '#10b981') + ';font-family:var(--mono)">' + (expDays < 0 ? 'EXPIRED' : expDays + 'd') + '</span>'
+      : '<span style="color:var(--muted)">—</span>';
+
+    html += '<tr style="border-bottom:1px solid var(--border)">' +
+      '<td style="padding:8px 8px"><div style="font-weight:500">' + esc(v.name) + '</div>' +
+      (v.website ? '<div><a href="' + esc(v.website) + '" target="_blank" style="color:var(--accent);font-size:10px">' + esc(v.website.replace('https://','')) + '</a></div>' : '') +
+      '</td>' +
+      '<td style="padding:8px 8px;color:var(--muted)">' + esc(v.category || '—') + '</td>' +
+      '<td style="padding:8px 8px"><span style="color:' + (RISK_COLORS[v.riskLevel] || '#6b7280') + ';font-family:var(--mono);font-size:11px;font-weight:600">' + esc(v.riskLevel || '—') + '</span></td>' +
+      '<td style="padding:8px 8px">' + (v.soc2ReportUrl ? '<a href="' + esc(v.soc2ReportUrl) + '" target="_blank" style="color:var(--accent)">View →</a>' : '<span style="color:var(--muted)">None</span>') + '</td>' +
+      '<td style="padding:8px 8px">' + expCell + '</td>' +
+      '<td style="padding:8px 8px"><button class="btn btn-secondary btn-sm" onclick="removeVendor(\'' + esc(v.id) + '\')">×</button></td>' +
+      '</tr>';
+  }
+
+  html += '</tbody></table></div>';
+  el.innerHTML = html;
+}
+
+function openAddVendor() {
+  document.getElementById('addVendorModal').style.display = 'flex';
+  ['vendorName','vendorWebsite','vendorSoc2Url','vendorSoc2Expiry','vendorNotes'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+}
+function closeAddVendor() {
+  document.getElementById('addVendorModal').style.display = 'none';
+}
+
+async function addVendor() {
+  const name = document.getElementById('vendorName')?.value.trim();
+  if (!name) { toast('Vendor name required', 'error'); return; }
+  const btn = document.getElementById('addVendorBtn');
+  btn.disabled = true; btn.textContent = 'Adding...';
+  try {
+    const r = await fetch('/api/platform', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        type: 'vendor',
+        name,
+        website: document.getElementById('vendorWebsite')?.value.trim() || '',
+        category: document.getElementById('vendorCategory')?.value || 'Other',
+        riskLevel: document.getElementById('vendorRisk')?.value || 'MEDIUM',
+        soc2ReportUrl: document.getElementById('vendorSoc2Url')?.value.trim() || '',
+        soc2ReportExpiry: document.getElementById('vendorSoc2Expiry')?.value || '',
+        notes: document.getElementById('vendorNotes')?.value.trim() || '',
+      }),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Failed');
+    toast(name + ' added', 'success');
+    closeAddVendor();
+    loadVendors();
+  } catch (err) { toast(err.message, 'error'); }
+  btn.disabled = false; btn.textContent = 'Add Vendor';
+}
+
+async function removeVendor(id) {
+  if (!confirm('Remove this vendor?')) return;
+  try {
+    const r = await fetch('/api/platform?type=vendor&id=' + encodeURIComponent(id), {
+      method: 'DELETE', headers: authHeaders(),
+    });
+    if (!r.ok) throw new Error('Failed');
+    toast('Vendor removed', 'success');
+    loadVendors();
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+// ── Reminders badge on dashboard ──────────────────────────────
+
+async function loadDashboardReminders() {
+  try {
+    const r = await fetch('/api/platform?type=reminders', { headers: authHeaders() });
+    if (!r.ok) return;
+    const d = await r.json();
+    if (d.urgent > 0) {
+      // Inject alert banner into dashboard
+      const existing = document.getElementById('dashRemindersAlert');
+      if (existing) return;
+      const banner = document.createElement('div');
+      banner.id = 'dashRemindersAlert';
+      banner.style.cssText = 'background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer';
+      banner.onclick = () => nav('platform');
+      banner.innerHTML = '<div style="font-size:12px;line-height:1.5">🔴 <strong>' + d.urgent + ' urgent</strong> compliance renewal' + (d.urgent > 1 ? 's' : '') + ' require attention</div>' +
+        '<span style="font-size:11px;color:var(--accent)">View →</span>';
+      const mainEl = document.querySelector('.dash-main');
+      if (mainEl) mainEl.prepend(banner);
+    }
+  } catch {}
 }
 
 // ── Login page grid animation ─────────────────────────────────

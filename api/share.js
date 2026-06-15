@@ -122,6 +122,10 @@ async function buildPublicPayload(userId, options = {}) {
     };
   }
 
+  // Get company profile
+  const profileRaw = await redis.get(`user:${userId}:profile`);
+  const profile = profileRaw ? (typeof profileRaw === 'object' ? profileRaw : JSON.parse(profileRaw)) : {};
+
   const payload = {
     score,
     ...getScoreMeta(score),
@@ -131,6 +135,13 @@ async function buildPublicPayload(userId, options = {}) {
     // Transparency: this is self-reported
     disclaimer: 'This compliance readiness score is self-reported and was assessed using AuditReady AI. It has not been independently verified by a licensed CPA firm and does not constitute a SOC 2 attestation.',
     selfReported: true,
+    company: {
+      name: profile.companyName || '',
+      description: profile.description || '',
+      website: profile.website || '',
+      logoUrl: profile.logoUrl || '',
+      frameworks: profile.frameworks || ['SOC 2 Type 1'],
+    },
   };
 
   // Optionally include generated report (executive summary only for public view)
