@@ -4,20 +4,23 @@
 //
 //   POST /api/share                  → create shareable auditor token
 //   GET  /api/share?token=X          → public report (NO AUTH required)
+//   GET  /api/share?list=true        → list user's active share links (auth required)
 //
 // Token TTL: 30 days (configurable via body)
 // Public view: score, category breakdown, report if generated
 // Sensitive data (userId, raw controls detail) excluded from public view
+// Disclaimer + selfReported flags included in all public payloads
 // ─────────────────────────────────────────────────────────────
 
 import { Redis } from '@upstash/redis';
+import { createHash, randomBytes } from 'crypto';
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL,
   token: process.env.KV_REST_API_TOKEN,
 });
 
-// ── Auth helpers (POST only — GET is public) ──────────────────
+// ── Auth helpers (POST and list GET — public GET is token-based) ──
 
 async function getUserId(authHeader) {
   if (!authHeader?.startsWith('Bearer ')) return null;
@@ -33,16 +36,22 @@ async function getUserId(authHeader) {
   } catch { return null; }
 }
 
-// ── Token generation ──────────────────────────────────────────
+// ── Token generation (cryptographically random) ───────────────
 
 function generateToken() {
-  // 32-char URL-safe token
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let token = '';
-  for (let i = 0; i < 32; i++) {
-    token += chars[Math.floor(Math.random() * chars.length)];
+  // Use crypto.randomBytes for a cryptographically secure 32-char URL-safe token
+  try {
+    const bytes = randomBytes(24);
+    // Base64url encode: replace +/= with URL-safe chars and trim padding
+    return bytes.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '').slice(0, 32);
+  } catch {
+    // Fallback: use crypto.randomUUID if available
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID().replace(/-/g, '').slice(0, 32);
+    }
+    // Last resort: timestamp + random (should not reach here in Node.js)
+    return Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
   }
-  return token;
 }
 
 // ── Score color helper ────────────────────────────────────────
@@ -66,15 +75,15 @@ async function buildPublicPayload(userId, options = {}) {
 
   // Get category breakdown from controls
   const CONTROLS_BY_CATEGORY = {
-    CC1: ['CC1.1', 'CC1.2'],
-    CC2: ['CC2.1', 'CC2.2'],
-    CC3: ['CC3.1', 'CC3.2'],
+    CC1: ['CC1.1', 'CC1.2', 'CC1.3', 'CC1.4'],
+    CC2: ['CC2.1', 'CC2.2', 'CC2.3'],
+    CC3: ['CC3.1', 'CC3.2', 'CC3.3'],
     CC4: ['CC4.1', 'CC4.2'],
-    CC5: ['CC5.1', 'CC5.2', 'CC5.3'],
-    CC6: ['CC6.1', 'CC6.2', 'CC6.3', 'CC6.4', 'CC6.5', 'CC6.6', 'CC6.7'],
-    CC7: ['CC7.1', 'CC7.2', 'CC7.3', 'CC7.4', 'CC7.5'],
-    CC8: ['CC8.1', 'CC8.2', 'CC8.3', 'CC8.4'],
-    CC9: ['CC9.1', 'CC9.2', 'CC9.3', 'CC9.4', 'CC9.5', 'CC9.6'],
+    CC5: ['CC5.1', 'CC5.2', 'CC5.3', 'CC5.4', 'CC5.5'],
+    CC6: ['CC6.1', 'CC6.2', 'CC6.3', 'CC6.4', 'CC6.5', 'CC6.6', 'CC6.7', 'CC6.8', 'CC6.9'],
+    CC7: ['CC7.1', 'CC7.2', 'CC7.3', 'CC7.4', 'CC7.5', 'CC7.6'],
+    CC8: ['CC8.1', 'CC8.2', 'CC8.3', 'CC8.4', 'CC8.5', 'CC8.6'],
+    CC9: ['CC9.1', 'CC9.2', 'CC9.3', 'CC9.4', 'CC9.5', 'CC9.6', 'CC9.7', 'CC9.8', 'CC9.9', 'CC9.10', 'CC9.11'],
   };
 
   const CATEGORY_NAMES = {
@@ -119,6 +128,9 @@ async function buildPublicPayload(userId, options = {}) {
     framework: 'SOC 2 Type 1',
     categoryBreakdown,
     generatedAt: new Date().toISOString(),
+    // Transparency: this is self-reported
+    disclaimer: 'This compliance readiness score is self-reported and was assessed using AuditReady AI. It has not been independently verified by a licensed CPA firm and does not constitute a SOC 2 attestation.',
+    selfReported: true,
   };
 
   // Optionally include generated report (executive summary only for public view)
@@ -132,6 +144,8 @@ async function buildPublicPayload(userId, options = {}) {
         overallRating: report.report?.overallRating,
         estimatedTimeToAuditReady: report.report?.estimatedTimeToAuditReady,
         generatedAt: report.generatedAt,
+        aiGenerated: report.aiGenerated || false,
+        generatedBy: report.generatedBy || null,
       };
     }
   }
@@ -147,9 +161,43 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // ── GET: Public report view — NO AUTH ─────────────────────────
+  // ── GET: Public report view — NO AUTH (token) or list (auth) ──
   if (req.method === 'GET') {
-    const { token } = req.query;
+    const { token, list } = req.query;
+
+    // ── GET ?list=true — authenticated list of user's share links ─
+    if (list === 'true') {
+      const userId = await getUserId(req.headers.authorization);
+      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+      try {
+        const userSharesKey = `user:${userId}:shares`;
+        const raw = await redis.lrange(userSharesKey, 0, 19);
+        const shares = [];
+        const now = Date.now();
+        for (const item of (raw || [])) {
+          try {
+            const s = typeof item === 'object' ? item : JSON.parse(item);
+            if (s.expiresAt && s.expiresAt > now) {
+              // Get view count
+              const viewCountRaw = await redis.get(`share:${s.token}:views`);
+              shares.push({
+                token: s.token,
+                createdAt: s.createdAt,
+                expiresAt: s.expiresAt,
+                ttlDays: s.ttlDays,
+                viewCount: viewCountRaw ? parseInt(viewCountRaw, 10) : 0,
+              });
+            }
+          } catch {}
+        }
+        return res.status(200).json({ shares });
+      } catch (err) {
+        return res.status(500).json({ error: err.message });
+      }
+    }
+
+    // ── GET ?token=X — public unauthenticated view ────────────────
     if (!token) return res.status(400).json({ error: 'Missing token' });
 
     try {
@@ -164,6 +212,10 @@ export default async function handler(req, res) {
       if (expiresAt && Date.now() > expiresAt) {
         return res.status(410).json({ error: 'Share link has expired' });
       }
+
+      // Increment view count
+      const viewKey = `share:${token}:views`;
+      await redis.incr(viewKey).catch(() => {});
 
       const payload = await buildPublicPayload(userId, options);
       payload.companyName = companyName;

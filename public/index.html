@@ -290,12 +290,16 @@ header{
 
 /* ── Login page — light theme with grid ──── */
 #pg-login{
-  position:relative;
   min-height:100dvh;
-  display:flex;flex-direction:column;align-items:center;
+  flex-direction:column;
+  align-items:center;
   overflow:hidden;
   background:#f5f6fa;
   color:#0f172a;
+}
+#pg-login.on{
+  display:flex!important;
+  position:relative;
 }
 /* grid canvas layers */
 .lp-grid-base{position:absolute;inset:0;z-index:0;opacity:0.32;pointer-events:none}
@@ -462,6 +466,26 @@ header{
   .stat-grid{grid-template-columns:repeat(2,1fr)}
   header{padding:0 14px}
 }
+
+/* ── Pricing modal ───────────────────────── */
+.plan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+@media(max-width:600px){.plan-grid{grid-template-columns:1fr}}
+.plan-card{background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;transition:border-color .15s,transform .12s;position:relative}
+.plan-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.plan-card.selected{border-color:var(--accent);background:var(--accent-dim)}
+.plan-popular{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:9px;font-weight:700;padding:2px 10px;border-radius:10px;white-space:nowrap;letter-spacing:.06em}
+.plan-name{font-size:13px;font-weight:600;margin-bottom:4px}
+.plan-price{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--accent);line-height:1;letter-spacing:-.03em}
+.plan-cycle{font-size:10px;color:var(--muted);margin-bottom:10px}
+.plan-feats{list-style:none;display:flex;flex-direction:column;gap:4px}
+.plan-feats li{font-size:11px;color:var(--muted);display:flex;align-items:flex-start;gap:5px;line-height:1.4}
+.plan-feats li::before{content:"✓";color:var(--green);flex-shrink:0;font-weight:700}
+.pay-btn{width:100%;padding:11px;border-radius:var(--r);background:var(--accent);color:#fff;font-size:14px;font-weight:600;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .15s}
+.pay-btn:hover{opacity:.9}
+.pay-btn:disabled{opacity:.4;cursor:not-allowed}
+.pay-secure{font-size:11px;color:var(--muted);text-align:center;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:4px}
+.upgrade-btn{width:100%;padding:9px 16px;border-radius:var(--r);background:linear-gradient(135deg,var(--accent),#1d4ed8);color:#fff;font-size:12px;font-weight:600;border:none;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .15s}
+.upgrade-btn:hover{opacity:.9}
 </style>
 </head>
 <body>
@@ -515,9 +539,9 @@ header{
       <div class="lp-logo-name"><span>Audit</span>Ready AI</div>
     </div>
     <div class="lp-nav-links">
-      <div class="lp-nav-link">How it works</div>
+      <div class="lp-nav-link" onclick="openSoc2Modal()">How it works</div>
       <div class="lp-nav-link">Pricing</div>
-      <div class="lp-nav-link">Docs</div>
+      <div class="lp-nav-link" onclick="openSoc2Modal()">SOC 2 Guide</div>
     </div>
     <button class="lp-nav-signin" onclick="location.href='/api/auth?provider=github'">Sign in</button>
   </nav>
@@ -601,16 +625,25 @@ header{
             <div class="score-number" id="scoreNum" style="color:var(--accent)">—</div>
             <div class="score-label" id="scoreLabel" style="color:var(--accent)">Loading</div>
             <div class="score-sub" id="scoreSub">—</div>
+            <div id="scoreContext" style="font-size:11px;color:var(--muted);margin-top:4px;text-align:center"></div>
           </div>
           <button class="scan-btn" id="scanBtn" onclick="triggerScan()">
             <span id="scanBtnText">⚡ Scan Now</span>
           </button>
           <div id="scanMeta" style="font-size:10px;color:var(--muted);margin-top:8px;font-family:var(--mono)"></div>
+          <div id="disclaimerNote" style="font-size:10px;color:var(--muted);margin-top:10px;padding:8px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;line-height:1.5;text-align:left">
+            ℹ️ <strong>Readiness Assistant</strong> — This score reflects your self-documented controls. It is not a certified SOC 2 audit.
+            <span style="color:var(--accent);cursor:pointer" onclick="openSoc2Modal()">Learn more →</span>
+          </div>
+          <div id="scoreTrend" style="display:none;margin-top:6px;text-align:center"></div>
           <button class="btn btn-secondary btn-full btn-sm" style="margin-top:8px" onclick="generateReport()">
             <span id="reportBtnText">📄 Generate Report</span>
           </button>
           <button class="btn btn-ghost btn-full btn-sm" style="margin-top:6px" onclick="openShareModal()">
             🔗 Share with Auditor
+          </button>
+          <button class="upgrade-btn" onclick="openPricingModal()">
+            ⚡ Upgrade Plan
           </button>
         </div>
       </div>
@@ -633,6 +666,17 @@ header{
             <div id="latestReportContent"></div>
           </div>
         </div>
+        <!-- Get Real Audit CTA -->
+        <div id="auditReadyCTA" style="display:none;margin-top:16px">
+          <div class="card" style="background:linear-gradient(135deg,rgba(37,99,235,.08),rgba(16,185,129,.06));border-color:rgba(37,99,235,.3)">
+            <div class="section-heading">READY FOR THE REAL AUDIT?</div>
+            <p style="font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.6">
+              Your score is strong. The next step is engaging a licensed CPA firm for your official SOC 2 Type 1 attestation.
+              Popular auditors for SaaS companies: <strong style="color:var(--text)">Schellman, Johanson Group, A-LIGN, Prescient Assurance</strong>.
+            </p>
+            <p style="font-size:11px;color:var(--muted)">💡 Export your AuditReady evidence package to share with your chosen auditor.</p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -644,7 +688,7 @@ header{
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
       <div>
         <h1 style="font-size:20px;font-weight:600;letter-spacing:-.03em">Control Checklist</h1>
-        <p style="font-size:13px;color:var(--muted);margin-top:2px">SOC 2 Type 1 — 33 controls across 9 categories</p>
+        <p style="font-size:13px;color:var(--muted);margin-top:2px">SOC 2 Type 1 checklist — track your evidence across all 9 TSC categories</p>
       </div>
     </div>
     <div class="filter-bar" id="controlFilters">
@@ -687,6 +731,91 @@ header{
   </div>
 </div>
 
+
+<!-- ── Pricing Modal ─────────────────────────────────────────── -->
+<div id="pricingModal" style="display:none" class="modal-overlay" onclick="if(event.target===this)closePricingModal()">
+  <div class="modal-box" style="max-width:620px">
+    <h3 style="margin-bottom:4px">Choose Your Plan</h3>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Upgrade to unlock automated scanning, full reports, and auditor sharing.</p>
+    <div class="plan-grid">
+      <div class="plan-card" id="plan-starter" onclick="selectPlan('starter','price_1ThZIZFQiRRnlhwuYRI3MfNX',24)">
+        <div class="plan-name">Starter</div>
+        <div class="plan-price">$24</div>
+        <div class="plan-cycle">/month</div>
+        <ul class="plan-feats">
+          <li>All 33 SOC 2 controls</li>
+          <li>Evidence uploads</li>
+          <li>Score dashboard</li>
+          <li>Basic report</li>
+        </ul>
+      </div>
+      <div class="plan-card" id="plan-growth" onclick="selectPlan('growth','price_1ThZLSFQiRRnlhwueStdff4L',299)" style="border-color:var(--accent)">
+        <div class="plan-popular">MOST POPULAR</div>
+        <div class="plan-name">Growth</div>
+        <div class="plan-price">$299</div>
+        <div class="plan-cycle">/month</div>
+        <ul class="plan-feats">
+          <li>Everything in Starter</li>
+          <li>GitHub signals detection</li>
+          <li>Google Drive doc linking</li>
+          <li>AI audit report (Groq)</li>
+          <li>Auditor share link</li>
+          <li>Priority support</li>
+        </ul>
+      </div>
+      <div class="plan-card" id="plan-enterprise" onclick="selectPlan('enterprise','price_1ThZNGFQiRRnlhwuH23alwzB',599)">
+        <div class="plan-name">Enterprise</div>
+        <div class="plan-price">$599</div>
+        <div class="plan-cycle">/month</div>
+        <ul class="plan-feats">
+          <li>Everything in Growth</li>
+          <li>AWS integration (coming Q2)</li>
+          <li>White-label ready reports</li>
+          <li>Dedicated account manager</li>
+          <li>Custom controls</li>
+          <li>SLA guarantee</li>
+        </ul>
+      </div>
+    </div>
+    <div id="paySection" style="display:none">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div id="payPlanName" style="font-size:13px;font-weight:600"></div>
+          <div style="font-size:11px;color:var(--muted)">Billed monthly · Cancel anytime</div>
+        </div>
+        <div style="font-family:var(--mono);font-size:20px;font-weight:700;color:var(--accent)" id="payPlanPrice"></div>
+      </div>
+      <div id="stripeCardEl" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:13px;margin-bottom:10px;min-height:46px"></div>
+      <div id="payError" style="font-size:12px;color:var(--red);margin-bottom:8px;min-height:16px"></div>
+      <button class="pay-btn" id="paySubmitBtn" onclick="submitPricingPayment()">
+        <span id="payBtnText">🔒 Pay & Activate</span>
+      </button>
+      <div class="pay-secure">🔒 Secured by Stripe · 256-bit encryption</div>
+    </div>
+    <button class="btn btn-secondary btn-full" style="margin-top:10px" onclick="closePricingModal()">Cancel</button>
+  </div>
+</div>
+<!-- SOC 2 Education Modal -->
+<div id="soc2Modal" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeSoc2Modal()">
+  <div class="modal-box" style="max-width:560px">
+    <h3 style="margin-bottom:12px">Understanding SOC 2</h3>
+    <div style="font-size:13px;color:var(--muted);line-height:1.8">
+      <p style="margin-bottom:12px"><strong style="color:var(--text)">What is SOC 2?</strong><br/>
+      SOC 2 is a security framework defined by the AICPA for SaaS companies. A SOC 2 report is issued by a licensed CPA firm after an independent audit.</p>
+      <p style="margin-bottom:12px"><strong style="color:var(--text)">Type 1 vs Type 2</strong><br/>
+      <strong>Type 1</strong>: Point-in-time audit — "Controls are designed appropriately as of [date]."<br/>
+      <strong>Type 2</strong>: Period audit (6-12 months) — "Controls operated effectively over [period]."<br/>
+      Most enterprise customers require Type 2.</p>
+      <p style="margin-bottom:12px"><strong style="color:var(--text)">What AuditReady does</strong><br/>
+      AuditReady helps you <em>prepare</em> for a SOC 2 audit. It tracks your evidence, identifies gaps, and generates AI-assisted readiness reports. It does NOT replace a licensed CPA audit.</p>
+      <p style="margin-bottom:12px"><strong style="color:var(--text)">Getting a Real Audit</strong><br/>
+      Once your AuditReady score reaches 80%+, you are typically ready to engage a CPA firm. Common auditors: Schellman, Johanson Group, Prescient Assurance, A-LIGN.</p>
+      <p style="color:#f59e0b;font-size:12px">⚡ Tip: AuditReady aims to get you audit-ready in 30-60 days, cutting 2-3 months off the typical preparation timeline.</p>
+    </div>
+    <button class="btn btn-primary btn-full" style="margin-top:16px" onclick="closeSoc2Modal()">Got it</button>
+  </div>
+</div>
+
 </div><!-- #app -->
 
 <script>
@@ -717,13 +846,13 @@ function authHeaders() {
   return { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' };
 }
 
-function saveUser() { if (ST.user) localStorage.setItem('ar_user', JSON.stringify(ST.user)); }
+function saveUser() { if (ST.user) sessionStorage.setItem('ar_user', JSON.stringify(ST.user)); }
 function loadUser() {
-  try { const s = localStorage.getItem('ar_user'); if (s) ST.user = JSON.parse(s); } catch {}
+  try { const s = sessionStorage.getItem('ar_user'); if (s) ST.user = JSON.parse(s); } catch {}
 }
 function logout() {
   ST.user = null; ST.score = null; ST.controls = [];
-  localStorage.removeItem('ar_user');
+  sessionStorage.removeItem('ar_user');
   updateHeader(); nav('login');
 }
 
@@ -749,7 +878,7 @@ function handleCallback() {
   if (gu) {
     try {
       const u = JSON.parse(decodeURIComponent(gu));
-      ST.user = { name: u.name, email: u.email, avatar: u.avatar, type: 'google', githubToken: null };
+      ST.user = { name: u.name, email: u.email, avatar: u.avatar, type: 'google', githubToken: null, googleToken: u.googleToken };
       saveUser(); history.replaceState({}, '', '/');
       fetch('/api/telemetry?type=track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: 'google:' + u.email, type: 'login', email: u.email, authType: 'google' }) }).catch(() => {});
       updateHeader(); nav('dashboard'); loadDashboard();
@@ -808,6 +937,31 @@ document.addEventListener('click', e => {
 async function loadDashboard() {
   if (!ST.user) return;
   await Promise.all([loadScore(), loadLatestReport()]);
+  // Load score history for trend display
+  try {
+    const hr = await fetch('/api/score?history=true', { headers: authHeaders() });
+    if (hr.ok) {
+      const hd = await hr.json();
+      renderScoreTrend(hd.history || []);
+    }
+  } catch {}
+}
+
+function renderScoreTrend(history) {
+  const el = document.getElementById('scoreTrend');
+  if (!el || !history.length) return;
+  // Show last 5 data points as a simple text sparkline
+  const recent = history.slice(0, 5).reverse();
+  if (recent.length < 2) return;
+  const scores = recent.map(h => (typeof h === 'object' ? h.score : h));
+  const first = scores[0];
+  const last = scores[scores.length - 1];
+  const diff = last - first;
+  const arrow = diff > 0 ? '↑' : diff < 0 ? '↓' : '→';
+  const color = diff > 0 ? 'var(--green)' : diff < 0 ? 'var(--red)' : 'var(--muted)';
+  el.style.display = 'block';
+  el.innerHTML = '<span style="color:' + color + ';font-family:var(--mono);font-size:10px">' +
+    arrow + ' ' + (diff > 0 ? '+' : '') + diff + '% trend (' + scores.join('→') + '%)</span>';
 }
 
 async function loadScore() {
@@ -841,6 +995,22 @@ function renderScorePanel(d) {
   lb.textContent = d.label;
   lb.style.color = d.color;
   sb.textContent = d.verified + ' of ' + d.applicable + ' controls met';
+
+  // Add context below score
+  const contextEl = document.getElementById('scoreContext');
+  if (contextEl) {
+    const contexts = {
+      AUDIT_READY: 'Ready to engage a CPA firm for Type 1 audit',
+      GETTING_CLOSE: 'Close — address top gaps before scheduling audit',
+      IN_PROGRESS: 'Building your evidence base — keep going',
+      NOT_READY: 'Start with the top gaps listed below',
+    };
+    contextEl.textContent = contexts[d.tier] || '';
+  }
+
+  // Show/hide Audit CTA based on score
+  const cta = document.getElementById('auditReadyCTA');
+  if (cta) cta.style.display = d.score >= 70 ? 'block' : 'none';
 }
 
 function renderCategoryBars(breakdown) {
@@ -903,8 +1073,8 @@ async function triggerScan() {
 
   try {
     const body = {};
-    // Pass google token if available from integration state
-    if (ST.integrations?.googleDrive?.token) body.googleToken = ST.integrations.googleDrive.token;
+    // Pass google token if available from user session (set during Google OAuth callback)
+    if (ST.user?.googleToken) body.googleToken = ST.user.googleToken;
 
     const r = await fetch('/api/scan', {
       method: 'POST',
@@ -914,7 +1084,8 @@ async function triggerScan() {
     const d = await r.json();
     if (!r.ok) throw new Error(d.error || 'Scan failed');
 
-    toast('Scan complete — ' + d.controlsAutoFilled + ' controls auto-filled', 'success');
+    const note = d.controlsAutoFilled > 0 ? d.controlsAutoFilled + ' signals detected — some require your confirmation' : '0 new signals detected';
+    toast('Scan complete · ' + note, 'success');
     await loadScore();
   } catch (err) {
     toast(err.message || 'Scan failed', 'error');
@@ -1007,10 +1178,14 @@ function renderControls(grouped) {
     html += '</div>';
     for (const c of controls) {
       const expanded = ST.expandedControl === c.id;
+      const evCount = (c.evidenceItems || []).length;
       html += '<div class="control-row' + (expanded ? ' expanded' : '') + '" id="cr-' + c.id + '" onclick="toggleControl(\'' + esc(c.id) + '\')">';
       html += '<div class="cr-id">' + esc(c.id) + '</div>';
       html += '<div class="cr-title">' + esc(c.title) + '</div>';
+      html += '<div style="display:flex;align-items:center;gap:6px">';
+      if (evCount > 0) html += '<span style="font-size:10px;color:var(--muted);font-family:var(--mono)">' + evCount + ' ev</span>';
       html += (STATUS_BADGE[c.status] || STATUS_BADGE.NOT_STARTED);
+      html += '</div>';
       html += '</div>';
       if (expanded) html += buildControlDetail(c);
     }
@@ -1025,6 +1200,12 @@ function buildControlDetail(c) {
   let html = '<div class="control-detail open fade-in" id="cd-' + c.id + '">';
   // Description
   html += '<div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6">' + esc(c.description || '') + '</div>';
+  // Evidence guidance if available
+  if (c.evidenceGuidance) {
+    html += '<div style="font-size:11px;background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.2);border-radius:5px;padding:8px 10px;margin-bottom:12px;line-height:1.6">';
+    html += '<span style="color:var(--accent);font-weight:600">📋 What to upload:</span> ' + esc(c.evidenceGuidance);
+    html += '</div>';
+  }
   // Auto-detect note
   if (c.autoDetectable) {
     html += '<div style="font-size:11px;color:var(--muted);padding:6px 10px;background:var(--surface);border:1px solid var(--border);border-radius:5px;margin-bottom:12px;font-family:var(--mono)">';
@@ -1292,6 +1473,17 @@ async function disconnectInt(provider) {
   } catch (err) { toast(err.message, 'error'); }
 }
 
+// ── SOC 2 Education Modal ─────────────────────────────────────
+
+function openSoc2Modal() {
+  const modal = document.getElementById('soc2Modal');
+  if (modal) modal.style.display = 'flex';
+}
+function closeSoc2Modal() {
+  const modal = document.getElementById('soc2Modal');
+  if (modal) modal.style.display = 'none';
+}
+
 // ── Share ─────────────────────────────────────────────────────
 
 function openShareModal() { document.getElementById('shareModal').style.display = 'flex'; }
@@ -1337,6 +1529,12 @@ async function loadPublicShare(token) {
   document.getElementById('reportBtnText').closest('button').style.display = 'none';
   document.querySelectorAll('.btn-ghost').forEach(b => b.style.display = 'none');
 
+  // Add disclaimer banner to public view
+  const disclaimer = document.createElement('div');
+  disclaimer.style.cssText = 'background:#1c2030;border:1px solid #f59e0b33;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#f59e0b;line-height:1.6;text-align:center';
+  disclaimer.textContent = '⚠️ Self-reported readiness score — not a certified SOC 2 audit. Scores reflect documented controls and may not represent actual compliance.';
+  document.querySelector('.page-inner')?.prepend(disclaimer);
+
   try {
     const r = await fetch('/api/share?token=' + encodeURIComponent(token));
     if (!r.ok) {
@@ -1374,6 +1572,118 @@ function toast(msg, type) {
   el.textContent = msg;
   document.body.appendChild(el);
   _toastTimer = setTimeout(() => el.remove(), 3200);
+}
+
+
+// ── Pricing & Checkout ────────────────────────────────────────
+
+let _stripe = null;
+let _stripeCard = null;
+let _selectedPlan = null;
+
+function initStripe() {
+  if (_stripe) return;
+  if (typeof Stripe === 'undefined') return;
+  _stripe = Stripe('pk_live_51TcCwgFQiRRnlhwuyEfgiRAbqRVPw6k842SX44K2ERlIZh6elyYAEsCi9Ub4np465NvRNAwuhO73Owz6YqUV9Kok00NmnGCsLm');
+}
+
+function openPricingModal() {
+  initStripe();
+  document.getElementById('pricingModal').style.display = 'flex';
+  document.getElementById('paySection').style.display = 'none';
+  document.getElementById('payError').textContent = '';
+  _selectedPlan = null;
+  // reset card borders
+  document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('plan-growth').classList.add('selected');
+}
+
+function closePricingModal() {
+  document.getElementById('pricingModal').style.display = 'none';
+  if (_stripeCard) { try { _stripeCard.destroy(); } catch(e){} _stripeCard = null; }
+}
+
+function selectPlan(name, priceId, amount) {
+  _selectedPlan = { name, priceId, amount };
+  document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('plan-' + name).classList.add('selected');
+
+  const paySection = document.getElementById('paySection');
+  paySection.style.display = 'block';
+  document.getElementById('payPlanName').textContent = name.charAt(0).toUpperCase() + name.slice(1) + ' Plan';
+  document.getElementById('payPlanPrice').textContent = '$' + amount + '/mo';
+  document.getElementById('payError').textContent = '';
+
+  // Mount Stripe card element
+  if (_stripeCard) { try { _stripeCard.destroy(); } catch(e){} }
+  if (!_stripe) { initStripe(); }
+  if (_stripe) {
+    const elements = _stripe.elements({
+      appearance: {
+        theme: 'night',
+        variables: {
+          colorPrimary: '#2563eb',
+          colorBackground: '#1c2030',
+          colorText: '#e8ecf4',
+          colorDanger: '#ef4444',
+          borderRadius: '8px',
+        }
+      }
+    });
+    _stripeCard = elements.create('card', { hidePostalCode: true });
+    _stripeCard.mount('#stripeCardEl');
+    _stripeCard.on('change', e => {
+      document.getElementById('payError').textContent = e.error ? e.error.message : '';
+    });
+  } else {
+    document.getElementById('stripeCardEl').innerHTML = '<div style="color:var(--red);font-size:12px">Stripe not loaded. Refresh and try again.</div>';
+  }
+}
+
+async function submitPricingPayment() {
+  if (!_stripe || !_stripeCard || !_selectedPlan) return;
+  const btn = document.getElementById('paySubmitBtn');
+  const errEl = document.getElementById('payError');
+  const txtEl = document.getElementById('payBtnText');
+  btn.disabled = true;
+  txtEl.innerHTML = '<span class="spinner"></span> Processing...';
+  errEl.textContent = '';
+
+  try {
+    const userId = ST.user?.type === 'github' ? 'github:' + ST.user.username : 'google:' + ST.user?.email;
+    const r = await fetch('/api/billing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({
+        priceId: _selectedPlan.priceId,
+        userId,
+        email: ST.user?.email || '',
+        mode: _selectedPlan.name,
+      }),
+    });
+    const d = await r.json();
+    if (!r.ok || !d.clientSecret) throw new Error(d.error || 'Payment setup failed');
+
+    const result = await _stripe.confirmCardPayment(d.clientSecret, {
+      payment_method: { card: _stripeCard },
+    });
+
+    if (result.error) {
+      errEl.textContent = result.error.message;
+      btn.disabled = false;
+      txtEl.innerHTML = '🔒 Pay & Activate';
+      return;
+    }
+
+    // Success
+    closePricingModal();
+    toast('🎉 ' + _selectedPlan.name.charAt(0).toUpperCase() + _selectedPlan.name.slice(1) + ' plan activated!', 'success');
+
+  } catch(err) {
+    errEl.textContent = err.message;
+    btn.disabled = false;
+    txtEl.innerHTML = '🔒 Pay & Activate';
+  }
 }
 
 // ── Login page grid animation ─────────────────────────────────

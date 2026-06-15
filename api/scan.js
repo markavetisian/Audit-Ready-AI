@@ -9,9 +9,10 @@
 //          isBlocked, checkRateLimit from telemetry.js
 // REMOVED: Agent analysis prompt, website fetching, chat mode
 //          SHA-256 anti-spam logic (repurposed as rate limiter via checkRateLimit)
-// ADDED:   GitHub org/repo scanning logic mapped to 33 SOC 2 controls
+// ADDED:   GitHub org/repo scanning logic mapped to SOC 2 controls
 //          Google Drive folder scanning for evidence keywords
 //          Control status updater, scannedAt timestamp writer
+//          Detection details object for transparency
 // ─────────────────────────────────────────────────────────────
 
 import { Redis } from '@upstash/redis';
@@ -56,12 +57,13 @@ async function ghGet(path, token) {
   } catch { return null; }
 }
 
-async function scanGitHub(token) {
+export async function scanGitHub(token) {
   const results = {};
+  const detectionDetails = {};
 
   // Get authenticated user
   const user = await ghGet('user', token);
-  if (!user) return results;
+  if (!user) return { results, detectionDetails };
   const owner = user.login;
 
   // Get orgs
@@ -80,51 +82,86 @@ async function scanGitHub(token) {
       const protection = await ghGet(`repos/${owner}/${mainRepo.name}/branches/${mainBranch.name}/protection`, token);
       if (protection && protection.required_pull_request_reviews) {
         results['CC8.2'] = 'CONNECTED_AUTO';
+        detectionDetails['CC8.2'] = `Branch protection enabled on ${mainBranch.name} branch of ${mainRepo.name} with required PR reviews`;
       }
     }
     // ── CC8.3 — Separate dev/staging/prod environments ──────────
     const branchNames = branches.map(b => b.name);
-    const hasEnvBranches = branchNames.some(n => n.includes('staging') || n.includes('develop') || n.includes('dev') || n.includes('prod'));
-    if (hasEnvBranches) results['CC8.3'] = 'CONNECTED_AUTO';
+    const envBranches = branchNames.filter(n => n.includes('staging') || n.includes('develop') || n.includes('dev') || n.includes('prod'));
+    if (envBranches.length > 0) {
+      results['CC8.3'] = 'CONNECTED_AUTO';
+      detectionDetails['CC8.3'] = `Environment branches detected: ${envBranches.slice(0, 3).join(', ')} in repo ${mainRepo.name}`;
+    }
 
     // ── CC8.1 — Change management (PRs exist) ────────────────────
     const pulls = await ghGet(`repos/${owner}/${mainRepo.name}/pulls?state=closed&per_page=10`, token) || [];
-    if (pulls.length > 0) results['CC8.1'] = 'CONNECTED_AUTO';
+    if (pulls.length > 0) {
+      results['CC8.1'] = 'CONNECTED_AUTO';
+      detectionDetails['CC8.1'] = `${pulls.length} closed pull requests found in ${mainRepo.name} — pull request workflow is in use`;
+    }
 
     // ── CC8.4 — Deployment pipeline (workflows exist) ────────────
     const workflows = await ghGet(`repos/${owner}/${mainRepo.name}/actions/workflows`, token);
-    if (workflows?.workflows?.length > 0) results['CC8.4'] = 'CONNECTED_AUTO';
+    if (workflows?.workflows?.length > 0) {
+      results['CC8.4'] = 'CONNECTED_AUTO';
+      detectionDetails['CC8.4'] = `${workflows.workflows.length} GitHub Actions workflow(s) found in ${mainRepo.name}: ${workflows.workflows.slice(0, 2).map(w => w.name).join(', ')}`;
+    }
 
-    // ── CC5.2 — TLS enforced (GitHub Pages = HTTPS enforced) ─────
-    if (mainRepo.has_pages) results['CC5.2'] = 'CONNECTED_AUTO';
+    // ── CC5.2 — TLS enforced — directional signal only ───────────
+    // GitHub Pages ≠ company-wide TLS enforcement. Check homepage URL instead.
+    if (mainRepo.homepage && mainRepo.homepage.startsWith('https://')) {
+      results['CC5.2'] = 'IN_PROGRESS';
+      detectionDetails['CC5.2'] = `Repo homepage URL uses HTTPS: ${mainRepo.homepage} — directional signal only, manual verification needed`;
+    }
+
+    // ── CC8.5 — Security testing in pipeline ────────────────────
+    if (workflows?.workflows?.length > 0) {
+      const wfNames = workflows.workflows.map(w => (w.name || '').toLowerCase());
+      const hasSecurityWf = wfNames.some(n => n.includes('security') || n.includes('sast') || n.includes('codeql') || n.includes('snyk') || n.includes('dependabot') || n.includes('scan'));
+      if (hasSecurityWf) {
+        results['CC8.5'] = 'CONNECTED_AUTO';
+        detectionDetails['CC8.5'] = `Security-related workflow detected: ${workflows.workflows.find(w => {
+          const n = (w.name || '').toLowerCase();
+          return n.includes('security') || n.includes('sast') || n.includes('codeql') || n.includes('snyk') || n.includes('dependabot') || n.includes('scan');
+        })?.name}`;
+      }
+    }
   }
 
   // ── CC6.2 — MFA enforced (org level) ─────────────────────────
   if (orgLogin) {
     const orgData = await ghGet(`orgs/${orgLogin}`, token);
-    if (orgData?.two_factor_requirement_enabled) results['CC6.2'] = 'CONNECTED_AUTO';
+    if (orgData?.two_factor_requirement_enabled) {
+      results['CC6.2'] = 'CONNECTED_AUTO';
+      detectionDetails['CC6.2'] = `GitHub org ${orgLogin} has two-factor authentication requirement enabled for all members`;
+    }
 
     // ── CC6.3 — Unique user accounts ─────────────────────────────
-    const members = await ghGet(`orgs/${orgLogin}/members`, token) || [];
-    if (members.length > 0) results['CC6.3'] = 'CONNECTED_AUTO';
+    // Removed: having org members ≠ unique accounts policy.
+    // Unique accounts policy requires documentation, not just member existence.
 
     // ── CC6.6 — Audit log access ─────────────────────────────────
+    // Audit log existing is directional but ≠ documented privileged access.
     const auditLog = await ghGet(`orgs/${orgLogin}/audit-log?per_page=1`, token);
     if (auditLog && Array.isArray(auditLog) && auditLog.length >= 0) {
-      results['CC6.6'] = 'CONNECTED_AUTO';
+      results['CC6.6'] = 'IN_PROGRESS';
+      detectionDetails['CC6.6'] = `GitHub org audit log is accessible for ${orgLogin} — directional signal; document privileged access controls to meet this requirement fully`;
     }
   }
 
   // ── CC6.1 — Access provisioning (collaborators exist with review) ─
   if (mainRepo) {
     const collaborators = await ghGet(`repos/${owner}/${mainRepo.name}/collaborators`, token) || [];
-    if (collaborators.length > 0) results['CC6.1'] = 'CONNECTED_AUTO';
+    if (collaborators.length > 0) {
+      results['CC6.1'] = 'CONNECTED_AUTO';
+      detectionDetails['CC6.1'] = `${collaborators.length} collaborator(s) found on ${mainRepo.name} — access provisioning via GitHub is in use`;
+    }
   }
 
-  // ── CC6.7 — Password policy (GitHub enforces this at platform level) ─
-  results['CC6.7'] = 'CONNECTED_AUTO';
+  // NOTE: CC6.7 (password policy) removed — GitHub does NOT enforce
+  // company password policies. This requires separate IdP documentation.
 
-  return results;
+  return { results, detectionDetails };
 }
 
 // ── Google Drive scanning helpers ────────────────────────────
@@ -155,13 +192,14 @@ const FILE_KEYWORD_MAP = {
 
 async function scanGoogleDrive(googleToken) {
   const results = {};
+  const detectionDetails = {};
   try {
     // List files in AuditReady Evidence folder
     const searchUrl = `https://www.googleapis.com/drive/v3/files?q=name+contains+'AuditReady'&fields=files(name,id)&pageSize=100`;
     const r = await fetch(searchUrl, {
       headers: { Authorization: `Bearer ${googleToken}` },
     });
-    if (!r.ok) return results;
+    if (!r.ok) return { results, detectionDetails };
     const data = await r.json();
     const files = data.files || [];
 
@@ -178,7 +216,9 @@ async function scanGoogleDrive(googleToken) {
       for (const [keyword, controlIds] of Object.entries(FILE_KEYWORD_MAP)) {
         if (nameLower.includes(keyword)) {
           for (const id of controlIds) {
-            results[id] = 'EVIDENCE_UPLOADED';
+            // Google Drive keyword match: document found but requires human confirmation
+            results[id] = 'IN_PROGRESS';
+            detectionDetails[id] = `Google Drive: File "${file.name}" matches keyword "${keyword}" — please verify this document meets the control requirement`;
           }
         }
       }
@@ -186,12 +226,12 @@ async function scanGoogleDrive(googleToken) {
   } catch (err) {
     console.error('Google Drive scan error:', err.message);
   }
-  return results;
+  return { results, detectionDetails };
 }
 
 // ── Update controls in Redis with scan results ────────────────
 
-async function applyGitHubScanResults(userId, scanResults) {
+async function applyGitHubScanResults(userId, scanResults, detectionDetails) {
   const now = new Date().toISOString();
   for (const [controlId, status] of Object.entries(scanResults)) {
     const key = `control:${userId}:${controlId}`;
@@ -207,13 +247,17 @@ async function applyGitHubScanResults(userId, scanResults) {
         control.status = status;
         control.lastUpdated = now;
         control.autoSource = 'github';
+        // Add descriptive note about what was detected
+        if (detectionDetails && detectionDetails[controlId]) {
+          control.autoNote = 'GitHub: ' + detectionDetails[controlId];
+        }
         await redis.set(key, JSON.stringify(control));
       }
     } catch {}
   }
 }
 
-async function applyDriveScanResults(userId, scanResults) {
+async function applyDriveScanResults(userId, scanResults, detectionDetails) {
   const now = new Date().toISOString();
   for (const [controlId, status] of Object.entries(scanResults)) {
     const key = `control:${userId}:${controlId}`;
@@ -228,6 +272,8 @@ async function applyDriveScanResults(userId, scanResults) {
         control.status = status;
         control.lastUpdated = now;
         control.autoSource = 'google_drive';
+        // Add note that Google Drive matches require human confirmation
+        control.autoNote = 'Google Drive: Document keyword match — please verify this document meets the control requirement';
         await redis.set(key, JSON.stringify(control));
       }
     } catch {}
@@ -272,22 +318,25 @@ export default async function handler(req, res) {
       const ghToken = getGitHubToken(req.headers.authorization);
       const { googleToken } = req.body || {};
       const scanResults = {};
+      const allDetectionDetails = {};
       const scanSummary = { github: {}, googleDrive: {} };
 
       // GitHub scan
       if (ghToken) {
-        const ghResults = await scanGitHub(ghToken);
+        const { results: ghResults, detectionDetails: ghDetails } = await scanGitHub(ghToken);
         Object.assign(scanResults, ghResults);
+        Object.assign(allDetectionDetails, ghDetails);
         scanSummary.github = ghResults;
-        await applyGitHubScanResults(userId, ghResults);
+        await applyGitHubScanResults(userId, ghResults, ghDetails);
       }
 
       // Google Drive scan
       if (googleToken) {
-        const driveResults = await scanGoogleDrive(googleToken);
+        const { results: driveResults, detectionDetails: driveDetails } = await scanGoogleDrive(googleToken);
         Object.assign(scanResults, driveResults);
+        Object.assign(allDetectionDetails, driveDetails);
         scanSummary.googleDrive = driveResults;
-        await applyDriveScanResults(userId, driveResults);
+        await applyDriveScanResults(userId, driveResults, driveDetails);
       }
 
       const controlsAutoFilled = Object.keys(scanResults).length;
@@ -302,6 +351,7 @@ export default async function handler(req, res) {
         githubScanned: !!ghToken,
         driveScanned: !!googleToken,
         results: scanResults,
+        detectionDetails: allDetectionDetails,
       }));
 
       await trackUser(userId, 'scan');
@@ -314,6 +364,7 @@ export default async function handler(req, res) {
         scannedAt,
         controlsAutoFilled,
         results: scanSummary,
+        detectionDetails: allDetectionDetails,
       });
 
     } catch (err) {
@@ -330,12 +381,17 @@ export default async function handler(req, res) {
 
 export async function recomputeScore(userId) {
   try {
-    // Get all 33 control IDs
+    // Get all control IDs (expanded set)
     const ALL_CONTROLS = [
-      'CC1.1','CC1.2','CC2.1','CC2.2','CC3.1','CC3.2','CC4.1','CC4.2',
-      'CC5.1','CC5.2','CC5.3','CC6.1','CC6.2','CC6.3','CC6.4','CC6.5',
-      'CC6.6','CC6.7','CC7.1','CC7.2','CC7.3','CC7.4','CC7.5',
-      'CC8.1','CC8.2','CC8.3','CC8.4','CC9.1','CC9.2','CC9.3','CC9.4','CC9.5','CC9.6',
+      'CC1.1','CC1.2','CC1.3','CC1.4',
+      'CC2.1','CC2.2','CC2.3',
+      'CC3.1','CC3.2','CC3.3',
+      'CC4.1','CC4.2',
+      'CC5.1','CC5.2','CC5.3','CC5.4','CC5.5',
+      'CC6.1','CC6.2','CC6.3','CC6.4','CC6.5','CC6.6','CC6.7','CC6.8','CC6.9',
+      'CC7.1','CC7.2','CC7.3','CC7.4','CC7.5','CC7.6',
+      'CC8.1','CC8.2','CC8.3','CC8.4','CC8.5','CC8.6',
+      'CC9.1','CC9.2','CC9.3','CC9.4','CC9.5','CC9.6','CC9.7','CC9.8','CC9.9','CC9.10','CC9.11',
     ];
 
     let verified = 0;

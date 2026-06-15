@@ -46,6 +46,39 @@ function generateId() {
 
 const VALID_TYPES = ['LINK', 'FILE_NAME', 'AUTO_DETECTED', 'SCREENSHOT'];
 const VALID_SOURCES = ['MANUAL', 'GITHUB', 'GOOGLE_DRIVE', 'AWS'];
+const MAX_EVIDENCE_PER_CONTROL = 10;
+
+// ── URL validation ────────────────────────────────────────────
+
+function validateUrl(url) {
+  if (!url || typeof url !== 'string') return { valid: false, error: 'URL is required' };
+  const trimmed = url.trim();
+  if (trimmed.length < 10) return { valid: false, error: 'URL is too short to be valid' };
+  if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+    return { valid: false, error: 'URL must start with http:// or https://' };
+  }
+  // Reject localhost and loopback addresses
+  if (trimmed.includes('localhost') || trimmed.includes('127.0.0.1') || trimmed.includes('::1')) {
+    return { valid: false, error: 'Local URLs (localhost, 127.0.0.1) cannot be used as evidence. Please provide a publicly accessible or internal company URL.' };
+  }
+  try {
+    new URL(trimmed);
+    return { valid: true };
+  } catch {
+    return { valid: false, error: 'Invalid URL format. Please include the full URL (e.g. https://docs.company.com/policy)' };
+  }
+}
+
+// ── Evidence quality scoring ──────────────────────────────────
+
+function computeQuality(type, note) {
+  const hasNote = note && note.trim().length > 0;
+  if (type === 'LINK') return hasNote ? 'GOOD' : 'BASIC';
+  if (type === 'FILE_NAME') return 'BASIC';
+  if (type === 'SCREENSHOT') return hasNote ? 'GOOD' : 'BASIC';
+  if (type === 'AUTO_DETECTED') return 'GOOD';
+  return 'BASIC';
+}
 
 // ── Main handler ─────────────────────────────────────────────
 
@@ -84,22 +117,47 @@ export default async function handler(req, res) {
     if (!value || !value.trim()) return res.status(400).json({ error: 'Missing value' });
     const effectiveSource = (source && VALID_SOURCES.includes(source)) ? source : 'MANUAL';
 
+    // ── LINK type validation ───────────────────────────────────
+    if (type === 'LINK') {
+      const urlCheck = validateUrl(value.trim());
+      if (!urlCheck.valid) {
+        return res.status(400).json({ error: urlCheck.error });
+      }
+    }
+
+    // ── Default note for LINK without note ─────────────────────
+    let effectiveNote = note || '';
+    if (type === 'LINK' && !effectiveNote) {
+      effectiveNote = 'URL link';
+    }
+
     try {
-      // Build evidence item per Section D3 schema
+      // ── Check evidence count limit ─────────────────────────────
+      const key = `user:${userId}:evidence:${controlId}`;
+      const raw = await redis.get(key);
+      const items = raw ? (typeof raw === 'object' ? raw : JSON.parse(raw)) : [];
+
+      if (items.length >= MAX_EVIDENCE_PER_CONTROL) {
+        return res.status(400).json({
+          error: `Maximum of ${MAX_EVIDENCE_PER_CONTROL} evidence items per control. Remove an existing item before adding a new one.`
+        });
+      }
+
+      // ── Build evidence item per Section D3 schema ──────────────
+      const now = new Date().toISOString();
+      const quality = computeQuality(type, effectiveNote);
       const item = {
         id: generateId(),
         controlId,
         type,
         value: value.trim(),
         source: effectiveSource,
-        uploadedAt: new Date().toISOString(),
-        note: note || '',
+        uploadedAt: now,
+        updatedAt: now,
+        note: effectiveNote,
+        quality,
       };
 
-      // Get existing evidence list
-      const key = `user:${userId}:evidence:${controlId}`;
-      const raw = await redis.get(key);
-      const items = raw ? (typeof raw === 'object' ? raw : JSON.parse(raw)) : [];
       items.push(item);
       await redis.set(key, JSON.stringify(items));
 
@@ -111,13 +169,13 @@ export default async function handler(req, res) {
         const statusRank = { NOT_STARTED: 0, IN_PROGRESS: 1, EVIDENCE_UPLOADED: 2, CONNECTED_AUTO: 3, NOT_APPLICABLE: -1 };
         if ((statusRank[control.status] ?? 0) < statusRank['EVIDENCE_UPLOADED']) {
           control.status = 'EVIDENCE_UPLOADED';
-          control.lastUpdated = new Date().toISOString();
+          control.lastUpdated = now;
           control.evidenceItems = items.map(i => i.id);
           await redis.set(controlKey, JSON.stringify(control));
         } else {
           // Just update evidence list reference
           control.evidenceItems = items.map(i => i.id);
-          control.lastUpdated = new Date().toISOString();
+          control.lastUpdated = now;
           await redis.set(controlKey, JSON.stringify(control));
         }
       }

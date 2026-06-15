@@ -1,23 +1,4 @@
-// ─────────────────────────────────────────────────────────────
-// api/score.js
-// ACTION: NEW (slot 11)
-//
-//   GET  /api/score                  → current score + category breakdown
-//   GET  /api/score?history=true     → score over time
-//   POST /api/score                  → recompute score (internal / on-demand)
-//
-// Scoring algorithm (Section B3):
-//   score = (verified_controls / total_applicable_controls) × 100
-//   verified = status EVIDENCE_UPLOADED or CONNECTED_AUTO
-//   applicable = all controls NOT marked NOT_APPLICABLE
-//   result = rounded to nearest integer
-//
-// Color thresholds:
-//   0-39%   → RED    (#EF4444) "Not Ready"
-//   40-69%  → AMBER  (#F59E0B) "In Progress"
-//   70-89%  → BLUE   (#3B82F6) "Getting Close"
-//   90-100% → GREEN  (#10B981) "Audit Ready"
-// ─────────────────────────────────────────────────────────────
+// api/score.js — Full score computation with control titles for topGaps
 
 import { Redis } from '@upstash/redis';
 
@@ -25,8 +6,6 @@ const redis = new Redis({
   url: process.env.KV_REST_API_URL,
   token: process.env.KV_REST_API_TOKEN,
 });
-
-// ── Auth helpers ─────────────────────────────────────────────
 
 async function getUserId(authHeader) {
   if (!authHeader?.startsWith('Bearer ')) return null;
@@ -42,8 +21,6 @@ async function getUserId(authHeader) {
   } catch { return null; }
 }
 
-// ── All 33 SOC 2 control IDs by category ─────────────────────
-
 const CONTROLS_BY_CATEGORY = {
   CC1: ['CC1.1', 'CC1.2'],
   CC2: ['CC2.1', 'CC2.2'],
@@ -54,6 +31,43 @@ const CONTROLS_BY_CATEGORY = {
   CC7: ['CC7.1', 'CC7.2', 'CC7.3', 'CC7.4', 'CC7.5'],
   CC8: ['CC8.1', 'CC8.2', 'CC8.3', 'CC8.4'],
   CC9: ['CC9.1', 'CC9.2', 'CC9.3', 'CC9.4', 'CC9.5', 'CC9.6'],
+};
+
+// Full title map so topGaps always has readable titles
+const CONTROL_TITLES = {
+  'CC1.1': 'Security policies documented and reviewed annually',
+  'CC1.2': 'Organizational roles and responsibilities defined',
+  'CC2.1': 'Security awareness training completed',
+  'CC2.2': 'Incident communication procedure exists',
+  'CC3.1': 'Formal risk assessment process documented',
+  'CC3.2': 'Risks identified, evaluated, and prioritized',
+  'CC4.1': 'Security monitoring and logging enabled',
+  'CC4.2': 'Internal audit or review process defined',
+  'CC5.1': 'Encryption at rest implemented',
+  'CC5.2': 'Encryption in transit (TLS) enforced',
+  'CC5.3': 'Data retention policy documented',
+  'CC6.1': 'Access provisioning requires approval',
+  'CC6.2': 'MFA enforced for all users',
+  'CC6.3': 'Unique user accounts (no shared credentials)',
+  'CC6.4': 'Access reviews conducted quarterly',
+  'CC6.5': 'Terminated employee access removed within 24h',
+  'CC6.6': 'Privileged access documented and limited',
+  'CC6.7': 'Password policy enforced',
+  'CC7.1': 'System availability monitored',
+  'CC7.2': 'Backup procedures documented and tested',
+  'CC7.3': 'Incident response plan exists',
+  'CC7.4': 'Vulnerability scanning performed regularly',
+  'CC7.5': 'Penetration testing conducted annually',
+  'CC8.1': 'Change management process documented',
+  'CC8.2': 'Code review required before deployment',
+  'CC8.3': 'Separate dev/staging/production environments',
+  'CC8.4': 'Deployment pipeline documented',
+  'CC9.1': 'Third-party vendor risk assessment process',
+  'CC9.2': 'Vendor contracts include security requirements',
+  'CC9.3': 'Business continuity plan documented',
+  'CC9.4': 'Disaster recovery plan documented and tested',
+  'CC9.5': 'Cyber liability insurance in place',
+  'CC9.6': 'Sub-processors listed and documented',
 };
 
 const CATEGORY_NAMES = {
@@ -68,8 +82,6 @@ const CATEGORY_NAMES = {
   CC9: 'Risk Mitigation',
 };
 
-// ── Score color + label ───────────────────────────────────────
-
 function getScoreMeta(score) {
   if (score >= 90) return { color: '#10B981', label: 'Audit Ready', tier: 'AUDIT_READY' };
   if (score >= 70) return { color: '#3B82F6', label: 'Getting Close', tier: 'GETTING_CLOSE' };
@@ -77,13 +89,11 @@ function getScoreMeta(score) {
   return { color: '#EF4444', label: 'Not Ready', tier: 'NOT_READY' };
 }
 
-// ── Full score computation with category breakdown ────────────
-
 async function computeFullScore(userId) {
   const categoryBreakdown = {};
   let totalVerified = 0;
   let totalApplicable = 0;
-  const gaps = []; // Controls that are NOT_STARTED and high priority
+  const gaps = [];
 
   for (const [category, controlIds] of Object.entries(CONTROLS_BY_CATEGORY)) {
     let catVerified = 0;
@@ -92,9 +102,12 @@ async function computeFullScore(userId) {
     for (const id of controlIds) {
       const raw = await redis.get(`control:${userId}:${id}`);
       let status = 'NOT_STARTED';
+      let autoDetectable = false;
+
       if (raw) {
         const control = typeof raw === 'object' ? raw : JSON.parse(raw);
         status = control.status || 'NOT_STARTED';
+        autoDetectable = control.autoDetectable || false;
 
         if (status !== 'NOT_APPLICABLE') {
           catApplicable++;
@@ -102,21 +115,26 @@ async function computeFullScore(userId) {
           if (status === 'EVIDENCE_UPLOADED' || status === 'CONNECTED_AUTO') {
             catVerified++;
             totalVerified++;
-          } else if (status === 'NOT_STARTED') {
-            // Build gaps list
+          } else if (status === 'NOT_STARTED' || status === 'IN_PROGRESS') {
             gaps.push({
               id,
               category,
-              title: control.title || id,
+              title: CONTROL_TITLES[id] || id,
               status,
-              autoDetectable: control.autoDetectable || false,
+              autoDetectable,
             });
           }
         }
       } else {
         catApplicable++;
         totalApplicable++;
-        gaps.push({ id, category, title: id, status: 'NOT_STARTED', autoDetectable: false });
+        gaps.push({
+          id,
+          category,
+          title: CONTROL_TITLES[id] || id,
+          status: 'NOT_STARTED',
+          autoDetectable: false,
+        });
       }
     }
 
@@ -133,11 +151,9 @@ async function computeFullScore(userId) {
   const overall = totalApplicable > 0 ? Math.round((totalVerified / totalApplicable) * 100) : 0;
   const meta = getScoreMeta(overall);
 
-  // Sort gaps: CC6 (highest evidence demand) first, then by category
-  gaps.sort((a, b) => {
-    const priorityOrder = { CC6: 0, CC8: 1, CC7: 2, CC5: 3, CC4: 4, CC3: 5, CC2: 6, CC1: 7, CC9: 8 };
-    return (priorityOrder[a.category] ?? 9) - (priorityOrder[b.category] ?? 9);
-  });
+  // Priority: CC6 first (most evidence-heavy), then by category order
+  const priorityOrder = { CC6: 0, CC8: 1, CC7: 2, CC5: 3, CC4: 4, CC3: 5, CC2: 6, CC1: 7, CC9: 8 };
+  gaps.sort((a, b) => (priorityOrder[a.category] ?? 9) - (priorityOrder[b.category] ?? 9));
 
   return {
     score: overall,
@@ -150,8 +166,6 @@ async function computeFullScore(userId) {
   };
 }
 
-// ── Main handler ─────────────────────────────────────────────
-
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -161,38 +175,30 @@ export default async function handler(req, res) {
   const userId = await getUserId(req.headers.authorization);
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-  // ── GET: Current score + category breakdown ───────────────────
   if (req.method === 'GET') {
     const { history } = req.query;
-
     if (history === 'true') {
       try {
-        const histKey = `user:${userId}:scoreHistory`;
-        const raw = await redis.lrange(histKey, 0, 89);
+        const raw = await redis.lrange(`user:${userId}:scoreHistory`, 0, 89);
         const entries = (raw || []).map(r => {
           try { return typeof r === 'object' ? r : JSON.parse(r); } catch { return null; }
         }).filter(Boolean);
-        entries.reverse(); // chronological order
+        entries.reverse();
         return res.status(200).json({ history: entries });
       } catch (err) {
         return res.status(500).json({ error: err.message });
       }
     }
-
     try {
       const result = await computeFullScore(userId);
-
-      // Persist computed score
       const entry = { score: result.score, ts: Date.now(), verified: result.verified, applicable: result.applicable };
       await redis.set(`user:${userId}:score`, JSON.stringify(entry));
-
       return res.status(200).json(result);
     } catch (err) {
       return res.status(500).json({ error: err.message });
     }
   }
 
-  // ── POST: Force recompute (called internally + by UI) ─────────
   if (req.method === 'POST') {
     try {
       const result = await computeFullScore(userId);
