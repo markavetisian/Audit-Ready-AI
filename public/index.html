@@ -487,6 +487,116 @@ header{
 .pay-secure{font-size:11px;color:var(--muted);text-align:center;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:4px}
 .upgrade-btn{width:100%;padding:9px 16px;border-radius:var(--r);background:linear-gradient(135deg,var(--accent),#1d4ed8);color:#fff;font-size:12px;font-weight:600;border:none;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .15s}
 .upgrade-btn:hover{opacity:.9}
+/* ── Landing page sections ─────────── */
+.lp-section{width:100%;position:relative;z-index:10}
+.lp-section-inner{max-width:960px;margin:0 auto;padding:88px 28px;text-align:center}
+.lp-eyebrow{
+  display:inline-block;font-family:var(--mono);font-size:11px;font-weight:600;
+  letter-spacing:.12em;text-transform:uppercase;color:#64748b;
+  background:rgba(37,99,235,.06);border:1px solid rgba(37,99,235,.14);
+  border-radius:20px;padding:4px 14px;margin-bottom:18px;
+}
+.lp-section-title{
+  font-size:clamp(26px,4vw,44px);font-weight:700;letter-spacing:-.04em;
+  line-height:1.1;color:#0f172a;margin-bottom:14px;
+}
+.lp-section-title em{font-style:normal;color:#2563eb}
+.lp-section-sub{font-size:15px;color:#64748b;line-height:1.7;max-width:520px;margin:0 auto 48px}
+
+/* Pain cards */
+.lp-pain{background:#f8fafc}
+.lp-pain-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;text-align:left;margin-top:8px}
+@media(max-width:640px){.lp-pain-grid{grid-template-columns:1fr}}
+.lp-pain-card{
+  display:flex;gap:16px;padding:24px;
+  background:#fff;border:1px solid #e2e8f0;border-radius:12px;
+  box-shadow:0 1px 4px rgba(15,23,42,.05);
+  transition:transform .25s,box-shadow .25s;
+}
+.lp-pain-card:hover{transform:translateY(-3px);box-shadow:0 6px 24px rgba(15,23,42,.08)}
+.lp-pain-num{
+  font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;
+  color:#cbd5e1;min-width:24px;padding-top:2px;flex-shrink:0;
+}
+.lp-pain-title{font-size:14px;font-weight:600;color:#0f172a;margin-bottom:6px}
+.lp-pain-desc{font-size:13px;color:#64748b;line-height:1.65}
+
+/* Steps */
+.lp-how{background:#fff}
+.lp-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:12px;position:relative;text-align:left}
+@media(max-width:640px){.lp-steps{grid-template-columns:1fr;gap:24px}}
+.lp-step{
+  padding:32px 28px;position:relative;
+  border-top:2px solid transparent;
+  transition:border-color .25s;
+}
+.lp-step:hover{border-top-color:#2563eb}
+.lp-step-connector{
+  display:none;
+}
+.lp-step-num{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;
+  color:#2563eb;letter-spacing:.06em;margin-bottom:16px;
+}
+.lp-step-icon{
+  width:44px;height:44px;border-radius:10px;
+  background:#eff6ff;border:1px solid rgba(37,99,235,.15);
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:16px;
+}
+.lp-step-title{font-size:15px;font-weight:600;color:#0f172a;margin-bottom:8px}
+.lp-step-desc{font-size:13px;color:#64748b;line-height:1.65}
+
+/* Steps connecting line */
+.lp-steps::before{
+  content:'';position:absolute;top:54px;left:calc(33.33% - 0px);right:calc(33.33%);
+  height:1px;background:linear-gradient(90deg,rgba(37,99,235,.25),rgba(37,99,235,.25));
+  pointer-events:none;
+}
+@media(max-width:640px){.lp-steps::before{display:none}}
+
+/* Why cards */
+.lp-why{background:#f8fafc}
+.lp-why-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;text-align:left;margin-top:8px}
+@media(max-width:900px){.lp-why-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.lp-why-grid{grid-template-columns:1fr}}
+.lp-why-card{
+  padding:22px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;
+  box-shadow:0 1px 4px rgba(15,23,42,.05);
+  transition:transform .25s,box-shadow .25s;
+}
+.lp-why-card:hover{transform:translateY(-3px);box-shadow:0 6px 24px rgba(15,23,42,.08)}
+.lp-why-icon{
+  width:40px;height:40px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;margin-bottom:14px;
+}
+.lp-why-title{font-size:14px;font-weight:600;color:#0f172a;margin-bottom:6px}
+.lp-why-desc{font-size:13px;color:#64748b;line-height:1.6}
+
+/* Final CTA */
+.lp-cta-section{background:linear-gradient(135deg,#1e3a8a 0%,#1d4ed8 50%,#2563eb 100%);overflow:hidden}
+.lp-cta-inner{
+  position:relative;max-width:640px;margin:0 auto;
+  padding:96px 28px;text-align:center;
+}
+.lp-cta-glow{
+  position:absolute;inset:-40px;
+  background:radial-gradient(ellipse at 50% 0%,rgba(147,197,253,.25) 0%,transparent 70%);
+  pointer-events:none;
+}
+.lp-btn-cta{
+  height:50px;padding:0 32px;border-radius:25px;
+  background:#fff;color:#1d4ed8;font-size:15px;font-weight:600;
+  border:none;cursor:pointer;display:inline-flex;align-items:center;gap:10px;
+  transition:transform .15s,box-shadow .15s;
+  box-shadow:0 4px 16px rgba(0,0,0,.15);
+}
+.lp-btn-cta:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.22)}
+
+/* Scroll reveal */
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .55s ease,transform .55s ease;transition-delay:var(--d,0s)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+
 /* ── Trust grid responsive ─────────── */
 @media(max-width:720px){.trust-grid{grid-template-columns:1fr!important}}
 /* ── Locker / reminders / vendor table ─ */
@@ -621,6 +731,139 @@ header{
       </div>
     </div>
   </div>
+
+  <!-- ── PAIN SECTION ─────────────────────────────────────────── -->
+  <section class="lp-section lp-pain" id="lpPain">
+    <div class="lp-section-inner">
+      <div class="lp-eyebrow reveal">The Reality</div>
+      <h2 class="lp-section-title reveal">Audit season shouldn't mean<br/><em>fire drills</em></h2>
+      <p class="lp-section-sub reveal">If you manage compliance, you know the drill — scattered evidence, last-minute requests, and the nagging fear that one missing document derails the whole review.</p>
+      <div class="lp-pain-grid">
+        <div class="lp-pain-card reveal" style="--d:.05s">
+          <div class="lp-pain-num">01</div>
+          <div class="lp-pain-body">
+            <div class="lp-pain-title">Weeks of manual prep</div>
+            <div class="lp-pain-desc">Collecting evidence, formatting reports, and chasing owners across teams eats entire sprints before every review.</div>
+          </div>
+        </div>
+        <div class="lp-pain-card reveal" style="--d:.1s">
+          <div class="lp-pain-num">02</div>
+          <div class="lp-pain-body">
+            <div class="lp-pain-title">Evidence everywhere</div>
+            <div class="lp-pain-desc">Policies, tickets, and screenshots live in inboxes, drives, and spreadsheets. Knowing what's complete is its own job.</div>
+          </div>
+        </div>
+        <div class="lp-pain-card reveal" style="--d:.15s">
+          <div class="lp-pain-num">03</div>
+          <div class="lp-pain-body">
+            <div class="lp-pain-title">Expensive outside help</div>
+            <div class="lp-pain-desc">Consultants close the gap, but the bill scales fast — painful for a lean GRC team under pressure.</div>
+          </div>
+        </div>
+        <div class="lp-pain-card reveal" style="--d:.2s">
+          <div class="lp-pain-num">04</div>
+          <div class="lp-pain-body">
+            <div class="lp-pain-title">Audit-day anxiety</div>
+            <div class="lp-pain-desc">Without a clear view of readiness, every audit starts with uncertainty — exactly when you need confidence.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── HOW IT WORKS ─────────────────────────────────────────── -->
+  <section class="lp-section lp-how" id="lpHow">
+    <div class="lp-section-inner">
+      <div class="lp-eyebrow reveal">How It Works</div>
+      <h2 class="lp-section-title reveal">From scattered evidence to<br/><em>audit-ready</em> in three steps</h2>
+      <p class="lp-section-sub reveal">No heavy implementation. Connect your sources and let the AI assemble the rest.</p>
+      <div class="lp-steps">
+        <div class="lp-step reveal" style="--d:.05s">
+          <div class="lp-step-num">1</div>
+          <div class="lp-step-connector"></div>
+          <div class="lp-step-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
+          </div>
+          <div class="lp-step-title">Connect your sources</div>
+          <div class="lp-step-desc">Upload documents or connect the tools you already use — GitHub, Google Drive, and more. Everything lands in one workspace.</div>
+        </div>
+        <div class="lp-step reveal" style="--d:.12s">
+          <div class="lp-step-num">2</div>
+          <div class="lp-step-connector"></div>
+          <div class="lp-step-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+          </div>
+          <div class="lp-step-title">AI maps the framework</div>
+          <div class="lp-step-desc">It checks your evidence against the controls, flags gaps, and tells you exactly what's missing — no manual cross-referencing.</div>
+        </div>
+        <div class="lp-step reveal" style="--d:.2s">
+          <div class="lp-step-num">3</div>
+          <div class="lp-step-connector" style="display:none"></div>
+          <div class="lp-step-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/><line x1="9" y1="11" x2="15" y2="11"/></svg>
+          </div>
+          <div class="lp-step-title">Export audit-ready docs</div>
+          <div class="lp-step-desc">Get clean, organized, framework-aligned documentation — ready to review and hand to your auditor. Or share a live Trust Page link instantly.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── WHY SECTION ──────────────────────────────────────────── -->
+  <section class="lp-section lp-why" id="lpWhy">
+    <div class="lp-section-inner">
+      <div class="lp-eyebrow reveal" style="color:#2563eb">Why GRC Teams Choose It</div>
+      <h2 class="lp-section-title reveal">Confidence, built in</h2>
+      <p class="lp-section-sub reveal">Less manual busywork, more control — so audits become routine, not emergencies.</p>
+      <div class="lp-why-grid">
+        <div class="lp-why-card reveal" style="--d:.04s">
+          <div class="lp-why-icon" style="background:#eff6ff">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="lp-why-title">Reclaim weeks</div>
+          <div class="lp-why-desc">Turn hours of prep into minutes with evidence collection that runs itself.</div>
+        </div>
+        <div class="lp-why-card reveal" style="--d:.08s">
+          <div class="lp-why-icon" style="background:#f0fdf4">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          </div>
+          <div class="lp-why-title">Always review-ready</div>
+          <div class="lp-why-desc">See your readiness at a glance and walk into every audit fully prepared.</div>
+        </div>
+        <div class="lp-why-card reveal" style="--d:.12s">
+          <div class="lp-why-icon" style="background:#fff7ed">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+          </div>
+          <div class="lp-why-title">Lower spend</div>
+          <div class="lp-why-desc">Cut reliance on costly consultants for routine compliance work.</div>
+        </div>
+        <div class="lp-why-card reveal" style="--d:.16s">
+          <div class="lp-why-icon" style="background:#fdf4ff">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9333ea" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <div class="lp-why-title">Stay aligned</div>
+          <div class="lp-why-desc">Keep pace with framework changes through AI that stays current.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FINAL CTA ─────────────────────────────────────────────── -->
+  <section class="lp-section lp-cta-section" id="lpCta">
+    <div class="lp-cta-inner reveal">
+      <div class="lp-cta-glow"></div>
+      <div class="lp-eyebrow" style="color:rgba(255,255,255,.6)">Get Started Free</div>
+      <h2 style="font-size:clamp(24px,4vw,42px);font-weight:700;letter-spacing:-.04em;margin:10px 0 12px;color:#fff;line-height:1.1">Your next audit starts today</h2>
+      <p style="font-size:14px;color:rgba(255,255,255,.65);margin-bottom:28px;line-height:1.7;max-width:380px;margin-left:auto;margin-right:auto">Connect your tools, get your score in under 10 minutes, and start your audit prep with a clear, prioritized action list.</p>
+      <div class="lp-btns">
+        <button class="lp-btn-cta" onclick="location.href='/api/auth?provider=github'">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12"/></svg>
+          Get your score free →
+        </button>
+      </div>
+      <p style="font-size:11px;color:rgba(255,255,255,.4);margin-top:14px">No credit card · Setup in 10 minutes · Cancel anytime</p>
+    </div>
+  </section>
 
 </div>
 
@@ -2307,6 +2550,31 @@ async function loadDashboardReminders() {
     }
   } catch {}
 }
+
+// ── Scroll reveal ─────────────────────────────────────────────
+
+(function() {
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+  function observeReveals() {
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+  }
+
+  // Observe immediately and re-observe when login page shown
+  window.addEventListener('load', observeReveals);
+  const _origNav = window.nav;
+  window.nav = function(page) {
+    _origNav(page);
+    if (page === 'login') setTimeout(observeReveals, 30);
+  };
+})();
 
 // ── Login page grid animation ─────────────────────────────────
 
