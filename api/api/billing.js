@@ -1,0 +1,144 @@
+// ─────────────────────────────────────────────────────────────
+// api/billing.js
+// ACTION: MERGED from stripe-checkout.js + stripe-cancel.js
+//
+//   POST   /api/billing → create subscription checkout (was stripe-checkout.js)
+//   DELETE /api/billing → cancel subscription at period end (was stripe-cancel.js)
+//
+// Logic: identical to originals. Method router only change.
+// api/stripe-webhook.js: UNTOUCHED — never modified.
+// ─────────────────────────────────────────────────────────────
+
+import { Redis } from '@upstash/redis';
+
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL,
+  token: process.env.KV_REST_API_TOKEN,
+});
+
+const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY;
+
+async function stripePost(path, body) {
+  const res = await fetch(`https://api.stripe.com/v1/${path}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${STRIPE_SECRET}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams(body),
+  });
+  return res.json();
+}
+
+async function stripeGet(path) {
+  const res = await fetch(`https://api.stripe.com/v1/${path}`, {
+    headers: { Authorization: `Bearer ${STRIPE_SECRET}` },
+  });
+  return res.json();
+}
+
+async function stripePatch(path, body) {
+  const res = await fetch(`https://api.stripe.com/v1/${path}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${STRIPE_SECRET}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams(body),
+  });
+  return res.json();
+}
+
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+
+  // ── POST: Create Stripe subscription checkout ────────────────
+  // Identical logic from stripe-checkout.js
+  if (req.method === 'POST') {
+    const { priceId, userId, email, mode } = req.body || {};
+    if (!priceId || !userId || !email) {
+      return res.status(400).json({ error: 'Missing priceId, userId, or email' });
+    }
+    try {
+      const userKey = `admin:user:${userId}`;
+      let userData = {};
+      try { userData = (await redis.get(userKey)) || {}; } catch {}
+      let customerId = userData.stripeCustomerId;
+
+      if (!customerId) {
+        const customer = await stripePost('customers', { email, metadata: { userId } });
+        if (customer.error) throw new Error(customer.error.message);
+        customerId = customer.id;
+        await redis.set(userKey, JSON.stringify({ ...userData, stripeCustomerId: customerId }));
+      }
+
+      const subscription = await stripePost('subscriptions', {
+        customer: customerId,
+        'items[0][price]': priceId,
+        payment_behavior: 'default_incomplete',
+        payment_settings: 'save_default_payment_method=on_subscription',
+        'expand[0]': 'latest_invoice.payment_intent',
+        'metadata[userId]': userId,
+        'metadata[mode]': mode,
+      });
+      if (subscription.error) throw new Error(subscription.error.message);
+
+      const clientSecret = subscription.latest_invoice?.payment_intent?.client_secret;
+      if (!clientSecret) throw new Error('Could not create payment intent');
+
+      return res.status(200).json({ clientSecret, subscriptionId: subscription.id });
+    } catch (err) {
+      console.error('Stripe checkout error:', err.message);
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
+  // ── DELETE: Cancel subscription at period end ────────────────
+  // Identical logic from stripe-cancel.js
+  if (req.method === 'DELETE') {
+    const { userId } = req.body || {};
+    if (!userId) return res.status(400).json({ error: 'Missing userId' });
+    try {
+      const userKey = `admin:user:${userId}`;
+      let userData = {};
+      try { userData = (await redis.get(userKey)) || {}; } catch {}
+      const subscriptionId = userData.stripeSubscriptionId;
+      const customerId = userData.stripeCustomerId;
+      let subId = subscriptionId;
+
+      if (!subId && customerId) {
+        const subs = await stripeGet(`subscriptions?customer=${customerId}&status=active&limit=1`);
+        if (subs.data?.length > 0) subId = subs.data[0].id;
+      }
+
+      if (subId) {
+        const result = await stripePatch(`subscriptions/${subId}`, {
+          cancel_at_period_end: 'true',
+        });
+        if (result.error) {
+          if (!result.error.message?.includes('No such subscription')) {
+            throw new Error(result.error.message);
+          }
+        }
+        await redis.set(userKey, JSON.stringify({
+          ...userData,
+          cancelPending: true,
+          cancelAt: result.current_period_end || null,
+        }));
+      }
+
+      return res.status(200).json({
+        ok: true,
+        message: 'Subscription will cancel at end of billing period. You keep full access until then.',
+      });
+    } catch (err) {
+      console.error('Cancel error:', err.message);
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
+  return res.status(405).json({ error: 'Method not allowed' });
+}
