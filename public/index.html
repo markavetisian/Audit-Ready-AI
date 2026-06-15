@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#0d0f14"/>
+<title>AuditReady AI — SOC 2 Compliance Automation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d0f14;
+  --surface:#141720;
+  --surface2:#1c2030;
+  --border:#252b3b;
+  --border2:#2e3650;
+  --accent:#2563eb;
+  --accent-dim:rgba(37,99,235,.12);
+  --accent-glow:rgba(37,99,235,.25);
+  --green:#10b981;
+  --green-dim:rgba(16,185,129,.1);
+  --amber:#f59e0b;
+  --amber-dim:rgba(245,158,11,.1);
+  --red:#ef4444;
+  --red-dim:rgba(239,68,68,.1);
+  --text:#e8ecf4;
+  --muted:#6b7a99;
+  --mono:'IBM Plex Mono',monospace;
+  --sans:'Inter',-apple-system,sans-serif;
+  --r:8px;
+}
+html{font-size:15px;-webkit-text-size-adjust:100%}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100dvh;overflow-x:hidden;-webkit-font-smoothing:antialiased;line-height:1.5}
+input,select,textarea,button{font-family:var(--sans);font-size:14px;color:inherit;border:none;background:none;outline:none;-webkit-appearance:none}
+button{cursor:pointer;user-select:none}
+a{color:inherit;text-decoration:none}
+
+/* ── Layout ─────────────────────────────── */
+#app{display:flex;flex-direction:column;min-height:100dvh}
+.page{display:none}
+.page.on{display:flex;flex-direction:column;flex:1}
+
+/* ── Header ─────────────────────────────── */
+header{
+  position:sticky;top:0;z-index:80;
+  height:52px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;
+  background:rgba(13,15,20,.96);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(16px);
+}
+.logo{display:flex;align-items:center;gap:10px;cursor:pointer}
+.logo-mark{
+  width:30px;height:30px;border-radius:6px;
+  background:var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:12px;font-weight:600;color:#fff;
+  flex-shrink:0;
+}
+.logo-text{font-family:var(--mono);font-size:13px;font-weight:500;letter-spacing:-.02em}
+.logo-text span{color:var(--accent)}
+.hdr-nav{display:flex;gap:2px}
+.hn{
+  padding:5px 12px;border-radius:6px;font-size:12px;font-weight:500;
+  color:var(--muted);cursor:pointer;transition:color .12s,background .12s;
+  min-height:32px;display:flex;align-items:center;
+}
+.hn:hover{color:var(--text);background:var(--surface)}
+.hn.active{color:var(--text);background:var(--surface2)}
+.hdr-right{display:flex;align-items:center;gap:8px}
+.user-chip{
+  display:flex;align-items:center;gap:6px;
+  padding:4px 10px 4px 4px;
+  border:1px solid var(--border);border-radius:20px;
+  background:var(--surface);cursor:pointer;font-size:12px;
+  position:relative;
+}
+.uc-av{
+  width:24px;height:24px;border-radius:50%;
+  background:var(--accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:600;overflow:hidden;flex-shrink:0;
+}
+.uc-av img{width:100%;height:100%;object-fit:cover}
+.dropdown{
+  position:absolute;top:calc(100% + 6px);right:0;
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:var(--r);min-width:180px;
+  box-shadow:0 12px 32px rgba(0,0,0,.5);
+  display:none;z-index:200;overflow:hidden;
+}
+.dropdown.open{display:block}
+.dd-head{padding:10px 12px;border-bottom:1px solid var(--border);background:var(--surface)}
+.dd-name{font-size:12px;font-weight:600}
+.dd-email{font-size:10px;color:var(--muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dd-item{
+  padding:9px 12px;font-size:12px;cursor:pointer;
+  display:flex;align-items:center;gap:8px;
+  transition:background .1s;
+}
+.dd-item:hover{background:var(--surface)}
+.dd-item.danger{color:var(--red)}
+
+/* ── Buttons ─────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:8px 16px;border-radius:var(--r);font-size:13px;font-weight:500;
+  cursor:pointer;transition:opacity .12s,transform .1s;
+}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{opacity:.9}
+.btn-secondary{background:var(--surface2);border:1px solid var(--border2);color:var(--text)}
+.btn-secondary:hover{border-color:var(--border2);background:var(--border)}
+.btn-ghost{color:var(--muted)}
+.btn-ghost:hover{color:var(--text)}
+.btn-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(239,68,68,.25)}
+.btn-sm{padding:5px 11px;font-size:12px}
+.btn-full{width:100%}
+
+/* ── Cards ───────────────────────────────── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px}
+.card-sm{padding:12px}
+
+/* ── Score ring widget ───────────────────── */
+.score-ring-wrap{display:flex;flex-direction:column;align-items:center;gap:4px}
+.score-number{font-family:var(--mono);font-size:42px;font-weight:600;line-height:1;letter-spacing:-.04em}
+.score-label{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.score-sub{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* ── Status badges ───────────────────────── */
+.badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 8px;border-radius:4px;
+  font-family:var(--mono);font-size:10px;font-weight:500;
+  white-space:nowrap;
+}
+.badge-not-started{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+.badge-in-progress{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(245,158,11,.25)}
+.badge-evidence{background:rgba(59,130,246,.1);color:#60a5fa;border:1px solid rgba(59,130,246,.25)}
+.badge-connected{background:var(--green-dim);color:var(--green);border:1px solid rgba(16,185,129,.25)}
+.badge-na{background:var(--surface2);color:var(--muted);border:1px solid var(--border);text-decoration:line-through}
+
+/* ── Progress bar ────────────────────────── */
+.progress-track{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;border-radius:3px;transition:width .5s ease}
+
+/* ── Category bar ────────────────────────── */
+.cat-bar{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.cat-label{font-size:12px;font-weight:500;min-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cat-score{font-family:var(--mono);font-size:11px;color:var(--muted);min-width:32px;text-align:right}
+.cat-track{flex:1;height:4px;background:var(--surface2);border-radius:2px;overflow:hidden}
+.cat-fill{height:100%;border-radius:2px;transition:width .6s ease}
+
+/* ── Control rows ────────────────────────── */
+.control-group{margin-bottom:16px}
+.control-group-header{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 12px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  margin-bottom:4px;cursor:pointer;
+}
+.cg-title{font-family:var(--mono);font-size:12px;font-weight:500}
+.cg-score{font-family:var(--mono);font-size:11px;color:var(--muted);margin-left:auto}
+.cg-count{font-size:11px;color:var(--muted)}
+.control-row{
+  display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;
+  padding:10px 12px;
+  border:1px solid var(--border);border-bottom:none;background:var(--surface);
+  cursor:pointer;transition:background .1s;
+}
+.control-row:last-child{border-bottom:1px solid var(--border);border-radius:0 0 var(--r) var(--r)}
+.control-row:first-of-type{border-radius:var(--r) var(--r) 0 0}
+.control-row:only-of-type{border-bottom:1px solid var(--border);border-radius:var(--r)}
+.control-row:hover{background:var(--surface2)}
+.control-row.expanded{background:var(--surface2)}
+.cr-id{font-family:var(--mono);font-size:10px;color:var(--muted);min-width:40px}
+.cr-title{font-size:13px;font-weight:400}
+.control-detail{
+  display:none;padding:12px;
+  border:1px solid var(--border);border-top:none;border-bottom:none;
+  background:var(--surface2);
+}
+.control-detail.open{display:block}
+.control-detail:last-child{border-bottom:1px solid var(--border);border-radius:0 0 var(--r) var(--r)}
+
+/* ── Evidence items ──────────────────────── */
+.evidence-item{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 10px;
+  background:var(--surface);border:1px solid var(--border);border-radius:6px;
+  margin-bottom:4px;font-size:12px;
+}
+.ev-type-badge{
+  font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:3px;
+  background:var(--surface2);color:var(--muted);border:1px solid var(--border);
+  white-space:nowrap;flex-shrink:0;
+}
+.ev-value{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.ev-auto{font-size:9px;color:var(--green);font-family:var(--mono);flex-shrink:0}
+.ev-del{color:var(--muted);flex-shrink:0;font-size:14px;padding:2px 4px;border-radius:3px;transition:color .1s,background .1s}
+.ev-del:hover{color:var(--red);background:var(--red-dim)}
+
+/* ── Evidence upload panel ───────────────── */
+.ev-upload{
+  border:1px dashed var(--border2);border-radius:var(--r);
+  padding:12px;margin-top:8px;background:var(--surface);
+}
+.ev-type-tabs{display:flex;gap:4px;margin-bottom:10px}
+.ev-tab{
+  padding:4px 10px;border-radius:4px;font-size:11px;font-weight:500;
+  color:var(--muted);cursor:pointer;border:1px solid transparent;transition:all .1s;
+}
+.ev-tab.active{background:var(--accent-dim);color:var(--accent);border-color:rgba(37,99,235,.3)}
+.ev-input{
+  width:100%;padding:8px 10px;
+  background:var(--bg);border:1px solid var(--border);border-radius:6px;
+  color:var(--text);font-size:13px;margin-bottom:8px;
+  transition:border-color .15s;
+}
+.ev-input:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-dim)}
+
+/* ── Integration tiles ───────────────────── */
+.int-tile{
+  display:flex;align-items:center;gap:14px;
+  padding:16px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  margin-bottom:10px;
+}
+.int-icon{
+  width:40px;height:40px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;flex-shrink:0;
+  background:var(--surface2);border:1px solid var(--border);
+}
+.int-info{flex:1;min-width:0}
+.int-name{font-size:13px;font-weight:600;margin-bottom:2px}
+.int-desc{font-size:11px;color:var(--muted);line-height:1.5}
+.int-meta{font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:3px}
+.connected-pill{
+  font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;
+  background:var(--green-dim);color:var(--green);border:1px solid rgba(16,185,129,.25);
+  font-family:var(--mono);
+}
+.coming-soon-pill{
+  font-size:10px;font-weight:500;padding:3px 8px;border-radius:20px;
+  background:var(--surface2);color:var(--muted);border:1px solid var(--border);
+  font-family:var(--mono);
+}
+
+/* ── Filter bar ──────────────────────────── */
+.filter-bar{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:14px}
+.filter-pill{
+  padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;
+  border:1px solid var(--border);color:var(--muted);cursor:pointer;
+  transition:all .12s;
+}
+.filter-pill.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.filter-pill:hover:not(.active){border-color:var(--border2);color:var(--text)}
+
+/* ── Gap list ────────────────────────────── */
+.gap-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  margin-bottom:6px;cursor:pointer;transition:border-color .12s;
+}
+.gap-item:hover{border-color:var(--accent)}
+.gap-id{font-family:var(--mono);font-size:10px;color:var(--muted);min-width:40px;flex-shrink:0}
+.gap-title{font-size:13px;flex:1}
+
+/* ── Dashboard stats ─────────────────────── */
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.stat-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:12px 14px;
+}
+.stat-label{font-size:9px;font-weight:600;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;font-family:var(--mono)}
+.stat-value{font-family:var(--mono);font-size:22px;font-weight:600;line-height:1;letter-spacing:-.03em}
+.stat-sub{font-size:10px;color:var(--muted);margin-top:3px}
+
+/* ── Action bar ──────────────────────────── */
+.action-bar{
+  display:flex;gap:8px;padding:14px 0;
+  border-top:1px solid var(--border);
+  flex-wrap:wrap;
+}
+
+/* ── Login page — light theme with grid ──── */
+#pg-login{
+  position:relative;
+  min-height:100dvh;
+  display:flex;flex-direction:column;align-items:center;
+  overflow:hidden;
+  background:#f5f6fa;
+  color:#0f172a;
+}
+/* grid canvas layers */
+.lp-grid-base{position:absolute;inset:0;z-index:0;opacity:0.32;pointer-events:none}
+.lp-grid-spot{position:absolute;inset:0;z-index:1;opacity:0;transition:opacity .18s;pointer-events:none;
+  -webkit-mask-image:radial-gradient(90px circle at 50% 50%,black,transparent);
+  mask-image:radial-gradient(90px circle at 50% 50%,black,transparent)}
+.lp-grid-base canvas,.lp-grid-spot canvas{position:absolute;inset:0;width:100%;height:100%}
+/* blobs */
+.lp-blob{position:absolute;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0}
+.lp-blob-1{width:500px;height:300px;background:rgba(147,197,253,0.45);top:-80px;right:-100px;border-radius:40%}
+.lp-blob-2{width:400px;height:250px;background:rgba(196,181,253,0.35);bottom:-60px;left:-80px;border-radius:40%}
+.lp-blob-3{width:300px;height:200px;background:rgba(253,186,116,0.22);bottom:100px;right:80px;border-radius:40%}
+/* login nav */
+.lp-nav{position:relative;z-index:10;width:100%;max-width:1100px;display:flex;align-items:center;justify-content:space-between;padding:22px 32px;margin:0 auto}
+.lp-logo{display:flex;align-items:center;gap:9px}
+.lp-logo-mark{width:32px;height:32px;border-radius:8px;background:#2563eb;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.lp-logo-name{font-size:15px;font-weight:650;letter-spacing:-.03em;color:#0f172a}
+.lp-logo-name span{color:#2563eb}
+.lp-nav-links{display:flex;align-items:center;gap:24px}
+.lp-nav-link{font-size:13px;color:#64748b;cursor:pointer;transition:color .15s}
+.lp-nav-link:hover{color:#0f172a}
+.lp-nav-signin{height:36px;padding:0 18px;border-radius:18px;background:#0f172a;color:#fff;font-size:13px;font-weight:500;border:none;cursor:pointer;transition:opacity .15s}
+.lp-nav-signin:hover{opacity:.85}
+/* badge */
+.lp-badge{position:relative;z-index:10;display:inline-flex;align-items:center;gap:6px;margin:28px auto 0;padding:5px 14px;border-radius:20px;background:rgba(37,99,235,.07);border:1px solid rgba(37,99,235,.18);font-size:12px;font-weight:500;color:#2563eb}
+.lp-badge-dot{width:6px;height:6px;border-radius:50%;background:#2563eb;animation:lp-pulse 2s ease-in-out infinite;flex-shrink:0}
+@keyframes lp-pulse{0%,100%{opacity:1}50%{opacity:.3}}
+/* hero */
+.lp-hero{position:relative;z-index:10;text-align:center;padding:20px 24px 0;max-width:820px;margin:0 auto}
+.lp-hero h1{font-size:clamp(32px,5.5vw,60px);font-weight:700;line-height:1.06;letter-spacing:-.04em;color:#0f172a;margin-bottom:18px}
+.lp-hero h1 em{font-style:normal;color:#2563eb}
+.lp-hero p{font-size:clamp(14px,1.6vw,17px);color:#64748b;line-height:1.7;max-width:500px;margin:0 auto 32px}
+.lp-btns{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
+.lp-btn-gh{height:46px;padding:0 26px;border-radius:23px;background:#0f172a;color:#fff;font-size:14px;font-weight:500;border:none;cursor:pointer;display:flex;align-items:center;gap:8px;transition:opacity .15s,transform .1s}
+.lp-btn-gh:hover{opacity:.88;transform:translateY(-1px)}
+.lp-btn-gg{height:46px;padding:0 26px;border-radius:23px;background:#fff;color:#0f172a;font-size:14px;font-weight:500;border:1px solid #e2e8f0;cursor:pointer;display:flex;align-items:center;gap:8px;transition:border-color .15s,transform .1s}
+.lp-btn-gg:hover{border-color:#94a3b8;transform:translateY(-1px)}
+/* mockup */
+.lp-mockup-wrap{position:relative;z-index:10;width:100%;max-width:900px;margin:44px auto 0;padding:0 24px 48px}
+.lp-mockup-glow{position:absolute;inset:20px;border-radius:14px;background:rgba(37,99,235,.06);filter:blur(40px);pointer-events:none}
+.lp-mockup{background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;box-shadow:0 4px 32px rgba(15,23,42,.08),0 1px 4px rgba(15,23,42,.04)}
+.lp-mock-bar{display:flex;align-items:center;gap:6px;padding:11px 14px;border-bottom:1px solid #f1f5f9;background:#fafafa}
+.lp-mock-dot{width:10px;height:10px;border-radius:50%}
+.lp-mock-url{flex:1;text-align:center;font-size:11px;color:#94a3b8;letter-spacing:.02em}
+.lp-mock-body{display:grid;grid-template-columns:190px 1fr;min-height:210px}
+.lp-mock-sidebar{background:#fafafa;border-right:1px solid #f1f5f9;padding:16px;display:flex;flex-direction:column;gap:10px}
+.lp-mock-score-num{font-size:34px;font-weight:700;color:#2563eb;line-height:1;letter-spacing:-.04em;text-align:center}
+.lp-mock-score-lbl{font-size:10px;color:#2563eb;font-weight:600;letter-spacing:.06em;text-transform:uppercase;text-align:center;margin-top:2px}
+.lp-mock-score-sub{font-size:10px;color:#94a3b8;text-align:center;margin-top:3px}
+.lp-mock-scan{width:100%;padding:7px;border-radius:6px;background:#2563eb;color:#fff;font-size:11px;font-weight:500;border:none;cursor:default;display:flex;align-items:center;justify-content:center;gap:4px}
+.lp-mock-div{height:1px;background:#f1f5f9}
+.lp-mock-meta{font-size:9px;color:#cbd5e1;text-align:center;letter-spacing:.03em}
+.lp-mock-main{padding:16px;display:flex;flex-direction:column;gap:12px}
+.lp-mock-sec{font-size:9px;font-weight:600;color:#94a3b8;letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px}
+.lp-mock-cat{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.lp-mock-cat-lbl{font-size:10px;color:#475569;min-width:148px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lp-mock-track{flex:1;height:3px;background:#f1f5f9;border-radius:2px;overflow:hidden}
+.lp-mock-fill{height:100%;border-radius:2px}
+.lp-mock-pct{font-size:9px;color:#94a3b8;min-width:26px;text-align:right}
+.lp-mock-gap{display:flex;align-items:center;gap:8px;padding:5px 8px;background:#f8fafc;border-radius:5px;margin-bottom:3px;border:1px solid #f1f5f9}
+.lp-mock-gap-id{font-size:9px;color:#94a3b8;min-width:34px;letter-spacing:.02em}
+.lp-mock-gap-title{font-size:10px;color:#475569;flex:1}
+.lp-mock-gap-btn{font-size:9px;padding:2px 7px;border-radius:4px;background:#eff6ff;color:#2563eb;border:none;cursor:default;white-space:nowrap}
+/* keep oauth-btn etc for other pages */
+.oauth-btn{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;padding:11px 16px;border-radius:var(--r);
+  font-size:14px;font-weight:500;margin-bottom:10px;
+  cursor:pointer;transition:opacity .12s,transform .1s;min-height:44px;
+  border:1px solid var(--border2);
+}
+.oauth-btn:active{opacity:.82;transform:scale(.98)}
+.oauth-gh{background:var(--accent);color:#fff;border-color:transparent}
+.oauth-gg{background:var(--surface2);color:var(--text)}
+.oauth-or{text-align:center;font-size:11px;color:var(--muted);margin:4px 0}
+@media(max-width:640px){.lp-nav-links{display:none}.lp-mock-sidebar{display:none}.lp-mock-body{grid-template-columns:1fr}}
+
+/* ── Page layouts ────────────────────────── */
+.page-inner{max-width:1024px;margin:0 auto;padding:20px;width:100%}
+.page-inner-narrow{max-width:720px;margin:0 auto;padding:20px;width:100%}
+
+/* ── Dashboard layout ────────────────────── */
+.dash-grid{display:grid;grid-template-columns:280px 1fr;gap:16px;align-items:start}
+.dash-score-panel{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:24px 20px;text-align:center;
+  position:sticky;top:72px;
+}
+.dash-main{}
+
+/* ── Scan button ─────────────────────────── */
+.scan-btn{
+  width:100%;padding:10px 16px;
+  background:var(--accent);color:#fff;
+  border-radius:var(--r);font-size:13px;font-weight:500;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  cursor:pointer;transition:opacity .12s;margin-top:14px;
+}
+.scan-btn:hover{opacity:.9}
+.scan-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ── Animations ──────────────────────────── */
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+.fade-in{animation:fadeIn .2s ease}
+
+/* ── Report card ─────────────────────────── */
+.report-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:16px;margin-bottom:10px;
+}
+.report-summary{font-size:13px;color:var(--muted);line-height:1.65;margin-top:8px}
+
+/* ── Section heading ─────────────────────── */
+.section-heading{
+  font-family:var(--mono);font-size:11px;font-weight:500;
+  color:var(--muted);letter-spacing:.08em;text-transform:uppercase;
+  margin-bottom:12px;display:flex;align-items:center;gap:8px;
+}
+.section-heading::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── Toast ───────────────────────────────── */
+.toast{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  background:var(--surface2);border:1px solid var(--border2);
+  padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;
+  box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:999;
+  animation:fadeIn .2s ease;white-space:nowrap;
+}
+.toast-success{border-color:rgba(16,185,129,.3);color:var(--green)}
+.toast-error{border-color:rgba(239,68,68,.3);color:var(--red)}
+
+/* ── Share modal ─────────────────────────── */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.6);
+  display:flex;align-items:center;justify-content:center;
+  z-index:200;padding:20px;backdrop-filter:blur(4px);
+}
+.modal-box{
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:12px;padding:24px;max-width:440px;width:100%;
+  box-shadow:0 20px 60px rgba(0,0,0,.5);
+}
+.modal-box h3{font-size:16px;font-weight:600;margin-bottom:6px;letter-spacing:-.02em}
+.modal-box p{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px}
+.share-url{
+  display:flex;align-items:center;gap:6px;
+  background:var(--bg);border:1px solid var(--border);border-radius:6px;
+  padding:8px 10px;font-family:var(--mono);font-size:11px;color:var(--muted);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  margin-bottom:12px;cursor:pointer;
+}
+
+/* ── Responsive ──────────────────────────── */
+@media(max-width:768px){
+  .dash-grid{grid-template-columns:1fr}
+  .dash-score-panel{position:static}
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+  .hdr-nav{display:none}
+  .page-inner{padding:14px}
+}
+@media(max-width:480px){
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+  header{padding:0 14px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ── Header ──────────────────────────────────────────────── -->
+<header id="hdr" style="display:none">
+  <div class="logo" onclick="nav('dashboard')">
+    <div class="logo-mark">AR</div>
+    <div class="logo-text"><span>Audit</span>Ready AI</div>
+  </div>
+  <nav class="hdr-nav">
+    <div class="hn" id="hn-dashboard" onclick="nav('dashboard')">Dashboard</div>
+    <div class="hn" id="hn-controls" onclick="nav('controls')">Controls</div>
+    <div class="hn" id="hn-integrations" onclick="nav('integrations')">Integrations</div>
+  </nav>
+  <div class="hdr-right">
+    <div class="user-chip" id="userChip" onclick="toggleDD()">
+      <div class="uc-av" id="ucAv">U</div>
+      <span id="ucName">User</span>
+      <div class="dropdown" id="userDD">
+        <div class="dd-head">
+          <div class="dd-name" id="ddName">—</div>
+          <div class="dd-email" id="ddEmail">—</div>
+        </div>
+        <div class="dd-item" onclick="nav('dashboard')">📊 Dashboard</div>
+        <div class="dd-item" onclick="nav('controls')">✅ Controls</div>
+        <div class="dd-item" onclick="nav('integrations')">🔌 Integrations</div>
+        <div class="dd-item danger" onclick="logout()">↩ Sign out</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ── Login ────────────────────────────────────────────────── -->
+<div class="page" id="pg-login">
+
+  <!-- blobs -->
+  <div class="lp-blob lp-blob-1"></div>
+  <div class="lp-blob lp-blob-2"></div>
+  <div class="lp-blob lp-blob-3"></div>
+
+  <!-- grid layers -->
+  <div class="lp-grid-base"><canvas id="lpGridBase"></canvas></div>
+  <div class="lp-grid-spot" id="lpGridSpot"><canvas id="lpGridHot"></canvas></div>
+
+  <!-- nav -->
+  <nav class="lp-nav">
+    <div class="lp-logo">
+      <div class="lp-logo-mark">AR</div>
+      <div class="lp-logo-name"><span>Audit</span>Ready AI</div>
+    </div>
+    <div class="lp-nav-links">
+      <div class="lp-nav-link">How it works</div>
+      <div class="lp-nav-link">Pricing</div>
+      <div class="lp-nav-link">Docs</div>
+    </div>
+    <button class="lp-nav-signin" onclick="location.href='/api/auth?provider=github'">Sign in</button>
+  </nav>
+
+  <!-- badge -->
+  <div class="lp-badge">
+    <span class="lp-badge-dot"></span>
+    SOC 2 readiness score in under 10 minutes
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+  </div>
+
+  <!-- hero -->
+  <div class="lp-hero">
+    <h1>Close enterprise deals.<br/><em>Stop losing them</em> to compliance.</h1>
+    <p>Connect your tools, get your SOC 2 readiness score instantly, and walk into every enterprise conversation audit-ready.</p>
+    <div class="lp-btns">
+      <button class="lp-btn-gh" onclick="location.href='/api/auth?provider=github'">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12"/></svg>
+        Continue with GitHub
+      </button>
+      <button class="lp-btn-gg" onclick="location.href='/api/auth?provider=google'">
+        <svg width="15" height="15" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Continue with Google
+      </button>
+    </div>
+    <p style="font-size:11px;color:#94a3b8;margin-top:14px">GitHub required for automated compliance scanning</p>
+  </div>
+
+  <!-- dashboard mockup -->
+  <div class="lp-mockup-wrap">
+    <div class="lp-mockup-glow"></div>
+    <div class="lp-mockup">
+      <div class="lp-mock-bar">
+        <div class="lp-mock-dot" style="background:#ff5f57"></div>
+        <div class="lp-mock-dot" style="background:#febc2e"></div>
+        <div class="lp-mock-dot" style="background:#28c840"></div>
+        <div class="lp-mock-url">app.auditready.ai — SOC 2 Dashboard</div>
+      </div>
+      <div class="lp-mock-body">
+        <div class="lp-mock-sidebar">
+          <div>
+            <div class="lp-mock-score-num">74%</div>
+            <div class="lp-mock-score-lbl">Getting Close</div>
+            <div class="lp-mock-score-sub">17 of 23 controls met</div>
+          </div>
+          <div class="lp-mock-scan">⚡ Scan Now</div>
+          <div class="lp-mock-div"></div>
+          <div class="lp-mock-meta">Last scan: 2h ago · 8 auto-filled</div>
+        </div>
+        <div class="lp-mock-main">
+          <div>
+            <div class="lp-mock-sec">Category Breakdown</div>
+            <div class="lp-mock-cat"><div class="lp-mock-cat-lbl">Control Environment</div><div class="lp-mock-track"><div class="lp-mock-fill" style="width:80%;background:#2563eb"></div></div><div class="lp-mock-pct">80%</div></div>
+            <div class="lp-mock-cat"><div class="lp-mock-cat-lbl">Logical & Physical Access</div><div class="lp-mock-track"><div class="lp-mock-fill" style="width:45%;background:#f59e0b"></div></div><div class="lp-mock-pct">45%</div></div>
+            <div class="lp-mock-cat"><div class="lp-mock-cat-lbl">Change Management</div><div class="lp-mock-track"><div class="lp-mock-fill" style="width:90%;background:#10b981"></div></div><div class="lp-mock-pct">90%</div></div>
+            <div class="lp-mock-cat"><div class="lp-mock-cat-lbl">System Operations</div><div class="lp-mock-track"><div class="lp-mock-fill" style="width:60%;background:#3b82f6"></div></div><div class="lp-mock-pct">60%</div></div>
+            <div class="lp-mock-cat"><div class="lp-mock-cat-lbl">Risk Mitigation</div><div class="lp-mock-track"><div class="lp-mock-fill" style="width:30%;background:#ef4444"></div></div><div class="lp-mock-pct">30%</div></div>
+          </div>
+          <div>
+            <div class="lp-mock-sec">Top Gaps to Fix</div>
+            <div class="lp-mock-gap"><div class="lp-mock-gap-id">CC6.4</div><div class="lp-mock-gap-title">Access reviews not documented</div><div class="lp-mock-gap-btn">Add Evidence →</div></div>
+            <div class="lp-mock-gap"><div class="lp-mock-gap-id">CC7.3</div><div class="lp-mock-gap-title">No incident response plan</div><div class="lp-mock-gap-btn">Add Evidence →</div></div>
+            <div class="lp-mock-gap"><div class="lp-mock-gap-id">CC9.5</div><div class="lp-mock-gap-title">Cyber liability insurance missing</div><div class="lp-mock-gap-btn">Add Evidence →</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Dashboard ─────────────────────────────────────────────── -->
+<div class="page" id="pg-dashboard">
+  <div class="page-inner" style="padding-top:24px">
+    <div class="dash-grid" id="dashGrid">
+      <!-- Score panel -->
+      <div>
+        <div class="dash-score-panel">
+          <div class="section-heading" style="justify-content:center;margin-bottom:16px">SOC 2 READINESS</div>
+          <div class="score-ring-wrap" id="scoreDisplay">
+            <div class="score-number" id="scoreNum" style="color:var(--accent)">—</div>
+            <div class="score-label" id="scoreLabel" style="color:var(--accent)">Loading</div>
+            <div class="score-sub" id="scoreSub">—</div>
+          </div>
+          <button class="scan-btn" id="scanBtn" onclick="triggerScan()">
+            <span id="scanBtnText">⚡ Scan Now</span>
+          </button>
+          <div id="scanMeta" style="font-size:10px;color:var(--muted);margin-top:8px;font-family:var(--mono)"></div>
+          <button class="btn btn-secondary btn-full btn-sm" style="margin-top:8px" onclick="generateReport()">
+            <span id="reportBtnText">📄 Generate Report</span>
+          </button>
+          <button class="btn btn-ghost btn-full btn-sm" style="margin-top:6px" onclick="openShareModal()">
+            🔗 Share with Auditor
+          </button>
+        </div>
+      </div>
+      <!-- Main -->
+      <div class="dash-main">
+        <!-- Category breakdown -->
+        <div class="card" style="margin-bottom:16px">
+          <div class="section-heading">CATEGORY BREAKDOWN</div>
+          <div id="categoryBars"><div style="color:var(--muted);font-size:12px;padding:8px 0">Loading...</div></div>
+        </div>
+        <!-- Top gaps -->
+        <div class="card" style="margin-bottom:16px">
+          <div class="section-heading">TOP GAPS TO FIX</div>
+          <div id="topGapsList"><div style="color:var(--muted);font-size:12px;padding:8px 0">Loading...</div></div>
+        </div>
+        <!-- Latest report -->
+        <div id="latestReportSection" style="display:none">
+          <div class="card">
+            <div class="section-heading">LATEST REPORT</div>
+            <div id="latestReportContent"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Controls ──────────────────────────────────────────────── -->
+<div class="page" id="pg-controls">
+  <div class="page-inner-narrow" style="padding-top:24px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <div>
+        <h1 style="font-size:20px;font-weight:600;letter-spacing:-.03em">Control Checklist</h1>
+        <p style="font-size:13px;color:var(--muted);margin-top:2px">SOC 2 Type 1 — 33 controls across 9 categories</p>
+      </div>
+    </div>
+    <div class="filter-bar" id="controlFilters">
+      <div class="filter-pill active" data-filter="ALL" onclick="filterControls('ALL',this)">All</div>
+      <div class="filter-pill" data-filter="NOT_STARTED" onclick="filterControls('NOT_STARTED',this)">Not Started</div>
+      <div class="filter-pill" data-filter="IN_PROGRESS" onclick="filterControls('IN_PROGRESS',this)">In Progress</div>
+      <div class="filter-pill" data-filter="EVIDENCE_UPLOADED" onclick="filterControls('EVIDENCE_UPLOADED',this)">Evidence Added</div>
+      <div class="filter-pill" data-filter="CONNECTED_AUTO" onclick="filterControls('CONNECTED_AUTO',this)">Auto-Detected</div>
+    </div>
+    <div id="controlsList"><div style="color:var(--muted);font-size:12px;text-align:center;padding:32px 0"><span class="spinner"></span> Loading controls...</div></div>
+  </div>
+</div>
+
+<!-- ── Integrations ──────────────────────────────────────────── -->
+<div class="page" id="pg-integrations">
+  <div class="page-inner-narrow" style="padding-top:24px">
+    <div style="margin-bottom:20px">
+      <h1 style="font-size:20px;font-weight:600;letter-spacing:-.03em">Connected Tools</h1>
+      <p style="font-size:13px;color:var(--muted);margin-top:2px">Connect your tools to auto-detect compliance controls</p>
+    </div>
+    <div id="integrationsList"><div style="color:var(--muted);font-size:12px;text-align:center;padding:32px 0"><span class="spinner"></span> Loading...</div></div>
+  </div>
+</div>
+
+<!-- ── Share Modal ───────────────────────────────────────────── -->
+<div id="shareModal" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeShareModal()">
+  <div class="modal-box">
+    <h3>Share with Auditor</h3>
+    <p>Generate a read-only link to share your compliance score and report with an external auditor. Link expires in 30 days.</p>
+    <div id="shareUrlBox" style="display:none">
+      <div class="share-url" id="shareUrlText" onclick="copyShareUrl()">Generating...</div>
+      <p style="font-size:11px;color:var(--green);margin-bottom:12px">✓ Link copied to clipboard</p>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" style="flex:1" onclick="createShareLink()">
+        <span id="shareBtnText">🔗 Generate Link</span>
+      </button>
+      <button class="btn btn-secondary" onclick="closeShareModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- #app -->
+
+<script>
+'use strict';
+
+// ── State ────────────────────────────────────────────────────
+let ST = {
+  user: null,
+  score: null,
+  controls: [],
+  integrations: {},
+  activeFilter: 'ALL',
+  expandedControl: null,
+};
+
+// ── Auth ─────────────────────────────────────────────────────
+
+function authTok() {
+  if (!ST.user) return null;
+  if (ST.user.githubToken) return ST.user.githubToken;
+  if (ST.user.type === 'google') return 'google:' + ST.user.email;
+  return null;
+}
+
+function authHeaders() {
+  const tok = authTok();
+  if (!tok) return {};
+  return { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' };
+}
+
+function saveUser() { if (ST.user) localStorage.setItem('ar_user', JSON.stringify(ST.user)); }
+function loadUser() {
+  try { const s = localStorage.getItem('ar_user'); if (s) ST.user = JSON.parse(s); } catch {}
+}
+function logout() {
+  ST.user = null; ST.score = null; ST.controls = [];
+  localStorage.removeItem('ar_user');
+  updateHeader(); nav('login');
+}
+
+function handleCallback() {
+  const p = new URLSearchParams(location.search);
+
+  // GitHub callback
+  const tok = p.get('token');
+  if (tok) {
+    fetch('https://api.github.com/user', {
+      headers: { Authorization: 'Bearer ' + tok, Accept: 'application/vnd.github+json', 'User-Agent': 'AuditReady-AI' }
+    }).then(r => r.json()).then(u => {
+      ST.user = { name: u.name || u.login, email: u.email || u.login + '@github', avatar: u.avatar_url, type: 'github', githubToken: tok, username: u.login };
+      saveUser(); history.replaceState({}, '', '/');
+      fetch('/api/telemetry?type=track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: 'github:' + u.login, type: 'login', email: u.email, authType: 'github' }) }).catch(() => {});
+      updateHeader(); nav('dashboard'); loadDashboard();
+    }).catch(() => nav('login'));
+    return;
+  }
+
+  // Google callback
+  const gu = p.get('google_user');
+  if (gu) {
+    try {
+      const u = JSON.parse(decodeURIComponent(gu));
+      ST.user = { name: u.name, email: u.email, avatar: u.avatar, type: 'google', githubToken: null };
+      saveUser(); history.replaceState({}, '', '/');
+      fetch('/api/telemetry?type=track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: 'google:' + u.email, type: 'login', email: u.email, authType: 'google' }) }).catch(() => {});
+      updateHeader(); nav('dashboard'); loadDashboard();
+    } catch { nav('login'); }
+    return;
+  }
+
+  // Share token — public view
+  const share = p.get('share');
+  if (share) { loadPublicShare(share); return; }
+}
+
+// ── Navigation ────────────────────────────────────────────────
+
+function nav(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+  const pg = document.getElementById('pg-' + page);
+  if (pg) pg.classList.add('on');
+  document.querySelectorAll('.hn').forEach(h => h.classList.remove('active'));
+  const hn = document.getElementById('hn-' + page);
+  if (hn) hn.classList.add('active');
+  if (page === 'dashboard') loadDashboard();
+  if (page === 'controls') loadControls();
+  if (page === 'integrations') loadIntegrations();
+  window.scrollTo(0, 0);
+}
+
+function updateHeader() {
+  const hdr = document.getElementById('hdr');
+  if (!ST.user) { hdr.style.display = 'none'; return; }
+  hdr.style.display = 'flex';
+  const ucAv = document.getElementById('ucAv');
+  const ucName = document.getElementById('ucName');
+  const ddName = document.getElementById('ddName');
+  const ddEmail = document.getElementById('ddEmail');
+  if (ST.user.avatar) ucAv.innerHTML = '<img src="' + esc(ST.user.avatar) + '" alt=""/>';
+  else ucAv.textContent = (ST.user.name || 'U')[0].toUpperCase();
+  ucName.textContent = (ST.user.name || 'User').split(' ')[0];
+  ddName.textContent = ST.user.name || '';
+  ddEmail.textContent = ST.user.email || '';
+}
+
+function toggleDD() {
+  const dd = document.getElementById('userDD');
+  dd.classList.toggle('open');
+}
+document.addEventListener('click', e => {
+  const chip = document.getElementById('userChip');
+  if (chip && !chip.contains(e.target)) {
+    document.getElementById('userDD')?.classList.remove('open');
+  }
+});
+
+// ── Dashboard ─────────────────────────────────────────────────
+
+async function loadDashboard() {
+  if (!ST.user) return;
+  await Promise.all([loadScore(), loadLatestReport()]);
+}
+
+async function loadScore() {
+  try {
+    const r = await fetch('/api/score', { headers: authHeaders() });
+    if (!r.ok) return;
+    const d = await r.json();
+    ST.score = d;
+    renderScorePanel(d);
+    renderCategoryBars(d.categoryBreakdown);
+    renderTopGaps(d.topGaps);
+    // Load last scan meta
+    const sr = await fetch('/api/scan', { headers: authHeaders() });
+    if (sr.ok) {
+      const sd = await sr.json();
+      const meta = document.getElementById('scanMeta');
+      if (sd.scanned && sd.scannedAt) {
+        const dt = new Date(sd.scannedAt);
+        meta.textContent = 'Last scan: ' + dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' · ' + sd.controlsAutoFilled + ' auto-filled';
+      }
+    }
+  } catch (err) { console.error('loadScore error:', err); }
+}
+
+function renderScorePanel(d) {
+  const el = document.getElementById('scoreNum');
+  const lb = document.getElementById('scoreLabel');
+  const sb = document.getElementById('scoreSub');
+  el.textContent = d.score + '%';
+  el.style.color = d.color;
+  lb.textContent = d.label;
+  lb.style.color = d.color;
+  sb.textContent = d.verified + ' of ' + d.applicable + ' controls met';
+}
+
+function renderCategoryBars(breakdown) {
+  if (!breakdown) return;
+  const el = document.getElementById('categoryBars');
+  const cats = Object.entries(breakdown);
+  el.innerHTML = cats.map(([cat, data]) => {
+    const pct = data.score || 0;
+    return '<div class="cat-bar">' +
+      '<div class="cat-label" style="font-size:12px">' + esc(data.name || cat) + '</div>' +
+      '<div class="cat-track"><div class="cat-fill" style="width:' + pct + '%;background:' + esc(data.color || '#3b82f6') + '"></div></div>' +
+      '<div class="cat-score">' + pct + '%</div>' +
+      '</div>';
+  }).join('');
+}
+
+function renderTopGaps(gaps) {
+  const el = document.getElementById('topGapsList');
+  if (!gaps || !gaps.length) {
+    el.innerHTML = '<div style="color:var(--green);font-size:13px;padding:8px 0">✓ All controls addressed — you\'re close to audit-ready.</div>';
+    return;
+  }
+  el.innerHTML = gaps.map(g => {
+    return '<div class="gap-item" onclick="nav(\'controls\')">' +
+      '<div class="gap-id">' + esc(g.id) + '</div>' +
+      '<div class="gap-title">' + esc(g.title || g.id) + '</div>' +
+      '<div class="btn btn-sm btn-secondary" style="flex-shrink:0">Add Evidence →</div>' +
+      '</div>';
+  }).join('');
+}
+
+async function loadLatestReport() {
+  try {
+    const r = await fetch('/api/report', { headers: authHeaders() });
+    if (!r.ok) return;
+    const d = await r.json();
+    const reports = d.reports || [];
+    if (!reports.length) return;
+    const latest = reports[0];
+    const sec = document.getElementById('latestReportSection');
+    const cont = document.getElementById('latestReportContent');
+    sec.style.display = 'block';
+    const dt = new Date(latest.generatedAt);
+    cont.innerHTML =
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">' +
+      '<span style="font-family:var(--mono);font-size:11px;color:var(--muted)">' + dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' · Score: ' + (latest.score || 0) + '%</span>' +
+      '<span class="badge badge-connected">' + esc(latest.overallRating || 'GENERATED') + '</span>' +
+      '</div>' +
+      '<div class="report-summary">' + esc(latest.executiveSummary || '') + '</div>';
+  } catch {}
+}
+
+// ── Scan ──────────────────────────────────────────────────────
+
+async function triggerScan() {
+  const btn = document.getElementById('scanBtn');
+  const txt = document.getElementById('scanBtnText');
+  btn.disabled = true;
+  txt.innerHTML = '<span class="spinner"></span> Scanning...';
+
+  try {
+    const body = {};
+    // Pass google token if available from integration state
+    if (ST.integrations?.googleDrive?.token) body.googleToken = ST.integrations.googleDrive.token;
+
+    const r = await fetch('/api/scan', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify(body),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Scan failed');
+
+    toast('Scan complete — ' + d.controlsAutoFilled + ' controls auto-filled', 'success');
+    await loadScore();
+  } catch (err) {
+    toast(err.message || 'Scan failed', 'error');
+  }
+  btn.disabled = false;
+  txt.innerHTML = '⚡ Scan Now';
+}
+
+// ── Report ────────────────────────────────────────────────────
+
+async function generateReport() {
+  const btn = document.getElementById('reportBtnText');
+  btn.innerHTML = '<span class="spinner"></span> Generating...';
+  try {
+    const companyName = ST.user?.name?.split(' ')[0] || 'Company';
+    const r = await fetch('/api/report', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ companyName }),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Report failed');
+    toast('Report generated', 'success');
+    loadLatestReport();
+  } catch (err) { toast(err.message, 'error'); }
+  btn.innerHTML = '📄 Generate Report';
+}
+
+// ── Controls ──────────────────────────────────────────────────
+
+async function loadControls() {
+  if (!ST.user) return;
+  const el = document.getElementById('controlsList');
+  el.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:32px 0"><span class="spinner"></span></div>';
+  try {
+    const r = await fetch('/api/controls?grouped=true', { headers: authHeaders() });
+    if (!r.ok) throw new Error('Failed to load controls');
+    const d = await r.json();
+    ST.controls = d.controls || [];
+    renderControls(d.grouped || {});
+  } catch (err) {
+    el.innerHTML = '<div style="color:var(--red);font-size:13px">' + esc(err.message) + '</div>';
+  }
+}
+
+function filterControls(filter, el) {
+  ST.activeFilter = filter;
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  // Re-render with filter
+  const grouped = {};
+  const filtered = filter === 'ALL' ? ST.controls : ST.controls.filter(c => c.status === filter);
+  for (const c of filtered) {
+    if (!grouped[c.category]) grouped[c.category] = [];
+    grouped[c.category].push(c);
+  }
+  renderControls(grouped);
+}
+
+const STATUS_BADGE = {
+  NOT_STARTED: '<span class="badge badge-not-started">NOT STARTED</span>',
+  IN_PROGRESS: '<span class="badge badge-in-progress">IN PROGRESS</span>',
+  EVIDENCE_UPLOADED: '<span class="badge badge-evidence">EVIDENCE ADDED</span>',
+  CONNECTED_AUTO: '<span class="badge badge-connected">AUTO-DETECTED</span>',
+  NOT_APPLICABLE: '<span class="badge badge-na">N/A</span>',
+};
+
+const CATEGORY_NAMES = {
+  CC1:'Control Environment', CC2:'Communication & Information', CC3:'Risk Assessment',
+  CC4:'Monitoring of Controls', CC5:'Control Activities', CC6:'Logical & Physical Access Controls',
+  CC7:'System Operations', CC8:'Change Management', CC9:'Risk Mitigation',
+};
+
+function renderControls(grouped) {
+  const el = document.getElementById('controlsList');
+  if (!Object.keys(grouped).length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:32px 0">No controls match this filter.</div>';
+    return;
+  }
+  let html = '';
+  for (const [cat, controls] of Object.entries(grouped)) {
+    if (!controls.length) continue;
+    const verified = controls.filter(c => c.status === 'EVIDENCE_UPLOADED' || c.status === 'CONNECTED_AUTO').length;
+    const pct = controls.length ? Math.round((verified / controls.length) * 100) : 0;
+    html += '<div class="control-group">';
+    html += '<div class="control-group-header">';
+    html += '<div class="cg-title">' + esc(cat) + ' — ' + esc(CATEGORY_NAMES[cat] || cat) + '</div>';
+    html += '<div class="cg-count">' + verified + '/' + controls.length + '</div>';
+    html += '<div class="cg-score">' + pct + '%</div>';
+    html += '</div>';
+    for (const c of controls) {
+      const expanded = ST.expandedControl === c.id;
+      html += '<div class="control-row' + (expanded ? ' expanded' : '') + '" id="cr-' + c.id + '" onclick="toggleControl(\'' + esc(c.id) + '\')">';
+      html += '<div class="cr-id">' + esc(c.id) + '</div>';
+      html += '<div class="cr-title">' + esc(c.title) + '</div>';
+      html += (STATUS_BADGE[c.status] || STATUS_BADGE.NOT_STARTED);
+      html += '</div>';
+      if (expanded) html += buildControlDetail(c);
+    }
+    html += '</div>';
+  }
+  el.innerHTML = html;
+}
+
+function buildControlDetail(c) {
+  const evidenceKey = 'ev_' + c.id;
+  const stored = [];
+  let html = '<div class="control-detail open fade-in" id="cd-' + c.id + '">';
+  // Description
+  html += '<div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6">' + esc(c.description || '') + '</div>';
+  // Auto-detect note
+  if (c.autoDetectable) {
+    html += '<div style="font-size:11px;color:var(--muted);padding:6px 10px;background:var(--surface);border:1px solid var(--border);border-radius:5px;margin-bottom:12px;font-family:var(--mono)">';
+    html += '⚡ Auto-detectable via ' + esc(c.autoSource || 'integration') + ' — run a scan to auto-fill';
+    html += '</div>';
+  }
+  // Existing evidence
+  html += '<div id="evList-' + c.id + '" style="margin-bottom:10px"></div>';
+  // Not applicable toggle
+  const isNA = c.status === 'NOT_APPLICABLE';
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">';
+  html += '<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer">';
+  html += '<input type="checkbox" ' + (isNA ? 'checked' : '') + ' onchange="toggleNA(\'' + c.id + '\',this.checked)" style="cursor:pointer"/> ';
+  html += 'Mark as Not Applicable</label>';
+  html += '</div>';
+  // Evidence panel (only if not N/A)
+  if (!isNA) html += buildEvidencePanel(c.id);
+  html += '</div>';
+  return html;
+}
+
+function buildEvidencePanel(controlId) {
+  return '<div class="ev-upload" id="evPanel-' + controlId + '">' +
+    '<div class="section-heading" style="font-size:9px;margin-bottom:8px">ADD EVIDENCE</div>' +
+    '<div class="ev-type-tabs">' +
+    '<div class="ev-tab active" onclick="setEvType(\'' + controlId + '\',\'LINK\',this)">🔗 Link</div>' +
+    '<div class="ev-tab" onclick="setEvType(\'' + controlId + '\',\'FILE_NAME\',this)">📄 File Name</div>' +
+    '<div class="ev-tab" onclick="setEvType(\'' + controlId + '\',\'SCREENSHOT\',this)">🖼 Screenshot</div>' +
+    '</div>' +
+    '<input class="ev-input" id="evVal-' + controlId + '" placeholder="Paste URL, file name, or description..." />' +
+    '<input class="ev-input" id="evNote-' + controlId + '" placeholder="Optional note..." style="font-size:12px" />' +
+    '<input type="hidden" id="evType-' + controlId + '" value="LINK"/>' +
+    '<button class="btn btn-primary btn-sm" onclick="addEvidence(\'' + controlId + '\')">Add Evidence</button>' +
+    '</div>';
+}
+
+async function toggleControl(id) {
+  if (ST.expandedControl === id) {
+    ST.expandedControl = null;
+  } else {
+    ST.expandedControl = id;
+  }
+  // Re-render grouped controls with current filter
+  const filter = ST.activeFilter;
+  const filtered = filter === 'ALL' ? ST.controls : ST.controls.filter(c => c.status === filter);
+  const grouped = {};
+  for (const c of filtered) {
+    if (!grouped[c.category]) grouped[c.category] = [];
+    grouped[c.category].push(c);
+  }
+  renderControls(grouped);
+  // Load evidence for expanded control
+  if (ST.expandedControl) loadEvidenceForControl(ST.expandedControl);
+}
+
+async function loadEvidenceForControl(controlId) {
+  const el = document.getElementById('evList-' + controlId);
+  if (!el) return;
+  try {
+    const r = await fetch('/api/evidence?controlId=' + controlId, { headers: authHeaders() });
+    if (!r.ok) return;
+    const d = await r.json();
+    renderEvidence(controlId, d.items || []);
+  } catch {}
+}
+
+function renderEvidence(controlId, items) {
+  const el = document.getElementById('evList-' + controlId);
+  if (!el) return;
+  if (!items.length) { el.innerHTML = '<div style="font-size:11px;color:var(--muted);margin-bottom:4px">No evidence added yet.</div>'; return; }
+  el.innerHTML = items.map(item => {
+    const isAuto = item.source === 'GITHUB' || item.source === 'GOOGLE_DRIVE' || item.source === 'AWS' || item.type === 'AUTO_DETECTED';
+    return '<div class="evidence-item">' +
+      '<span class="ev-type-badge">' + esc(item.type) + '</span>' +
+      '<span class="ev-value" title="' + esc(item.value) + '">' + esc(item.value) + (item.note ? ' — ' + esc(item.note) : '') + '</span>' +
+      (isAuto ? '<span class="ev-auto">AUTO</span>' : '<button class="ev-del" onclick="deleteEvidence(\'' + controlId + '\',\'' + item.id + '\')">×</button>') +
+      '</div>';
+  }).join('');
+}
+
+function setEvType(controlId, type, el) {
+  document.querySelectorAll('#evPanel-' + controlId + ' .ev-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  const input = document.getElementById('evVal-' + controlId);
+  const typeInput = document.getElementById('evType-' + controlId);
+  typeInput.value = type;
+  const placeholders = { LINK: 'Paste policy doc URL, Notion link, Confluence link...', FILE_NAME: 'Enter file name (e.g. incident-response-plan.pdf)', SCREENSHOT: 'Describe screenshot evidence...' };
+  input.placeholder = placeholders[type] || 'Add evidence...';
+}
+
+async function addEvidence(controlId) {
+  const val = document.getElementById('evVal-' + controlId)?.value.trim();
+  const note = document.getElementById('evNote-' + controlId)?.value.trim();
+  const type = document.getElementById('evType-' + controlId)?.value || 'LINK';
+  if (!val) { toast('Please enter evidence value', 'error'); return; }
+  try {
+    const r = await fetch('/api/evidence', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ controlId, type, value: val, source: 'MANUAL', note }),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Failed');
+    document.getElementById('evVal-' + controlId).value = '';
+    document.getElementById('evNote-' + controlId).value = '';
+    toast('Evidence added', 'success');
+    // Update local control status
+    const ctrl = ST.controls.find(c => c.id === controlId);
+    if (ctrl && (ctrl.status === 'NOT_STARTED' || ctrl.status === 'IN_PROGRESS')) ctrl.status = 'EVIDENCE_UPLOADED';
+    await loadEvidenceForControl(controlId);
+    if (d.newScore !== undefined) updateScoreQuick(d.newScore);
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+async function deleteEvidence(controlId, evidenceId) {
+  if (!confirm('Remove this evidence item?')) return;
+  try {
+    const r = await fetch('/api/evidence?id=' + evidenceId + '&controlId=' + controlId, {
+      method: 'DELETE', headers: authHeaders(),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Failed');
+    toast('Evidence removed', 'success');
+    await loadEvidenceForControl(controlId);
+    if (d.newScore !== undefined) updateScoreQuick(d.newScore);
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+async function toggleNA(controlId, checked) {
+  try {
+    const r = await fetch('/api/controls', {
+      method: 'PATCH',
+      headers: authHeaders(),
+      body: JSON.stringify({ controlId, notApplicable: checked }),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Failed');
+    const ctrl = ST.controls.find(c => c.id === controlId);
+    if (ctrl) ctrl.status = checked ? 'NOT_APPLICABLE' : 'NOT_STARTED';
+    toast(checked ? 'Marked as Not Applicable' : 'Restored', 'success');
+    if (d.newScore !== undefined) updateScoreQuick(d.newScore);
+    // Re-render
+    const filter = ST.activeFilter;
+    const filtered = filter === 'ALL' ? ST.controls : ST.controls.filter(c => c.status === filter);
+    const grouped = {};
+    for (const c of filtered) {
+      if (!grouped[c.category]) grouped[c.category] = [];
+      grouped[c.category].push(c);
+    }
+    renderControls(grouped);
+    if (ST.expandedControl) loadEvidenceForControl(ST.expandedControl);
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+function updateScoreQuick(score) {
+  const el = document.getElementById('scoreNum');
+  if (el) el.textContent = score + '%';
+}
+
+// ── Integrations ──────────────────────────────────────────────
+
+async function loadIntegrations() {
+  if (!ST.user) return;
+  const el = document.getElementById('integrationsList');
+  try {
+    const r = await fetch('/api/integrations', { headers: authHeaders() });
+    if (!r.ok) throw new Error('Failed to load integrations');
+    const d = await r.json();
+    ST.integrations = d.integrations || {};
+    renderIntegrations(d.integrations || {});
+  } catch (err) {
+    el.innerHTML = '<div style="color:var(--red);font-size:13px">' + esc(err.message) + '</div>';
+  }
+}
+
+function renderIntegrations(integrations) {
+  const el = document.getElementById('integrationsList');
+  const intList = [integrations.github, integrations.googleDrive, integrations.aws].filter(Boolean);
+  el.innerHTML = intList.map(int => {
+    const icons = { github: '⌥', googleDrive: '▲', aws: '☁' };
+    const connected = int.status === 'CONNECTED';
+    const comingSoon = int.comingSoon;
+
+    let statusEl = '';
+    if (comingSoon) statusEl = '<span class="coming-soon-pill">COMING SOON</span>';
+    else if (connected) statusEl = '<span class="connected-pill">● CONNECTED</span>';
+
+    let actionBtn = '';
+    if (!comingSoon) {
+      if (connected) {
+        actionBtn = '<button class="btn btn-secondary btn-sm" onclick="disconnectInt(\'' + int.id + '\')">Disconnect</button>';
+        if (int.id === 'github') actionBtn += ' <button class="btn btn-primary btn-sm" onclick="rescanGitHub()">↺ Rescan</button>';
+      } else {
+        if (int.id === 'github') actionBtn = '<button class="btn btn-primary btn-sm" onclick="connectGitHub()">Connect</button>';
+        if (int.id === 'googleDrive') actionBtn = '<button class="btn btn-primary btn-sm" onclick="connectGoogleDrive()">Connect</button>';
+      }
+    }
+
+    let metaStr = '';
+    if (connected && int.scannedAt) {
+      const dt = new Date(int.scannedAt);
+      metaStr = 'Last scan: ' + dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      if (int.controlsAutoFilled) metaStr += ' · ' + int.controlsAutoFilled + ' controls auto-filled';
+    }
+    if (connected && int.login) metaStr = '@' + int.login + (metaStr ? ' · ' + metaStr : '');
+    if (connected && int.email) metaStr = int.email + (metaStr ? ' · ' + metaStr : '');
+
+    return '<div class="int-tile">' +
+      '<div class="int-icon">' + (icons[int.id] || '●') + '</div>' +
+      '<div class="int-info">' +
+      '<div class="int-name">' + esc(int.name) + '</div>' +
+      '<div class="int-desc">' + esc(int.description) + '</div>' +
+      (metaStr ? '<div class="int-meta">' + esc(metaStr) + '</div>' : '') +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">' +
+      statusEl + actionBtn +
+      '</div></div>';
+  }).join('');
+}
+
+async function connectGitHub() {
+  // GitHub is connected if user has a githubToken
+  if (!ST.user?.githubToken) {
+    location.href = '/api/auth?provider=github';
+    return;
+  }
+  try {
+    const r = await fetch('/api/integrations', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ provider: 'github' }),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error);
+    toast('GitHub connected', 'success');
+    loadIntegrations();
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+async function rescanGitHub() {
+  await triggerScan();
+  // Update last scan in integrations
+  const intRaw = await fetch('/api/integrations', { headers: authHeaders() });
+  if (intRaw.ok) {
+    const d = await intRaw.json();
+    renderIntegrations(d.integrations || {});
+  }
+}
+
+function connectGoogleDrive() {
+  location.href = '/api/auth?provider=google';
+}
+
+async function disconnectInt(provider) {
+  if (!confirm('Disconnect ' + provider + '? This will reset auto-detected controls from this source.')) return;
+  try {
+    const r = await fetch('/api/integrations?provider=' + provider, {
+      method: 'DELETE', headers: authHeaders(),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error);
+    toast('Disconnected', 'success');
+    loadIntegrations();
+    loadScore();
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+// ── Share ─────────────────────────────────────────────────────
+
+function openShareModal() { document.getElementById('shareModal').style.display = 'flex'; }
+function closeShareModal() {
+  document.getElementById('shareModal').style.display = 'none';
+  document.getElementById('shareUrlBox').style.display = 'none';
+  document.getElementById('shareBtnText').textContent = '🔗 Generate Link';
+}
+
+async function createShareLink() {
+  const btn = document.getElementById('shareBtnText');
+  btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const r = await fetch('/api/share', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ companyName: ST.user?.name || 'Company', ttlDays: 30 }),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error);
+    const box = document.getElementById('shareUrlBox');
+    const urlEl = document.getElementById('shareUrlText');
+    urlEl.textContent = d.shareUrl;
+    box.style.display = 'block';
+    navigator.clipboard?.writeText(d.shareUrl).catch(() => {});
+  } catch (err) { toast(err.message, 'error'); }
+  btn.textContent = '🔗 Generate Link';
+}
+
+function copyShareUrl() {
+  const url = document.getElementById('shareUrlText')?.textContent;
+  if (url) { navigator.clipboard?.writeText(url).catch(() => {}); toast('Link copied', 'success'); }
+}
+
+// ── Public share view ─────────────────────────────────────────
+
+async function loadPublicShare(token) {
+  document.getElementById('hdr').style.display = 'none';
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+  const pg = document.getElementById('pg-dashboard');
+  pg.classList.add('on');
+  document.getElementById('scanBtn').style.display = 'none';
+  document.getElementById('reportBtnText').closest('button').style.display = 'none';
+  document.querySelectorAll('.btn-ghost').forEach(b => b.style.display = 'none');
+
+  try {
+    const r = await fetch('/api/share?token=' + encodeURIComponent(token));
+    if (!r.ok) {
+      document.getElementById('scoreNum').textContent = 'Invalid';
+      return;
+    }
+    const d = await r.json();
+    renderScorePanel(d);
+    renderCategoryBars(d.categoryBreakdown);
+    document.getElementById('topGapsList').innerHTML = '<div style="font-size:12px;color:var(--muted)">This is a read-only auditor view.</div>';
+    if (d.report) {
+      const sec = document.getElementById('latestReportSection');
+      const cont = document.getElementById('latestReportContent');
+      sec.style.display = 'block';
+      cont.innerHTML = '<div class="report-summary">' + esc(d.report.executiveSummary || '') + '</div>' +
+        '<div style="font-size:11px;color:var(--muted);margin-top:8px;font-family:var(--mono)">Est. time to audit ready: ' + esc(d.report.estimatedTimeToAuditReady || '—') + '</div>';
+    }
+  } catch (err) { console.error('Public share error:', err); }
+}
+
+// ── Utilities ─────────────────────────────────────────────────
+
+function esc(s) {
+  if (!s) return '';
+  const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML;
+}
+
+let _toastTimer;
+function toast(msg, type) {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  if (_toastTimer) clearTimeout(_toastTimer);
+  const el = document.createElement('div');
+  el.className = 'toast toast-' + (type || 'success');
+  el.textContent = msg;
+  document.body.appendChild(el);
+  _toastTimer = setTimeout(() => el.remove(), 3200);
+}
+
+// ── Login page grid animation ─────────────────────────────────
+
+(function() {
+  const GRID = 40;
+  const BASE_COL = 'rgba(37,99,235,0.13)';
+  const HOT_COL  = 'rgba(37,99,235,0.6)';
+  const RADIUS = 90;
+  let ox = 0, oy = 0, animating = false;
+
+  function drawGrid(canvas, color, offX, offY) {
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 0.8;
+    const sx = (offX % GRID) - GRID;
+    const sy = (offY % GRID) - GRID;
+    ctx.beginPath();
+    for (let x = sx; x < W + GRID; x += GRID) { ctx.moveTo(x, 0); ctx.lineTo(x, H); }
+    for (let y = sy; y < H + GRID; y += GRID) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
+    ctx.stroke();
+  }
+
+  function lpResize() {
+    const pg = document.getElementById('pg-login');
+    if (!pg) return;
+    const W = pg.offsetWidth, H = pg.offsetHeight;
+    ['lpGridBase','lpGridHot'].forEach(id => {
+      const c = document.getElementById(id);
+      if (c) { c.width = W; c.height = H; }
+    });
+  }
+
+  function lpAnimate() {
+    ox = (ox + 0.4) % GRID;
+    oy = (oy + 0.4) % GRID;
+    drawGrid(document.getElementById('lpGridBase'), BASE_COL, ox, oy);
+    drawGrid(document.getElementById('lpGridHot'),  HOT_COL,  ox, oy);
+    requestAnimationFrame(lpAnimate);
+  }
+
+  function initLoginGrid() {
+    const pg = document.getElementById('pg-login');
+    const spot = document.getElementById('lpGridSpot');
+    if (!pg || !spot) return;
+
+    lpResize();
+    if (!animating) { animating = true; lpAnimate(); }
+
+    pg.addEventListener('mousemove', e => {
+      const r = pg.getBoundingClientRect();
+      const x = e.clientX - r.left;
+      const y = e.clientY - r.top;
+      const mask = `radial-gradient(${RADIUS}px circle at ${x}px ${y}px, black 0%, transparent 100%)`;
+      spot.style.webkitMaskImage = mask;
+      spot.style.maskImage = mask;
+      spot.style.opacity = '1';
+    });
+
+    pg.addEventListener('mouseleave', () => { spot.style.opacity = '0'; });
+    window.addEventListener('resize', lpResize);
+  }
+
+  // Init when login page becomes visible
+  const origNav = window.nav;
+  window.nav = function(page) {
+    origNav(page);
+    if (page === 'login') setTimeout(initLoginGrid, 30);
+  };
+
+  // Also init on page load if starting on login
+  window.addEventListener('load', () => {
+    if (document.getElementById('pg-login')?.classList.contains('on')) {
+      initLoginGrid();
+    }
+  });
+})();
+
+// ── Init ──────────────────────────────────────────────────────
+
+loadUser();
+handleCallback();
+if (ST.user) {
+  updateHeader();
+  nav('dashboard');
+} else {
+  nav('login');
+  setTimeout(() => {
+    const pg = document.getElementById('pg-login');
+    const spot = document.getElementById('lpGridSpot');
+    if (!pg || !spot) return;
+    const W = pg.offsetWidth, H = pg.offsetHeight;
+    ['lpGridBase','lpGridHot'].forEach(id => {
+      const c = document.getElementById(id);
+      if (c) { c.width = W; c.height = H; }
+    });
+  }, 50);
+}
+</script>
+</body>
+</html>
