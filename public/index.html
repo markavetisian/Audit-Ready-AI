@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://js.stripe.com/v3/"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -509,23 +510,67 @@ header{
   .dropdown{min-width:240px;right:-10px}
 }
 
-/* ── Pricing modal ───────────────────────── */
-.plan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
-@media(max-width:600px){.plan-grid{grid-template-columns:1fr}}
-.plan-card{background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;transition:border-color .15s,transform .12s,box-shadow .15s;position:relative}
-.plan-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 4px 16px rgba(37,99,235,.1)}
-.plan-card.selected{border-color:var(--accent);background:#eff6ff}
-.plan-popular{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:9px;font-weight:700;padding:2px 10px;border-radius:10px;white-space:nowrap;letter-spacing:.06em}
-.plan-name{font-size:13px;font-weight:600;margin-bottom:4px}
-.plan-price{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--accent);line-height:1;letter-spacing:-.03em}
-.plan-cycle{font-size:10px;color:var(--muted);margin-bottom:10px}
-.plan-feats{list-style:none;display:flex;flex-direction:column;gap:4px}
-.plan-feats li{font-size:11px;color:var(--muted);display:flex;align-items:flex-start;gap:5px;line-height:1.4}
-.plan-feats li::before{content:"✓";color:var(--green);flex-shrink:0;font-weight:700}
-.pay-btn{width:100%;padding:11px;border-radius:var(--r);background:var(--accent);color:#fff;font-size:14px;font-weight:600;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .15s}
-.pay-btn:hover{opacity:.9}
+/* ── Pricing modal redesign ──────────────── */
+.pm-overlay{position:fixed;inset:0;background:rgba(15,23,42,.55);backdrop-filter:blur(4px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto}
+.pm-box{background:#fff;border-radius:20px;padding:36px 32px 28px;max-width:860px;width:100%;box-shadow:0 24px 80px rgba(15,23,42,.18);position:relative;max-height:calc(100dvh - 32px);overflow-y:auto}
+.pm-close{position:absolute;top:14px;right:14px;background:none;border:none;font-size:18px;cursor:pointer;color:#94a3b8;padding:4px 8px;border-radius:6px;line-height:1}
+.pm-close:hover{background:#f1f5f9;color:#0f172a}
+.pm-title{font-size:24px;font-weight:800;text-align:center;color:#0f172a;letter-spacing:-.02em;margin-bottom:6px}
+.pm-sub{font-size:13px;color:#64748b;text-align:center;margin-bottom:22px;line-height:1.5}
+/* toggle */
+.pm-toggle{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:28px}
+.pm-toggle-lbl{font-size:13px;font-weight:500;color:#94a3b8;transition:color .15s}
+.pm-toggle-lbl.on{color:#0f172a;font-weight:600}
+.pm-sw-wrap{width:44px;height:24px;position:relative;cursor:pointer;flex-shrink:0}
+.pm-sw-track{position:absolute;inset:0;background:#e2e8f0;border-radius:12px;transition:background .2s}
+.pm-sw-wrap.active .pm-sw-track{background:#2563eb}
+.pm-sw-thumb{position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.18);transition:transform .2s;pointer-events:none}
+.pm-sw-wrap.active .pm-sw-thumb{transform:translateX(20px)}
+.pm-save{background:#dcfce7;color:#15803d;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;white-space:nowrap}
+/* cards grid */
+.pm-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;align-items:center}
+.pm-card{background:#fff;border:1.5px solid #e2e8f0;border-radius:18px;padding:24px 18px 20px;position:relative;display:flex;flex-direction:column;transition:box-shadow .2s,border-color .2s,transform .5s cubic-bezier(.34,1.56,.64,1)}
+.pm-card-side{transform:scale(.93) translateY(10px);opacity:.9}
+.pm-card-center{border:2px solid #2563eb;box-shadow:0 12px 40px rgba(37,99,235,.16);transform:translateY(-10px) scale(1.02);z-index:1}
+.pm-card:hover:not(.pm-card-center){border-color:#93c5fd;box-shadow:0 6px 24px rgba(37,99,235,.1)}
+/* popular badge — top-right corner */
+.pm-popular{position:absolute;top:0;right:0;background:#2563eb;color:#fff;font-size:10px;font-weight:700;padding:5px 12px 5px 14px;border-radius:0 16px 0 14px;display:flex;align-items:center;gap:5px;letter-spacing:.04em}
+/* card content */
+.pm-plan-name{font-size:11px;font-weight:700;color:#64748b;letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px;text-align:center}
+.pm-price-row{display:flex;align-items:baseline;justify-content:center;gap:4px;margin-bottom:2px}
+.pm-price-num{font-size:44px;font-weight:800;color:#0f172a;letter-spacing:-.03em;transition:opacity .12s,transform .12s;display:inline-block}
+.pm-price-num.flip{opacity:0;transform:translateY(8px)}
+.pm-price-per{font-size:13px;color:#64748b;font-weight:500}
+.pm-billing-note{font-size:11px;color:#94a3b8;text-align:center;min-height:16px;margin-bottom:16px}
+.pm-annual-badge{display:inline-block;background:#fef9c3;color:#854d0e;border:1px solid #fde68a;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:4px;vertical-align:middle}
+.pm-feats{list-style:none;display:flex;flex-direction:column;gap:7px;margin-bottom:18px;flex:1}
+.pm-feats li{font-size:11.5px;color:#374151;display:flex;align-items:flex-start;gap:8px;line-height:1.45;text-align:left}
+.pm-check{font-size:12.5px;color:#374151;display:flex;align-items:flex-start;gap:8px;line-height:1.45}
+.pm-check::before{content:"✓";color:#2563eb;font-weight:700;flex-shrink:0}
+.pm-card.pm-selected{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+.pm-desc{font-size:11px;color:#94a3b8;line-height:1.5;text-align:center;padding-top:10px;border-top:1px solid #f1f5f9;margin-top:auto}
+.pm-cta{width:100%;padding:11px 0;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;transition:background .15s,color .15s,border-color .15s;margin-bottom:0;margin-top:auto}
+.pm-cta-outline{border:1.5px solid #2563eb;background:#fff;color:#2563eb}
+.pm-cta-outline:hover{background:#2563eb;color:#fff}
+.pm-cta-solid{border:1.5px solid #2563eb;background:#2563eb;color:#fff}
+.pm-cta-solid:hover{background:#1d4ed8;border-color:#1d4ed8}
+/* pay section */
+.pm-pay-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pay-btn{width:100%;padding:12px;border-radius:10px;background:#2563eb;color:#fff;font-size:14px;font-weight:700;border:none;cursor:pointer;transition:opacity .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+.pay-btn:hover{opacity:.88}
 .pay-btn:disabled{opacity:.4;cursor:not-allowed}
-.pay-secure{font-size:11px;color:var(--muted);text-align:center;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:4px}
+.pay-secure{font-size:11px;color:#94a3b8;text-align:center;margin-top:8px}
+.pm-later{display:block;width:100%;padding:10px;margin-top:10px;background:none;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;color:#64748b;cursor:pointer;transition:border-color .15s}
+.pm-later:hover{border-color:#94a3b8}
+.pm-free-note{text-align:center;font-size:11px;color:#94a3b8;margin-top:8px}
+@media(max-width:680px){
+  .pm-box{padding:20px 14px 18px;border-radius:16px}
+  .pm-cards{grid-template-columns:1fr;gap:10px}
+  .pm-card-side{transform:none;opacity:1}
+  .pm-card-center{transform:none;box-shadow:0 4px 20px rgba(37,99,235,.12)}
+  .pm-title{font-size:20px}
+  .pm-price-num{font-size:36px}
+}
 .upgrade-btn{width:100%;padding:9px 16px;border-radius:var(--r);background:linear-gradient(135deg,var(--accent),#1d4ed8);color:#fff;font-size:12px;font-weight:600;border:none;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .15s}
 .upgrade-btn:hover{opacity:.9}
 /* ── Landing page sections ─────────── */
@@ -1116,82 +1161,100 @@ header{
 
 
 <!-- ── Pricing Modal ─────────────────────────────────────────── -->
-<div id="pricingModal" style="display:none" class="modal-overlay" onclick="if(event.target===this)closePricingModal()">
-  <div class="modal-box" style="max-width:680px">
-    <h3 style="margin-bottom:4px">Choose Your Plan</h3>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:16px">From first readiness check to live audit — pick the stage that matches yours.</p>
-    <div class="plan-grid">
+<div id="pricingModal" style="display:none" class="pm-overlay" onclick="if(event.target===this)closePricingModal()">
+  <div class="pm-box">
+    <button onclick="closePricingModal()" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:#94a3b8;line-height:1">✕</button>
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-size:22px;font-weight:800;color:#0f172a;margin-bottom:4px">Simple, transparent pricing</div>
+      <div style="font-size:14px;color:#64748b">From first readiness check to live audit — pick your stage.</div>
+      <div style="display:inline-flex;align-items:center;gap:10px;margin-top:16px;background:#f1f5f9;border-radius:50px;padding:4px 6px">
+        <span id="pmLabelMonthly" style="font-size:13px;font-weight:600;padding:4px 14px;border-radius:50px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.1);color:#0f172a;cursor:pointer" onclick="setPmBilling(false)">Monthly</span>
+        <span id="pmLabelAnnual" style="font-size:13px;font-weight:600;padding:4px 14px;border-radius:50px;color:#64748b;cursor:pointer" onclick="setPmBilling(true)">Annual <span style="color:#16a34a;font-size:11px;font-weight:700">Save 17%</span></span>
+      </div>
+    </div>
 
+    <div class="pm-cards">
       <!-- Starter -->
-      <div class="plan-card" id="plan-starter" onclick="selectPlan('starter','price_1ThZIZFQiRRnlhwuYRI3MfNX',3000)">
-        <div class="plan-name">Starter</div>
-        <div class="plan-price">$250</div>
-        <div class="plan-cycle">/month</div>
-        <div style="font-size:10px;background:#fef9c3;color:#854d0e;border:1px solid #fde68a;border-radius:4px;padding:3px 7px;display:inline-block;margin-bottom:10px;font-weight:600">$3,000 billed annually</div>
-        <ul class="plan-feats">
-          <li>1 integration (GitHub or AWS)</li>
-          <li>Full 23-control TSC mapping</li>
-          <li>AI policy document generator</li>
-          <li>Incident Response Plan draft</li>
-          <li>1 exportable Audit Readiness PDF</li>
-          <li>Score dashboard + gap tracker</li>
+      <div class="pm-card pm-card-side" id="pm-starter" onclick="selectPlan('starter','price_1ThZIZFQiRRnlhwuYRI3MfNX',250)">
+        <div style="font-size:13px;font-weight:700;color:#64748b;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">Starter</div>
+        <div style="display:flex;align-items:flex-end;gap:2px;margin-bottom:4px">
+          <span style="font-size:20px;font-weight:700;color:#0f172a;align-self:flex-start;margin-top:10px">$</span>
+          <span class="pm-price-num" id="pm-price-starter">250</span>
+          <span style="font-size:14px;color:#64748b;margin-bottom:8px">/mo</span>
+        </div>
+        <div id="pm-annual-note-starter" style="font-size:11px;color:#16a34a;font-weight:600;min-height:16px;margin-bottom:14px"></div>
+        <div style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5">Pre-seed startups closing their first enterprise deal.</div>
+        <ul style="list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:8px">
+          <li class="pm-check">1 integration (GitHub or AWS)</li>
+          <li class="pm-check">Full 50-control TSC mapping</li>
+          <li class="pm-check">AI policy document generator</li>
+          <li class="pm-check">1 exportable Audit Readiness PDF</li>
+          <li class="pm-check">Score dashboard + gap tracker</li>
         </ul>
-        <div style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5">Best for pre-seed startups (2–10 people) who need a readiness report immediately for an enterprise deal.</div>
+        <button class="pm-cta pm-cta-outline">Get started</button>
       </div>
 
-      <!-- Growth — most popular -->
-      <div class="plan-card" id="plan-growth" onclick="selectPlan('growth','price_1ThZLSFQiRRnlhwueStdff4L',500)" style="border-color:var(--accent)">
-        <div class="plan-popular">MOST POPULAR</div>
-        <div class="plan-name">Growth</div>
-        <div class="plan-price">$500</div>
-        <div class="plan-cycle">/month · cancel anytime</div>
-        <ul class="plan-feats" style="margin-top:10px">
-          <li>Unlimited integrations (GitHub, AWS/GCP, Google Drive, Slack)</li>
-          <li>Continuous scanning every 2 hours</li>
-          <li>Live Trust Page with real-time control status</li>
-          <li>Share link for enterprise procurement teams</li>
-          <li>AI audit report generation</li>
-          <li>Evidence Locker + Vendor Risk Tracker</li>
-          <li>Renewal reminders & expiry alerts</li>
+      <!-- Growth — center / popular -->
+      <div class="pm-card pm-card-center" id="pm-growth" onclick="selectPlan('growth','price_1ThZLSFQiRRnlhwueStdff4L',500)">
+        <div class="pm-popular">⭐ Most Popular</div>
+        <div style="font-size:13px;font-weight:700;color:#2563eb;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">Growth</div>
+        <div style="display:flex;align-items:flex-end;gap:2px;margin-bottom:4px">
+          <span style="font-size:20px;font-weight:700;color:#0f172a;align-self:flex-start;margin-top:10px">$</span>
+          <span class="pm-price-num" id="pm-price-growth">500</span>
+          <span style="font-size:14px;color:#64748b;margin-bottom:8px">/mo</span>
+        </div>
+        <div id="pm-annual-note-growth" style="font-size:11px;color:#16a34a;font-weight:600;min-height:16px;margin-bottom:14px"></div>
+        <div style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5">Seed-stage teams closing multiple enterprise deals at once.</div>
+        <ul style="list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:8px">
+          <li class="pm-check">Unlimited integrations (GitHub, AWS, GCP, Slack)</li>
+          <li class="pm-check">Continuous scanning every 2 hours</li>
+          <li class="pm-check">Live Trust Page + share link</li>
+          <li class="pm-check">AI audit report generation</li>
+          <li class="pm-check">Evidence Locker + Vendor Risk Tracker</li>
+          <li class="pm-check">Renewal reminders & expiry alerts</li>
         </ul>
-        <div style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5">Best for Seed-stage startups (10–30 people) closing multiple enterprise deals at once.</div>
+        <button class="pm-cta pm-cta-solid">Get started</button>
       </div>
 
       <!-- Audit-Ready -->
-      <div class="plan-card" id="plan-enterprise" onclick="selectPlan('enterprise','price_1ThZNGFQiRRnlhwuH23alwzB',1000)">
-        <div class="plan-name">Audit-Ready</div>
-        <div class="plan-price">$1,000</div>
-        <div class="plan-cycle">/month · cancel anytime</div>
-        <ul class="plan-feats" style="margin-top:10px">
-          <li>Everything in Growth</li>
-          <li>Dedicated auditor dashboard login for your CPA firm</li>
-          <li>AI Gap Remediation — Slack alerts when a control breaks</li>
-          <li>Real-time engineer notifications (e.g. offboarding gaps)</li>
-          <li>White-label audit-ready export</li>
-          <li>Dedicated account manager</li>
-          <li>SLA + priority support</li>
-        </ul>
-        <div style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5">Best for Series A companies (30+ people) undergoing an active audit right now.</div>
-      </div>
-
-    </div>
-    <div id="paySection" style="display:none">
-      <div style="background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
-        <div>
-          <div id="payPlanName" style="font-size:13px;font-weight:600"></div>
-          <div id="payBillingNote" style="font-size:11px;color:var(--muted)">Billed monthly · Cancel anytime</div>
+      <div class="pm-card pm-card-side" id="pm-enterprise" onclick="selectPlan('enterprise','price_1ThZNGFQiRRnlhwuH23alwzB',1000)">
+        <div style="font-size:13px;font-weight:700;color:#64748b;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">Audit-Ready</div>
+        <div style="display:flex;align-items:flex-end;gap:2px;margin-bottom:4px">
+          <span style="font-size:20px;font-weight:700;color:#0f172a;align-self:flex-start;margin-top:10px">$</span>
+          <span class="pm-price-num" id="pm-price-enterprise">1,000</span>
+          <span style="font-size:14px;color:#64748b;margin-bottom:8px">/mo</span>
         </div>
-        <div style="font-family:var(--mono);font-size:20px;font-weight:700;color:var(--accent)" id="payPlanPrice"></div>
+        <div id="pm-annual-note-enterprise" style="font-size:11px;color:#16a34a;font-weight:600;min-height:16px;margin-bottom:14px"></div>
+        <div style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5">Series A companies undergoing an active audit right now.</div>
+        <ul style="list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:8px">
+          <li class="pm-check">Everything in Growth</li>
+          <li class="pm-check">Dedicated auditor dashboard login</li>
+          <li class="pm-check">AI Gap Remediation + Slack alerts</li>
+          <li class="pm-check">White-label audit-ready export</li>
+          <li class="pm-check">Dedicated account manager + SLA</li>
+        </ul>
+        <button class="pm-cta pm-cta-outline">Get started</button>
       </div>
-      <div id="stripeCardEl" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:13px;margin-bottom:10px;min-height:46px"></div>
-      <div id="payError" style="font-size:12px;color:var(--red);margin-bottom:8px;min-height:16px"></div>
+    </div>
+
+    <!-- Stripe payment section -->
+    <div id="paySection" style="display:none;margin-top:16px">
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div id="payPlanName" style="font-size:13px;font-weight:600;color:#0f172a"></div>
+          <div id="payBillingNote" style="font-size:11px;color:#64748b">Billed monthly · Cancel anytime</div>
+        </div>
+        <div style="font-size:20px;font-weight:700;color:#2563eb" id="payPlanPrice"></div>
+      </div>
+      <div id="stripeCardEl" style="background:#fff;border:1.5px solid #e2e8f0;border-radius:8px;padding:13px;margin-bottom:10px;min-height:46px"></div>
+      <div id="payError" style="font-size:12px;color:#ef4444;margin-bottom:8px;min-height:16px"></div>
       <button class="pay-btn" id="paySubmitBtn" onclick="submitPricingPayment()">
         <span id="payBtnText">🔒 Pay & Activate</span>
       </button>
       <div class="pay-secure">🔒 Secured by Stripe · 256-bit encryption · Cancel anytime</div>
     </div>
-    <button class="btn btn-secondary btn-full" style="margin-top:10px" onclick="closePricingModal()">Maybe later</button>
-    <div style="text-align:center;margin-top:8px;font-size:11px;color:var(--muted)">Free (Sandbox) includes: manual control tracking, score dashboard, and 1 scan per hour. No credit card required.</div>
+
+    <div class="pm-free-note">Free sandbox: manual tracking, score dashboard, 1 scan/hour. No credit card required.</div>
   </div>
 </div>
 <!-- SOC 2 Education Modal -->
@@ -2332,16 +2395,59 @@ function initStripe() {
   _stripe = Stripe('pk_live_51TcCwgFQiRRnlhwuyEfgiRAbqRVPw6k842SX44K2ERlIZh6elyYAEsCi9Ub4np465NvRNAwuhO73Owz6YqUV9Kok00NmnGCsLm');
 }
 
+let _pmAnnual = false;
+const PM_PRICES = {
+  starter:    { monthly: 250,   annual: 208  },
+  growth:     { monthly: 500,   annual: 416  },
+  enterprise: { monthly: 1000,  annual: 833  },
+};
+
+function setPmBilling(annual) {
+  _pmAnnual = annual;
+  document.getElementById('pmLabelMonthly').style.cssText = annual
+    ? 'font-size:13px;font-weight:600;padding:4px 14px;border-radius:50px;color:#64748b;cursor:pointer'
+    : 'font-size:13px;font-weight:600;padding:4px 14px;border-radius:50px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.1);color:#0f172a;cursor:pointer';
+  document.getElementById('pmLabelAnnual').style.cssText = annual
+    ? 'font-size:13px;font-weight:600;padding:4px 14px;border-radius:50px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.1);color:#0f172a;cursor:pointer'
+    : 'font-size:13px;font-weight:600;padding:4px 14px;border-radius:50px;color:#64748b;cursor:pointer';
+
+  ['starter','growth','enterprise'].forEach(plan => {
+    const el = document.getElementById('pm-price-' + plan);
+    const note = document.getElementById('pm-annual-note-' + plan);
+    if (!el) return;
+    el.classList.add('flip');
+    setTimeout(() => {
+      const price = annual ? PM_PRICES[plan].annual : PM_PRICES[plan].monthly;
+      el.textContent = price.toLocaleString();
+      el.classList.remove('flip');
+    }, 120);
+    if (note) note.textContent = annual ? 'Billed $' + (PM_PRICES[plan].annual * 12).toLocaleString() + '/yr' : '';
+  });
+
+  if (annual && typeof confetti === 'function') {
+    confetti({ particleCount: 80, spread: 60, origin: { y: 0.4 }, colors: ['#2563eb','#16a34a','#f59e0b'] });
+  }
+
+  // Update pay section if plan already selected
+  if (_selectedPlan) {
+    const price = annual ? PM_PRICES[_selectedPlan.name].annual : PM_PRICES[_selectedPlan.name].monthly;
+    _selectedPlan.amount = price;
+    document.getElementById('payPlanPrice').textContent = '$' + price + '/mo';
+    document.getElementById('payBillingNote').textContent = annual
+      ? 'Billed annually · Cancel anytime'
+      : 'Billed monthly · Cancel anytime';
+  }
+}
+
 function openPricingModal(preselect) {
   initStripe();
+  _pmAnnual = false;
+  setPmBilling(false);
   document.getElementById('pricingModal').style.display = 'flex';
   document.getElementById('paySection').style.display = 'none';
   document.getElementById('payError').textContent = '';
   _selectedPlan = null;
-  document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
-  const highlight = preselect || 'growth';
-  const card = document.getElementById('plan-' + highlight);
-  if (card) card.classList.add('selected');
+  document.querySelectorAll('.pm-card').forEach(c => c.classList.remove('pm-selected'));
 }
 
 function closePricingModal() {
@@ -2350,29 +2456,34 @@ function closePricingModal() {
 }
 
 function selectPlan(name, priceId, amount) {
-  _selectedPlan = { name, priceId, amount };
-  document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
-  document.getElementById('plan-' + name).classList.add('selected');
+  const price = _pmAnnual ? PM_PRICES[name].annual : PM_PRICES[name].monthly;
+  _selectedPlan = { name, priceId, amount: price };
+  document.querySelectorAll('.pm-card').forEach(c => c.classList.remove('pm-selected'));
+  const card = document.getElementById('pm-' + name);
+  if (card) card.classList.add('pm-selected');
 
   const paySection = document.getElementById('paySection');
   paySection.style.display = 'block';
   document.getElementById('payPlanName').textContent = name.charAt(0).toUpperCase() + name.slice(1) + ' Plan';
-  document.getElementById('payPlanPrice').textContent = '$' + amount + '/mo';
+  document.getElementById('payPlanPrice').textContent = '$' + price + '/mo';
+  document.getElementById('payBillingNote').textContent = _pmAnnual
+    ? 'Billed annually · Cancel anytime'
+    : 'Billed monthly · Cancel anytime';
   document.getElementById('payError').textContent = '';
 
-  // Mount Stripe card element
   if (_stripeCard) { try { _stripeCard.destroy(); } catch(e){} }
   if (!_stripe) { initStripe(); }
   if (_stripe) {
     const elements = _stripe.elements({
       appearance: {
-        theme: 'night',
+        theme: 'stripe',
         variables: {
           colorPrimary: '#2563eb',
-          colorBackground: '#1c2030',
-          colorText: '#e8ecf4',
+          colorBackground: '#ffffff',
+          colorText: '#0f172a',
           colorDanger: '#ef4444',
           borderRadius: '8px',
+          fontSizeBase: '14px',
         }
       }
     });
@@ -2382,7 +2493,7 @@ function selectPlan(name, priceId, amount) {
       document.getElementById('payError').textContent = e.error ? e.error.message : '';
     });
   } else {
-    document.getElementById('stripeCardEl').innerHTML = '<div style="color:var(--red);font-size:12px">Stripe not loaded. Refresh and try again.</div>';
+    document.getElementById('stripeCardEl').innerHTML = '<div style="color:#ef4444;font-size:12px">Stripe not loaded. Refresh and try again.</div>';
   }
 }
 
