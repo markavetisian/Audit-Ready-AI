@@ -984,6 +984,20 @@ header{
       </div>
       <!-- Main -->
       <div class="dash-main">
+        <!-- Post-scan upsell — shown after scan when GitHub not connected and on sandbox -->
+        <div id="upsellCard" class="card" style="display:none;margin-bottom:16px;border-color:rgba(37,99,235,.3);background:linear-gradient(135deg,#eff6ff,#f8fafc)">
+          <div style="display:flex;align-items:flex-start;gap:14px">
+            <div style="font-size:28px;flex-shrink:0">🔍</div>
+            <div style="flex:1">
+              <div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:4px">Auto-detect 12+ controls instantly</div>
+              <div style="font-size:12px;color:#64748b;line-height:1.6;margin-bottom:12px">Connect GitHub, AWS, or Google Drive to automatically verify controls like access management, code review, and change management — no manual uploads needed.</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn btn-primary btn-sm" onclick="openPricingModal('growth');document.getElementById('upsellCard').style.display='none'">⚡ Upgrade to Growth</button>
+                <button class="btn btn-ghost btn-sm" onclick="document.getElementById('upsellCard').style.display='none'">Dismiss</button>
+              </div>
+            </div>
+          </div>
+        </div>
         <!-- Onboarding guide — shown only on first use -->
         <div id="onboardingCard" class="card" style="margin-bottom:16px;display:none;border-color:rgba(37,99,235,.25);background:linear-gradient(135deg,#eff6ff,#f8fafc)">
           <div class="section-heading" style="color:var(--accent)">GETTING STARTED</div>
@@ -1098,54 +1112,69 @@ header{
 
 <!-- ── Pricing Modal ─────────────────────────────────────────── -->
 <div id="pricingModal" style="display:none" class="modal-overlay" onclick="if(event.target===this)closePricingModal()">
-  <div class="modal-box" style="max-width:620px">
+  <div class="modal-box" style="max-width:680px">
     <h3 style="margin-bottom:4px">Choose Your Plan</h3>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Upgrade to unlock automated scanning, full reports, and auditor sharing.</p>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px">From first readiness check to live audit — pick the stage that matches yours.</p>
     <div class="plan-grid">
-      <div class="plan-card" id="plan-starter" onclick="selectPlan('starter','price_1ThZIZFQiRRnlhwuYRI3MfNX',24)">
+
+      <!-- Starter -->
+      <div class="plan-card" id="plan-starter" onclick="selectPlan('starter','REPLACE_STARTER_PRICE_ID',3000)">
         <div class="plan-name">Starter</div>
-        <div class="plan-price">$24</div>
+        <div class="plan-price">$250</div>
         <div class="plan-cycle">/month</div>
+        <div style="font-size:10px;background:#fef9c3;color:#854d0e;border:1px solid #fde68a;border-radius:4px;padding:3px 7px;display:inline-block;margin-bottom:10px;font-weight:600">$3,000 billed annually</div>
         <ul class="plan-feats">
-          <li>All 33 SOC 2 controls</li>
-          <li>Evidence uploads</li>
-          <li>Score dashboard</li>
-          <li>Basic report</li>
+          <li>1 integration (GitHub or AWS)</li>
+          <li>Full 23-control TSC mapping</li>
+          <li>AI policy document generator</li>
+          <li>Incident Response Plan draft</li>
+          <li>1 exportable Audit Readiness PDF</li>
+          <li>Score dashboard + gap tracker</li>
         </ul>
+        <div style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5">Best for pre-seed startups (2–10 people) who need a readiness report immediately for an enterprise deal.</div>
       </div>
-      <div class="plan-card" id="plan-growth" onclick="selectPlan('growth','price_1ThZLSFQiRRnlhwueStdff4L',299)" style="border-color:var(--accent)">
+
+      <!-- Growth — most popular -->
+      <div class="plan-card" id="plan-growth" onclick="selectPlan('growth','REPLACE_GROWTH_PRICE_ID',500)" style="border-color:var(--accent)">
         <div class="plan-popular">MOST POPULAR</div>
         <div class="plan-name">Growth</div>
-        <div class="plan-price">$299</div>
-        <div class="plan-cycle">/month</div>
-        <ul class="plan-feats">
-          <li>Everything in Starter</li>
-          <li>GitHub signals detection</li>
-          <li>Google Drive doc linking</li>
-          <li>AI audit report (Groq)</li>
-          <li>Auditor share link</li>
-          <li>Priority support</li>
+        <div class="plan-price">$500</div>
+        <div class="plan-cycle">/month · cancel anytime</div>
+        <ul class="plan-feats" style="margin-top:10px">
+          <li>Unlimited integrations (GitHub, AWS/GCP, Google Drive, Slack)</li>
+          <li>Continuous scanning every 2 hours</li>
+          <li>Live Trust Page with real-time control status</li>
+          <li>Share link for enterprise procurement teams</li>
+          <li>AI audit report generation</li>
+          <li>Evidence Locker + Vendor Risk Tracker</li>
+          <li>Renewal reminders & expiry alerts</li>
         </ul>
+        <div style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5">Best for Seed-stage startups (10–30 people) closing multiple enterprise deals at once.</div>
       </div>
-      <div class="plan-card" id="plan-enterprise" onclick="selectPlan('enterprise','price_1ThZNGFQiRRnlhwuH23alwzB',599)">
-        <div class="plan-name">Enterprise</div>
-        <div class="plan-price">$599</div>
-        <div class="plan-cycle">/month</div>
-        <ul class="plan-feats">
+
+      <!-- Audit-Ready -->
+      <div class="plan-card" id="plan-enterprise" onclick="selectPlan('enterprise','REPLACE_ENTERPRISE_PRICE_ID',1000)">
+        <div class="plan-name">Audit-Ready</div>
+        <div class="plan-price">$1,000</div>
+        <div class="plan-cycle">/month · cancel anytime</div>
+        <ul class="plan-feats" style="margin-top:10px">
           <li>Everything in Growth</li>
-          <li>AWS integration (coming Q2)</li>
-          <li>White-label ready reports</li>
+          <li>Dedicated auditor dashboard login for your CPA firm</li>
+          <li>AI Gap Remediation — Slack alerts when a control breaks</li>
+          <li>Real-time engineer notifications (e.g. offboarding gaps)</li>
+          <li>White-label audit-ready export</li>
           <li>Dedicated account manager</li>
-          <li>Custom controls</li>
-          <li>SLA guarantee</li>
+          <li>SLA + priority support</li>
         </ul>
+        <div style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5">Best for Series A companies (30+ people) undergoing an active audit right now.</div>
       </div>
+
     </div>
     <div id="paySection" style="display:none">
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+      <div style="background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
         <div>
           <div id="payPlanName" style="font-size:13px;font-weight:600"></div>
-          <div style="font-size:11px;color:var(--muted)">Billed monthly · Cancel anytime</div>
+          <div id="payBillingNote" style="font-size:11px;color:var(--muted)">Billed monthly · Cancel anytime</div>
         </div>
         <div style="font-family:var(--mono);font-size:20px;font-weight:700;color:var(--accent)" id="payPlanPrice"></div>
       </div>
@@ -1154,9 +1183,10 @@ header{
       <button class="pay-btn" id="paySubmitBtn" onclick="submitPricingPayment()">
         <span id="payBtnText">🔒 Pay & Activate</span>
       </button>
-      <div class="pay-secure">🔒 Secured by Stripe · 256-bit encryption</div>
+      <div class="pay-secure">🔒 Secured by Stripe · 256-bit encryption · Cancel anytime</div>
     </div>
-    <button class="btn btn-secondary btn-full" style="margin-top:10px" onclick="closePricingModal()">Cancel</button>
+    <button class="btn btn-secondary btn-full" style="margin-top:10px" onclick="closePricingModal()">Maybe later</button>
+    <div style="text-align:center;margin-top:8px;font-size:11px;color:var(--muted)">Free (Sandbox) includes: manual control tracking, score dashboard, and 1 scan per hour. No credit card required.</div>
   </div>
 </div>
 <!-- SOC 2 Education Modal -->
@@ -1708,6 +1738,11 @@ async function triggerScan() {
     const note = d.controlsAutoFilled > 0 ? d.controlsAutoFilled + ' signals detected — some require your confirmation' : '0 new signals detected';
     toast('Scan complete · ' + note, 'success');
     await loadScore();
+    // Show upsell if sandbox and GitHub not connected
+    if (ST.mode === 'sandbox' && !ST.user?.githubToken) {
+      const uc = document.getElementById('upsellCard');
+      if (uc) uc.style.display = 'block';
+    }
   } catch (err) {
     toast(err.message || 'Scan failed', 'error');
   }
@@ -1718,6 +1753,11 @@ async function triggerScan() {
 // ── Report ────────────────────────────────────────────────────
 
 async function generateReport() {
+  if (ST.mode === 'sandbox') {
+    openPricingModal('growth');
+    toast('Generate Report requires a paid plan', 'error');
+    return;
+  }
   const btn = document.getElementById('reportBtnText');
   btn.innerHTML = '<span class="spinner"></span> Generating...';
   try {
@@ -2208,15 +2248,16 @@ function initStripe() {
   _stripe = Stripe('pk_live_51TcCwgFQiRRnlhwuyEfgiRAbqRVPw6k842SX44K2ERlIZh6elyYAEsCi9Ub4np465NvRNAwuhO73Owz6YqUV9Kok00NmnGCsLm');
 }
 
-function openPricingModal() {
+function openPricingModal(preselect) {
   initStripe();
   document.getElementById('pricingModal').style.display = 'flex';
   document.getElementById('paySection').style.display = 'none';
   document.getElementById('payError').textContent = '';
   _selectedPlan = null;
-  // reset card borders
   document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
-  document.getElementById('plan-growth').classList.add('selected');
+  const highlight = preselect || 'growth';
+  const card = document.getElementById('plan-' + highlight);
+  if (card) card.classList.add('selected');
 }
 
 function closePricingModal() {
@@ -2539,6 +2580,11 @@ async function loadTrustLinks() {
 }
 
 async function createTrustLink() {
+  if (ST.mode === 'sandbox') {
+    openPricingModal('growth');
+    toast('Trust Page requires a paid plan', 'error');
+    return;
+  }
   try {
     const companyName = document.getElementById('tpCompanyName')?.value.trim() || _profile.companyName || 'Company';
     const r = await fetch('/api/share', {
