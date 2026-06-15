@@ -16,7 +16,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { Redis } from '@upstash/redis';
-import { trackUser, isBlocked, checkRateLimit, logError } from './telemetry.js';
+import { trackUser, isBlocked, checkRateLimit, logError } from './_telemetry.js';
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL,
