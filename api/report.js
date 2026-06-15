@@ -153,6 +153,46 @@ export default async function handler(req, res) {
 
   // ── GET: List reports or get single report ────────────────────
   if (req.method === 'GET') {
+    // ── GET ?type=policy&controlId=X — generate policy doc via Groq ──
+    if (req.query.type === 'policy') {
+      const { controlId } = req.query;
+      if (!controlId) return res.status(400).json({ error: 'Missing controlId' });
+      if (!process.env.GROQ_API_KEY) return res.status(500).json({ error: 'GROQ_API_KEY not configured' });
+      const cacheKey = `policy:${controlId}`;
+      const cached = await redis.get(cacheKey);
+      if (cached) return res.status(200).json(typeof cached === 'object' ? cached : JSON.parse(cached));
+      const POLICY_PROMPTS = {
+        'CC1.1': { name: 'Information Security Policy', guidance: 'Write a complete Information Security Policy for a SaaS startup. Include: purpose, scope, roles & responsibilities (CISO/CTO ownership), asset management, acceptable use, password requirements, incident reporting obligation, annual review requirement. Use professional legal language. Aim for 600-900 words.' },
+        'CC1.3': { name: 'Code of Conduct & Ethics Policy', guidance: 'Write a Code of Conduct and Ethics Policy for a SaaS company. Include: purpose, scope (all employees/contractors), expected behaviors, conflicts of interest, confidentiality, data handling ethics, reporting violations, consequences. 400-600 words.' },
+        'CC2.1': { name: 'Security Awareness Training Policy', guidance: 'Write a Security Awareness Training Policy. Include: purpose, mandatory training schedule (new hire + annual), topics covered (phishing, data handling, password hygiene, incident reporting), completion tracking, consequences for non-completion. 300-500 words.' },
+        'CC2.2': { name: 'Incident Communication Procedure', guidance: 'Write an Incident Communication Procedure. Include: purpose, incident severity levels (P1-P4), notification timelines per severity, customer notification within 72hrs for data breach, communication templates, post-incident report requirement. 500-700 words.' },
+        'CC3.1': { name: 'Risk Assessment Procedure', guidance: 'Write a Risk Assessment Procedure for a SaaS company. Include: purpose, scope, methodology (likelihood 1-5 × impact 1-5), risk categories, risk owner assignment, review frequency (annual + on major changes), risk treatment options. 500-700 words.' },
+        'CC5.3': { name: 'Data Retention & Disposal Policy', guidance: 'Write a Data Retention and Disposal Policy. Include: purpose, data categories and retention periods, secure disposal methods, disposal verification, customer data deletion on contract termination. 400-600 words.' },
+        'CC5.4': { name: 'Encryption Key Management Procedure', guidance: 'Write an Encryption Key Management Procedure. Include: purpose, key types in use (TLS, data-at-rest, API keys), key generation, storage (HSM or KMS), rotation schedule (annual, immediate on compromise), retirement and destruction. 400-600 words.' },
+        'CC5.5': { name: 'Data Classification Policy', guidance: 'Write a Data Classification Policy. Include: purpose, four classification levels (Public, Internal, Confidential, Restricted), definitions and examples, handling requirements per level, labeling requirements, employee responsibilities. 400-600 words.' },
+        'CC6.3': { name: 'Unique User Account Policy', guidance: 'Write a Unique User Account and Credential Management Policy. Include: purpose, prohibition of shared credentials, unique account requirement for all systems, naming convention, account provisioning, service account management, periodic review. 300-500 words.' },
+        'CC6.4': { name: 'Access Review Procedure', guidance: 'Write a Quarterly Access Review Procedure. Include: purpose, scope (all production systems and SaaS tools), review frequency, reviewer responsibilities, review steps, actions for inappropriate access, documentation requirements. 400-500 words.' },
+        'CC6.5': { name: 'Employee Offboarding Security Procedure', guidance: 'Write an Employee Offboarding Security Procedure. Include: purpose, trigger (termination, resignation, role change), 24-hour access revocation SLA, system checklist, responsible parties, verification step, documentation requirement. 400-600 words.' },
+        'CC6.7': { name: 'Password Policy', guidance: 'Write a Password Policy. Include: purpose, minimum requirements (16+ chars, complexity, no reuse of last 12), prohibition of sharing, MFA requirement, approved password manager, admin account requirements, breach response. 300-500 words.' },
+        'CC6.9': { name: 'Remote Access Security Policy', guidance: 'Write a Remote Access Security Policy. Include: purpose, approved access methods (VPN, zero-trust), MFA requirement, device requirements, prohibited activities (public WiFi without VPN), session timeout, logging. 300-500 words.' },
+        'CC7.3': { name: 'Incident Response Plan', guidance: 'Write a complete Incident Response Plan (IRP). Include: purpose, scope, severity definitions (P1-P4 with examples), response team roles (Incident Commander, Tech Lead, Communications Lead), step-by-step procedures (Detect → Contain → Eradicate → Recover → Review), communication matrix, post-incident review, 30-day remediation tracking. 800-1200 words.' },
+        'CC7.6': { name: 'System Performance & Capacity Management Policy', guidance: 'Write a System Performance and Capacity Management Policy. Include: purpose, monitoring requirements (CPU <80%, memory <85%, disk <80%), alerting SLAs, capacity planning review (quarterly), scaling procedures, performance baseline documentation. 300-400 words.' },
+        'CC8.6': { name: 'Rollback Procedure', guidance: 'Write a Deployment Rollback Procedure. Include: purpose, rollback triggers (error rate threshold, latency spike, failed health checks), decision authority, rollback steps, time objective (RTO: 15 minutes), post-rollback actions (incident report, root cause analysis). 400-600 words.' },
+        'CC9.1': { name: 'Vendor Risk Assessment Procedure', guidance: 'Write a Vendor Risk Assessment Procedure. Include: purpose, vendor tiers (Critical/Important/Standard), assessment requirements per tier, frequency (annual for Critical/Important), risk scoring, escalation for high-risk vendors. 500-700 words.' },
+        'CC9.3': { name: 'Business Continuity Plan', guidance: 'Write a Business Continuity Plan (BCP). Include: purpose, business impact analysis, RTO/RPO targets (RTO: 4 hours, RPO: 1 hour for critical systems), recovery team contact list, communication plan, alternate work procedures, annual test requirement. 600-900 words.' },
+        'CC9.7': { name: 'Employee Offboarding Checklist', guidance: 'Write a detailed Employee Offboarding Security Checklist template. Format as a numbered checklist with: access revocation items (10+ specific systems: GitHub, AWS, Google Workspace, Slack, production databases, CI/CD, monitoring tools, VPN), equipment return, knowledge transfer, exit interview security briefing, final sign-off block.' },
+      };
+      const policyInfo = POLICY_PROMPTS[controlId];
+      if (!policyInfo) return res.status(400).json({ error: 'No policy template available for ' + controlId });
+      try {
+        const prompt = `You are a SOC 2 compliance attorney and policy writer. Write the following policy document for a SaaS startup preparing for SOC 2 Type 1 audit.\n\nDocument: ${policyInfo.name}\nInstructions: ${policyInfo.guidance}\n\nFormat professionally:\n- Start with: [COMPANY NAME] - ${policyInfo.name}\n- Version: 1.0 | Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} | Owner: [OWNER ROLE]\n- Use clear section headers\n- End with: "Approved by: __________ [Title] Date: __________"\n\nOutput only the policy document text, no preamble.`;
+        const text = await groqPost([{ role: 'user', content: prompt }], 1800, 0.2);
+        const result = { controlId, policyName: policyInfo.name, text, generatedAt: new Date().toISOString() };
+        await redis.set(cacheKey, JSON.stringify(result), { ex: 7 * 24 * 3600 });
+        return res.status(200).json(result);
+      } catch (err) { return res.status(500).json({ error: err.message }); }
+    }
+
     try {
       const { id } = req.query;
 

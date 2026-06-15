@@ -1032,6 +1032,11 @@ header{
           <div class="section-heading">CATEGORY BREAKDOWN</div>
           <div id="categoryBars"><div style="color:var(--muted);font-size:12px;padding:8px 0">Loading...</div></div>
         </div>
+        <!-- Next Steps -->
+        <div id="nextStepsCard" class="card" style="display:none;margin-bottom:16px">
+          <div class="section-heading">YOUR NEXT STEPS</div>
+          <div id="nextStepsList" style="display:flex;flex-direction:column;gap:8px;margin-top:10px"></div>
+        </div>
         <!-- Top gaps -->
         <div class="card" style="margin-bottom:16px">
           <div class="section-heading">TOP GAPS TO FIX</div>
@@ -1787,6 +1792,7 @@ async function loadControls() {
     const d = await r.json();
     ST.controls = d.controls || [];
     renderControls(d.grouped || {});
+    loadNextSteps();
   } catch (err) {
     el.innerHTML = '<div style="color:var(--red);font-size:13px">' + esc(err.message) + '</div>';
   }
@@ -1884,6 +1890,12 @@ function buildControlDetail(c) {
   html += '</div>';
   // Evidence panel (only if not N/A)
   if (!isNA) html += buildEvidencePanel(c.id);
+  // Policy generator button
+  const POLICY_CONTROLS = ['CC1.1','CC1.3','CC2.1','CC2.2','CC3.1','CC5.3','CC5.4','CC5.5','CC6.3','CC6.4','CC6.5','CC6.7','CC6.9','CC7.3','CC7.6','CC8.6','CC9.1','CC9.3','CC9.7'];
+  if (POLICY_CONTROLS.includes(c.id)) {
+    html += '<button class="btn btn-secondary btn-sm" style="margin-top:8px;font-size:11px;width:100%" onclick="event.stopPropagation();generatePolicy(\'' + esc(c.id) + '\')" id="policyBtn-' + c.id + '">📝 Generate Policy Template</button>';
+    html += '<div id="policyOutput-' + c.id + '" style="display:none;margin-top:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;font-size:11px;line-height:1.7;white-space:pre-wrap;font-family:monospace;max-height:320px;overflow-y:auto"></div>';
+  }
   html += '</div>';
   return html;
 }
@@ -2214,6 +2226,78 @@ async function loadPublicShare(token) {
         '<div style="font-size:11px;color:var(--muted);margin-top:8px;font-family:var(--mono)">Est. time to audit ready: ' + esc(d.report.estimatedTimeToAuditReady || '—') + '</div>';
     }
   } catch (err) { console.error('Public share error:', err); }
+}
+
+// ── Policy Generator ──────────────────────────────────────────
+
+async function generatePolicy(controlId) {
+  const btn = document.getElementById('policyBtn-' + controlId);
+  const out = document.getElementById('policyOutput-' + controlId);
+  if (!btn || !out) return;
+  btn.textContent = '⏳ Generating...';
+  btn.disabled = true;
+  try {
+    const r = await fetch('/api/report?type=policy&controlId=' + encodeURIComponent(controlId), { headers: authHeaders() });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Failed to generate policy');
+    out.style.display = 'block';
+    out.textContent = d.text || '';
+    btn.textContent = '📋 Copy Policy';
+    btn.disabled = false;
+    btn.onclick = (e) => { e.stopPropagation(); copyText(d.text); toast('Policy copied to clipboard', 'success'); };
+  } catch (err) {
+    toast(err.message, 'error');
+    btn.textContent = '📝 Generate Policy Template';
+    btn.disabled = false;
+  }
+}
+
+// ── Next Steps Panel ───────────────────────────────────────────
+
+async function loadNextSteps() {
+  if (!ST.controls || !ST.controls.length) return;
+  const card = document.getElementById('nextStepsCard');
+  const list = document.getElementById('nextStepsList');
+  if (!card || !list) return;
+  const PRIORITY = [
+    { id: 'CC7.3', reason: 'Incident Response Plan is required by most auditors and enterprise procurement teams.' },
+    { id: 'CC6.2', reason: 'MFA enforcement is the #1 question auditors ask. Set it up in your GitHub org or IdP.' },
+    { id: 'CC8.2', reason: 'Enable branch protection with required reviews on your main branch — takes 2 minutes.' },
+    { id: 'CC1.1', reason: 'Information Security Policy is the foundation of your SOC 2 — generate a template below.' },
+    { id: 'CC6.5', reason: 'Offboarding procedure must show access is revoked within 24h of any termination.' },
+    { id: 'CC3.1', reason: 'Risk assessment is required — even a simple spreadsheet satisfies this for Type 1.' },
+    { id: 'CC9.1', reason: 'Vendor risk assessment for your top 3 vendors (AWS, Stripe, etc.) is commonly asked for.' },
+    { id: 'CC6.4', reason: 'Quarterly access reviews are a very common audit finding for early-stage companies.' },
+    { id: 'CC2.1', reason: 'Security training completion logs are one of the most common document requests.' },
+    { id: 'CC6.7', reason: 'Password policy + MFA enforcement together close a major audit gap.' },
+  ];
+  const notStarted = ST.controls.filter(c => c.status === 'NOT_STARTED');
+  if (!notStarted.length) { card.style.display = 'none'; return; }
+  const steps = [];
+  for (const p of PRIORITY) {
+    const ctrl = notStarted.find(c => c.id === p.id);
+    if (ctrl) { steps.push({ ...ctrl, reason: p.reason }); if (steps.length >= 5) break; }
+  }
+  if (steps.length < 3) {
+    for (const c of notStarted) {
+      if (!steps.find(s => s.id === c.id)) { steps.push(c); if (steps.length >= 5) break; }
+    }
+  }
+  if (!steps.length) { card.style.display = 'none'; return; }
+  const POLICY_CONTROLS = ['CC1.1','CC1.3','CC2.1','CC2.2','CC3.1','CC5.3','CC5.4','CC5.5','CC6.3','CC6.4','CC6.5','CC6.7','CC6.9','CC7.3','CC7.6','CC8.6','CC9.1','CC9.3','CC9.7'];
+  list.innerHTML = steps.map((s, i) => `
+    <div style="display:flex;gap:12px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;align-items:flex-start">
+      <div style="background:var(--accent);color:#fff;font-size:10px;font-weight:700;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">${i+1}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600;color:#0f172a">${esc(s.id)} — ${esc(s.title)}</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px;line-height:1.5">${esc(s.reason || s.description || '')}</div>
+        <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+          <button class="btn btn-primary btn-sm" style="font-size:10px;padding:3px 10px" onclick="nav('controls');setTimeout(()=>{const el=document.getElementById('cr-${esc(s.id)}');if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.click();}},400)">Open Control →</button>
+          ${POLICY_CONTROLS.includes(s.id) ? `<button class="btn btn-secondary btn-sm" style="font-size:10px;padding:3px 10px" onclick="nav('controls');setTimeout(()=>{const el=document.getElementById('cr-${esc(s.id)}');if(el){el.click();setTimeout(()=>generatePolicy('${esc(s.id)}'),200);}},400)">📝 Generate Policy</button>` : ''}
+        </div>
+      </div>
+    </div>`).join('');
+  card.style.display = 'block';
 }
 
 // ── Utilities ─────────────────────────────────────────────────

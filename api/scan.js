@@ -161,6 +161,57 @@ export async function scanGitHub(token) {
   // NOTE: CC6.7 (password policy) removed — GitHub does NOT enforce
   // company password policies. This requires separate IdP documentation.
 
+  // ── Extra GitHub signals ──────────────────────────────────────
+  if (mainRepo) {
+    // CODEOWNERS file → CC8.2 (code review ownership defined)
+    const codeowners = await ghGet(`repos/${owner}/${mainRepo.name}/contents/CODEOWNERS`, token) ||
+                       await ghGet(`repos/${owner}/${mainRepo.name}/contents/.github/CODEOWNERS`, token);
+    if (codeowners && !codeowners.message) {
+      results['CC8.2'] = 'CONNECTED_AUTO';
+      detectionDetails['CC8.2'] = (detectionDetails['CC8.2'] || '') + ' | CODEOWNERS file found';
+    }
+
+    // Dependabot config → CC8.5 + CC7.4
+    const dependabot = await ghGet(`repos/${owner}/${mainRepo.name}/contents/.github/dependabot.yml`, token);
+    if (dependabot && !dependabot.message) {
+      results['CC8.5'] = results['CC8.5'] || 'CONNECTED_AUTO';
+      results['CC7.4'] = results['CC7.4'] || 'IN_PROGRESS';
+      detectionDetails['CC8.5'] = (detectionDetails['CC8.5'] || '') + ' | Dependabot enabled';
+      detectionDetails['CC7.4'] = 'Dependabot detected — add vuln scan reports for full credit';
+    }
+
+    // CodeQL / code scanning → CC7.5
+    const codeql = await ghGet(`repos/${owner}/${mainRepo.name}/code-scanning/alerts?per_page=1&state=open`, token);
+    if (Array.isArray(codeql)) {
+      results['CC7.5'] = results['CC7.5'] || 'IN_PROGRESS';
+      detectionDetails['CC7.5'] = 'Code scanning active on ' + mainRepo.name + ' — add formal pentest report for full credit';
+    }
+
+    // SECURITY.md → CC1.1 directional signal
+    const secMd = await ghGet(`repos/${owner}/${mainRepo.name}/contents/SECURITY.md`, token) ||
+                  await ghGet(`repos/${owner}/${mainRepo.name}/contents/.github/SECURITY.md`, token);
+    if (secMd && !secMd.message) {
+      results['CC1.1'] = results['CC1.1'] || 'IN_PROGRESS';
+      detectionDetails['CC1.1'] = 'SECURITY.md found — upload full Information Security Policy for full credit';
+    }
+
+    // Secret scanning enabled → CC6.2 additional signal
+    const secretScan = await ghGet(`repos/${owner}/${mainRepo.name}/secret-scanning/alerts?per_page=1`, token);
+    if (Array.isArray(secretScan)) {
+      results['CC6.2'] = results['CC6.2'] || 'IN_PROGRESS';
+      detectionDetails['CC6.2'] = (detectionDetails['CC6.2'] || '') + ' | Secret scanning enabled';
+    }
+
+    // Offboarding-related workflow → CC6.5 directional signal
+    if (workflows?.workflows?.length > 0) {
+      const wfNames = workflows.workflows.map(w => (w.name || '').toLowerCase());
+      if (wfNames.some(n => n.includes('offboard') || n.includes('deprovision') || n.includes('revoke'))) {
+        results['CC6.5'] = results['CC6.5'] || 'IN_PROGRESS';
+        detectionDetails['CC6.5'] = 'Offboarding-related workflow detected — upload full procedure for credit';
+      }
+    }
+  }
+
   return { results, detectionDetails };
 }
 
