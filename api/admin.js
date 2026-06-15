@@ -1,6 +1,12 @@
 // ─────────────────────────────────────────────────────────────
 // api/admin.js
-// ACTION: KEPT AS-IS — unchanged
+// Admin panel API — protected by ADMIN_GH env var
+//
+//   GET  /api/admin                    → all users, stats, logs
+//   GET  /api/admin?action=check       → auth check
+//   GET  /api/admin?action=user&id=X   → single user detail
+//   POST /api/admin {userId, type}     → user actions
+//     types: suspend | unsuspend | ban | unban | set_mode | cancel_subscription | delete
 // ─────────────────────────────────────────────────────────────
 
 import { Redis } from '@upstash/redis';
@@ -10,12 +16,30 @@ const redis = new Redis({
   token: process.env.KV_REST_API_TOKEN,
 });
 
+const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY;
+
 function isAdmin(req) {
   const auth = req.headers['x-admin-key'];
   if (!auth) return false;
-  const parts = auth.split(':');
-  const username = parts[parts.length - 1];
+  // Accept either raw github username or "github:username"
+  const username = auth.replace('github:', '').split(':').pop();
   return username === process.env.ADMIN_GH;
+}
+
+async function stripePatch(path, body) {
+  const res = await fetch(`https://api.stripe.com/v1/${path}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${STRIPE_SECRET}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams(body),
+  });
+  return res.json();
+}
+
+async function stripeGet(path) {
+  const res = await fetch(`https://api.stripe.com/v1/${path}`, {
+    headers: { Authorization: `Bearer ${STRIPE_SECRET}` },
+  });
+  return res.json();
 }
 
 export default async function handler(req, res) {
@@ -24,6 +48,7 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Admin-Key');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
+  // Auth check endpoint — public (returns 200/401)
   if (req.method === 'GET' && req.query.action === 'check') {
     return res.status(isAdmin(req) ? 200 : 401).json({ ok: isAdmin(req) });
   }
@@ -31,94 +56,127 @@ export default async function handler(req, res) {
   if (!isAdmin(req)) return res.status(401).json({ error: 'Unauthorized' });
 
   try {
+    // ── GET: Dashboard data ──────────────────────────────────────
     if (req.method === 'GET') {
-      const [
-        totalUsers, totalDeploys, deploysToday, failedDeploys,
-        activeSessions, analyzeCount, errorCount
-      ] = await Promise.all([
+      // Single user detail
+      if (req.query.action === 'user' && req.query.id) {
+        const raw = await redis.get(`admin:user:${req.query.id}`);
+        if (!raw) return res.status(404).json({ error: 'User not found' });
+        const user = typeof raw === 'object' ? raw : JSON.parse(raw);
+        return res.status(200).json({ user });
+      }
+
+      // Global stats
+      const [totalUsers, totalScans, totalReports, failedScans, totalErrors] = await Promise.all([
         redis.get('admin:stats:total_users').then(v => Number(v || 0)),
-        redis.get('admin:stats:total_deploys').then(v => Number(v || 0)),
-        redis.get(`admin:stats:deploys:${today()}`).then(v => Number(v || 0)),
-        redis.get('admin:stats:failed_deploys').then(v => Number(v || 0)),
-        redis.get('admin:stats:active_sessions').then(v => Number(v || 0)),
-        redis.get('admin:stats:total_analyzes').then(v => Number(v || 0)),
+        redis.get('admin:stats:total_scans').then(v => Number(v || 0)),
+        redis.get('admin:stats:total_reports').then(v => Number(v || 0)),
+        redis.get('admin:stats:failed_scans').then(v => Number(v || 0)),
         redis.get('admin:stats:total_errors').then(v => Number(v || 0)),
       ]);
 
+      // All users
       const userKeys = await redis.keys('admin:user:*');
       const users = [];
-      for (const k of userKeys.slice(0, 200)) {
+      for (const k of userKeys.slice(0, 500)) {
         try {
           const u = await redis.get(k);
-          if (u) users.push(typeof u === 'object' ? u : JSON.parse(u));
+          if (u) {
+            const parsed = typeof u === 'object' ? u : JSON.parse(u);
+            // Enrich with derived fields
+            parsed.displayId = parsed.userId || k.replace('admin:user:', '');
+            users.push(parsed);
+          }
         } catch {}
       }
       users.sort((a, b) => (b.lastActivity || 0) - (a.lastActivity || 0));
 
-      const [deployLogs, authLogs, analyzeLogs, errorLogs] = await Promise.all([
-        redis.lrange('admin:logs:deploy', 0, 49).then(parse),
-        redis.lrange('admin:logs:auth', 0, 49).then(parse),
-        redis.lrange('admin:logs:analyze', 0, 49).then(parse),
+      // Subscription breakdown
+      const modeCounts = { sandbox: 0, starter: 0, growth: 0, enterprise: 0 };
+      users.forEach(u => { modeCounts[u.mode || 'sandbox'] = (modeCounts[u.mode || 'sandbox'] || 0) + 1; });
+
+      // Auth logs
+      const [authLogs, errorLogs, eventLogs] = await Promise.all([
+        redis.lrange('admin:logs:auth', 0, 99).then(parse),
         redis.lrange('admin:logs:error', 0, 49).then(parse),
+        redis.lrange('admin:logs:events', 0, 49).then(parse),
       ]);
 
-      const templateKeys = await redis.keys('admin:template:*');
-      const templates = [];
-      for (const k of templateKeys) {
-        try {
-          const t = await redis.get(k);
-          if (t) templates.push(typeof t === 'object' ? t : JSON.parse(t));
-        } catch {}
-      }
-      templates.sort((a, b) => (b.deployCount || 0) - (a.deployCount || 0));
-
       return res.status(200).json({
-        stats: { totalUsers, totalDeploys, deploysToday, failedDeploys, activeSessions, analyzeCount, errorCount },
+        stats: { totalUsers, totalScans, totalReports, failedScans, totalErrors, modeCounts },
         users,
-        logs: { deploy: deployLogs, auth: authLogs, analyze: analyzeLogs, error: errorLogs },
-        templates,
+        logs: { auth: authLogs, error: errorLogs, events: eventLogs },
       });
     }
 
+    // ── POST: User actions ───────────────────────────────────────
     if (req.method === 'POST') {
-      const { userId, type } = req.body;
+      const { userId, type, mode } = req.body || {};
       if (!userId || !type) return res.status(400).json({ error: 'Missing userId or type' });
 
       const userKey = `admin:user:${userId}`;
       let user = await redis.get(userKey);
-      if (!user) return res.status(404).json({ error: 'User not found' });
-      if (typeof user === 'string') user = JSON.parse(user);
+      if (!user && type !== 'delete') return res.status(404).json({ error: 'User not found' });
+      if (user && typeof user === 'string') user = JSON.parse(user);
+      if (!user) user = {};
+
+      const ts = Date.now();
+      await adminLog({ action: type, userId, by: process.env.ADMIN_GH, ts });
 
       if (type === 'suspend') {
-        user.status = 'suspended'; user.suspendedAt = Date.now();
-        await redis.set(`blocked:${userId}`, JSON.stringify({ status: 'suspended', since: Date.now() }));
-        await log('admin', { action: 'suspend', userId, ts: Date.now() });
+        user.status = 'suspended'; user.suspendedAt = ts;
+        await redis.set(`blocked:${userId}`, JSON.stringify({ status: 'suspended', since: ts }));
+
       } else if (type === 'unsuspend') {
         user.status = 'active'; delete user.suspendedAt;
         await redis.del(`blocked:${userId}`);
-        await log('admin', { action: 'unsuspend', userId, ts: Date.now() });
+
       } else if (type === 'ban') {
-        user.status = 'banned'; user.bannedAt = Date.now();
-        await redis.set(`blocked:${userId}`, JSON.stringify({ status: 'banned', since: Date.now() }));
+        user.status = 'banned'; user.bannedAt = ts;
+        await redis.set(`blocked:${userId}`, JSON.stringify({ status: 'banned', since: ts }));
         await redis.set(`banned:${userId}`, '1');
-        await log('admin', { action: 'ban', userId, ts: Date.now() });
+
       } else if (type === 'unban') {
         user.status = 'active'; delete user.bannedAt;
         await redis.del(`blocked:${userId}`); await redis.del(`banned:${userId}`);
-        await log('admin', { action: 'unban', userId, ts: Date.now() });
-      } else if (type === 'reset_sandbox') {
-        user.sandboxUsed = false;
-        await redis.del(`sb_used:${userId}`);
-        await log('admin', { action: 'reset_sandbox', userId, ts: Date.now() });
+
       } else if (type === 'set_mode') {
-        user.mode = req.body.mode || 'sandbox';
-        await log('admin', { action: 'set_mode', userId, mode: user.mode, ts: Date.now() });
+        if (!['sandbox', 'starter', 'growth', 'enterprise'].includes(mode)) {
+          return res.status(400).json({ error: 'Invalid mode' });
+        }
+        user.mode = mode;
+
+      } else if (type === 'cancel_subscription') {
+        // Cancel via Stripe
+        let subId = user.stripeSubscriptionId;
+        if (!subId && user.stripeCustomerId) {
+          const subs = await stripeGet(`subscriptions?customer=${user.stripeCustomerId}&status=active&limit=1`);
+          if (subs.data?.length > 0) subId = subs.data[0].id;
+        }
+        if (subId) {
+          const result = await stripePatch(`subscriptions/${subId}`, { cancel_at_period_end: 'true' });
+          if (result.error && !result.error.message?.includes('No such')) {
+            return res.status(500).json({ error: result.error.message });
+          }
+          user.cancelPending = true;
+          user.cancelAt = result.current_period_end || null;
+        }
+        user.mode = 'sandbox';
+
       } else if (type === 'delete') {
-        await redis.del(userKey);
-        await redis.del(`blocked:${userId}`);
-        await redis.del(`banned:${userId}`);
-        await log('admin', { action: 'delete', userId, ts: Date.now() });
+        // Delete all user data
+        const keysToDelete = [
+          userKey,
+          `blocked:${userId}`,
+          `banned:${userId}`,
+          `user:${userId}:score`,
+          `user:${userId}:vendors`,
+          `user:${userId}:profile`,
+          `user:${userId}:shares`,
+        ];
+        await Promise.all(keysToDelete.map(k => redis.del(k).catch(() => {})));
         return res.status(200).json({ ok: true, deleted: true });
+
       } else {
         return res.status(400).json({ error: 'Unknown action type' });
       }
@@ -138,9 +196,9 @@ function today() { return new Date().toISOString().slice(0, 10); }
 function parse(arr) {
   return (arr || []).map(x => { try { return typeof x === 'object' ? x : JSON.parse(x); } catch { return null; } }).filter(Boolean);
 }
-async function log(type, data) {
+async function adminLog(data) {
   try {
-    await redis.lpush(`admin:logs:${type}`, JSON.stringify({ ...data, ts: Date.now() }));
-    await redis.ltrim(`admin:logs:${type}`, 0, 499);
+    await redis.lpush('admin:logs:admin_actions', JSON.stringify(data));
+    await redis.ltrim('admin:logs:admin_actions', 0, 499);
   } catch {}
 }

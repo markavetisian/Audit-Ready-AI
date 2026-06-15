@@ -597,6 +597,17 @@ header{
 .reveal{opacity:0;transform:translateY(22px);transition:opacity .55s ease,transform .55s ease;transition-delay:var(--d,0s)}
 .reveal.visible{opacity:1;transform:translateY(0)}
 
+/* ── Admin panel ───────────────────── */
+.admin-stat{background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px 14px;box-shadow:0 1px 3px rgba(15,23,42,.04)}
+.admin-stat-num{font-family:var(--mono);font-size:20px;font-weight:700;line-height:1;letter-spacing:-.03em}
+.admin-stat-lbl{font-size:10px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.06em}
+.admin-log-row{padding:4px 0;border-bottom:1px solid var(--border);color:var(--muted);line-height:1.5;word-break:break-all}
+.admin-log-row:last-child{border-bottom:none}
+.plan-badge{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;font-family:var(--mono);letter-spacing:.04em}
+.plan-sandbox{background:#f1f5f9;color:#64748b}
+.plan-starter{background:#eff6ff;color:#2563eb}
+.plan-growth{background:#f0fdf4;color:#059669}
+.plan-enterprise{background:#fdf4ff;color:#9333ea}
 /* ── Trust grid responsive ─────────── */
 @media(max-width:720px){.trust-grid{grid-template-columns:1fr!important}}
 /* ── Locker / reminders / vendor table ─ */
@@ -635,6 +646,8 @@ header{
         <div class="dd-item" onclick="nav('locker')">🗄 Evidence Locker</div>
         <div class="dd-item" onclick="nav('trust')">🛡 Trust Page</div>
         <div class="dd-item" onclick="nav('platform')">📋 Vendors & Alerts</div>
+        <div class="dd-item" id="ddAdminItem" style="display:none" onclick="nav('admin')">⚙️ Admin Panel</div>
+        <div class="dd-item" onclick="openCancelModal()">↩ Cancel Subscription</div>
         <div class="dd-item danger" onclick="logout()">↩ Sign out</div>
       </div>
     </div>
@@ -1244,6 +1257,75 @@ header{
   </div>
 </div>
 
+<!-- ── Cancel Subscription Modal ─────────────────────────────── -->
+<div id="cancelSubModal" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeCancelModal()">
+  <div class="modal-box" style="max-width:400px">
+    <h3 style="margin-bottom:8px">Cancel Subscription</h3>
+    <p>Your subscription will cancel at the end of the current billing period. You keep full access until then.</p>
+    <div style="background:#fef2f2;border:1px solid rgba(220,38,38,.2);border-radius:6px;padding:10px 12px;font-size:12px;color:var(--red);margin-bottom:16px">
+      After cancellation your account returns to the free sandbox tier with limited features.
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-danger" style="flex:1" onclick="confirmCancelSubscription()" id="cancelSubBtn">Cancel My Subscription</button>
+      <button class="btn btn-secondary" onclick="closeCancelModal()">Keep Plan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Admin Panel ────────────────────────────────────────────── -->
+<div class="page" id="pg-admin">
+  <div class="page-inner" style="padding-top:24px;max-width:1200px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+      <div>
+        <h1 style="font-size:20px;font-weight:600;letter-spacing:-.03em">Admin Panel</h1>
+        <p style="font-size:13px;color:var(--muted);margin-top:2px">User management, subscriptions, and platform logs</p>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="loadAdmin()">↺ Refresh</button>
+    </div>
+
+    <!-- Stats row -->
+    <div id="adminStats" style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px;flex-wrap:wrap"></div>
+
+    <!-- Users table -->
+    <div class="card" style="margin-bottom:20px;padding:0;overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px">
+        <div class="section-heading" style="margin-bottom:0">USERS</div>
+        <input class="ev-input" id="adminUserSearch" placeholder="Search by ID or email..." style="width:220px;margin-bottom:0;font-size:12px" oninput="filterAdminUsers(this.value)"/>
+      </div>
+      <div style="overflow-x:auto">
+        <table id="adminUsersTable" style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border);background:var(--surface2)">
+              <th style="text-align:left;padding:8px 12px;font-weight:500;color:var(--muted)">User</th>
+              <th style="text-align:left;padding:8px 12px;font-weight:500;color:var(--muted)">Auth</th>
+              <th style="text-align:left;padding:8px 12px;font-weight:500;color:var(--muted)">Plan</th>
+              <th style="text-align:left;padding:8px 12px;font-weight:500;color:var(--muted)">Status</th>
+              <th style="text-align:left;padding:8px 12px;font-weight:500;color:var(--muted)">Last Active</th>
+              <th style="text-align:left;padding:8px 12px;font-weight:500;color:var(--muted)">Scans / Reports</th>
+              <th style="padding:8px 12px;font-weight:500;color:var(--muted)">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="adminUserRows">
+            <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)"><span class="spinner"></span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Logs -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+      <div class="card">
+        <div class="section-heading">AUTH LOG</div>
+        <div id="adminAuthLog" style="font-size:11px;font-family:var(--mono);max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:4px"></div>
+      </div>
+      <div class="card">
+        <div class="section-heading">ERROR LOG</div>
+        <div id="adminErrorLog" style="font-size:11px;font-family:var(--mono);max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:4px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 </div><!-- #app -->
 
 <script>
@@ -1334,6 +1416,7 @@ function nav(page) {
   if (page === 'locker') loadLocker();
   if (page === 'trust') loadTrustPage();
   if (page === 'platform') { loadReminders(); loadVendors(); }
+  if (page === 'admin') loadAdmin();
   window.scrollTo(0, 0);
 }
 
@@ -1350,6 +1433,11 @@ function updateHeader() {
   ucName.textContent = (ST.user.name || 'User').split(' ')[0];
   ddName.textContent = ST.user.name || '';
   ddEmail.textContent = ST.user.email || '';
+  // Check admin access async
+  checkAdminAccess().then(isAdmin => {
+    const adminItem = document.getElementById('ddAdminItem');
+    if (adminItem) adminItem.style.display = isAdmin ? 'flex' : 'none';
+  });
 }
 
 function toggleDD() {
@@ -1367,7 +1455,7 @@ document.addEventListener('click', e => {
 
 async function loadDashboard() {
   if (!ST.user) return;
-  await Promise.all([loadScore(), loadLatestReport(), loadDashboardReminders()]);
+  await Promise.all([loadScore(), loadLatestReport(), loadDashboardReminders(), loadUserMode()]);
   // Load score history for trend display
   try {
     const hr = await fetch('/api/score?history=true', { headers: authHeaders() });
@@ -2549,6 +2637,273 @@ async function loadDashboardReminders() {
       if (mainEl) mainEl.prepend(banner);
     }
   } catch {}
+}
+
+// ── Admin Panel ───────────────────────────────────────────────
+
+let _adminData = null;
+
+function adminKey() {
+  // Use GitHub token as admin key
+  if (ST.user?.githubToken) return ST.user.githubToken;
+  return null;
+}
+
+function adminHeaders() {
+  const key = adminKey();
+  if (!key) return {};
+  return { 'X-Admin-Key': key, 'Content-Type': 'application/json' };
+}
+
+async function checkAdminAccess() {
+  const key = adminKey();
+  if (!key) return false;
+  try {
+    const r = await fetch('/api/admin?action=check', { headers: { 'X-Admin-Key': key } });
+    return r.ok;
+  } catch { return false; }
+}
+
+async function loadAdmin() {
+  if (!ST.user) return;
+  const statsEl = document.getElementById('adminStats');
+  const rowsEl = document.getElementById('adminUserRows');
+  if (rowsEl) rowsEl.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)"><span class="spinner"></span></td></tr>';
+
+  try {
+    const r = await fetch('/api/admin', { headers: adminHeaders() });
+    if (!r.ok) { if (rowsEl) rowsEl.innerHTML = '<tr><td colspan="7" style="color:var(--red);padding:16px">Not authorized</td></tr>'; return; }
+    const d = await r.json();
+    _adminData = d;
+    renderAdminStats(d.stats);
+    renderAdminUsers(d.users || []);
+    renderAdminLogs(d.logs || {});
+  } catch (err) {
+    if (rowsEl) rowsEl.innerHTML = '<tr><td colspan="7" style="color:var(--red);padding:16px">' + esc(err.message) + '</td></tr>';
+  }
+}
+
+function renderAdminStats(stats) {
+  const el = document.getElementById('adminStats');
+  if (!el || !stats) return;
+  const mc = stats.modeCounts || {};
+  el.innerHTML = [
+    { num: stats.totalUsers, lbl: 'Total Users', color: '#2563eb' },
+    { num: (mc.starter || 0) + (mc.growth || 0) + (mc.enterprise || 0), lbl: 'Paid Subs', color: '#059669' },
+    { num: mc.growth || 0, lbl: 'Growth', color: '#9333ea' },
+    { num: stats.totalScans, lbl: 'Total Scans', color: '#0f172a' },
+    { num: stats.totalReports, lbl: 'Reports', color: '#0f172a' },
+    { num: stats.totalErrors, lbl: 'Errors', color: stats.totalErrors > 0 ? '#dc2626' : '#64748b' },
+  ].map(s => `<div class="admin-stat"><div class="admin-stat-num" style="color:${s.color}">${s.num ?? 0}</div><div class="admin-stat-lbl">${s.lbl}</div></div>`).join('');
+}
+
+const PLAN_BADGES = {
+  sandbox: '<span class="plan-badge plan-sandbox">SANDBOX</span>',
+  starter: '<span class="plan-badge plan-starter">STARTER</span>',
+  growth: '<span class="plan-badge plan-growth">GROWTH</span>',
+  enterprise: '<span class="plan-badge plan-enterprise">ENTERPRISE</span>',
+};
+
+function renderAdminUsers(users) {
+  const el = document.getElementById('adminUserRows');
+  if (!el) return;
+  if (!users.length) { el.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">No users yet</td></tr>'; return; }
+
+  el.innerHTML = users.map(u => {
+    const id = u.displayId || u.userId || '—';
+    const statusColor = u.status === 'banned' ? '#dc2626' : u.status === 'suspended' ? '#d97706' : '#059669';
+    const statusLabel = u.status || 'active';
+    const lastActive = u.lastActivity ? timeAgo(u.lastActivity) : '—';
+    const planBadge = PLAN_BADGES[u.mode || 'sandbox'] || PLAN_BADGES.sandbox;
+    const authIcon = u.authType === 'github' ? '⌥ GitHub' : u.authType === 'google' ? '▲ Google' : '—';
+    const isBlocked = u.status === 'banned' || u.status === 'suspended';
+
+    return `<tr style="border-bottom:1px solid var(--border)" data-userid="${esc(id)}" data-email="${esc(u.email||'')}">
+      <td style="padding:9px 12px">
+        <div style="font-weight:500;font-size:12px">${esc(u.email || id)}</div>
+        <div style="font-size:10px;color:var(--muted);font-family:var(--mono)">${esc(id)}</div>
+      </td>
+      <td style="padding:9px 12px;color:var(--muted);font-size:11px">${esc(authIcon)}</td>
+      <td style="padding:9px 12px">${planBadge}</td>
+      <td style="padding:9px 12px"><span style="font-size:11px;font-weight:600;color:${statusColor}">${esc(statusLabel.toUpperCase())}</span></td>
+      <td style="padding:9px 12px;font-size:11px;color:var(--muted)">${esc(lastActive)}</td>
+      <td style="padding:9px 12px;font-family:var(--mono);font-size:11px;color:var(--muted)">${u.scanCount||0} / ${u.reportCount||0}</td>
+      <td style="padding:9px 12px;text-align:right">
+        <div style="display:flex;gap:4px;justify-content:flex-end;flex-wrap:wrap">
+          <select class="ev-input" style="width:auto;padding:4px 7px;font-size:11px;margin-bottom:0" onchange="adminSetMode('${esc(id)}',this.value)">
+            <option value="">Set plan…</option>
+            <option value="sandbox">Sandbox</option>
+            <option value="starter">Starter</option>
+            <option value="growth">Growth</option>
+            <option value="enterprise">Enterprise</option>
+          </select>
+          ${isBlocked
+            ? `<button class="btn btn-sm btn-secondary" onclick="adminAction('${esc(id)}','${u.status==='banned'?'unban':'unsuspend'}')">Restore</button>`
+            : `<button class="btn btn-sm btn-secondary" onclick="adminAction('${esc(id)}','suspend')">Suspend</button>
+               <button class="btn btn-sm" style="background:var(--red-dim);color:var(--red);border:1px solid rgba(220,38,38,.2);font-size:11px;padding:4px 9px;border-radius:6px" onclick="adminAction('${esc(id)}','ban')">Ban</button>`}
+          <button class="btn btn-sm btn-secondary" onclick="adminAction('${esc(id)}','cancel_subscription')" title="Cancel Stripe subscription">↩ Sub</button>
+          <button class="btn btn-sm" style="background:var(--red-dim);color:var(--red);border:1px solid rgba(220,38,38,.2);font-size:11px;padding:4px 9px;border-radius:6px" onclick="adminDeleteUser('${esc(id)}')">Delete</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filterAdminUsers(query) {
+  if (!_adminData) return;
+  const q = query.toLowerCase();
+  const filtered = q ? (_adminData.users || []).filter(u =>
+    (u.userId || '').toLowerCase().includes(q) ||
+    (u.email || '').toLowerCase().includes(q) ||
+    (u.displayId || '').toLowerCase().includes(q)
+  ) : (_adminData.users || []);
+  renderAdminUsers(filtered);
+}
+
+function renderAdminLogs(logs) {
+  const authEl = document.getElementById('adminAuthLog');
+  const errEl = document.getElementById('adminErrorLog');
+  if (authEl) {
+    const items = logs.auth || [];
+    authEl.innerHTML = items.length ? items.map(l =>
+      `<div class="admin-log-row"><span style="color:var(--accent)">${fmtTs(l.ts)}</span> ${esc(l.event||'login')} — ${esc(l.userId||l.email||'?')} (${esc(l.authType||'?')})</div>`
+    ).join('') : '<div style="color:var(--muted)">No auth events yet</div>';
+  }
+  if (errEl) {
+    const items = logs.error || [];
+    errEl.innerHTML = items.length ? items.map(l =>
+      `<div class="admin-log-row" style="color:var(--red)"><span style="color:var(--muted)">${fmtTs(l.ts)}</span> ${esc(l.msg||JSON.stringify(l))}</div>`
+    ).join('') : '<div style="color:var(--muted)">No errors logged</div>';
+  }
+}
+
+async function adminAction(userId, type) {
+  const confirmMsgs = {
+    ban: 'Ban this user? They will be blocked from the platform.',
+    suspend: 'Suspend this user?',
+    cancel_subscription: 'Cancel this user\'s Stripe subscription now?',
+  };
+  if (confirmMsgs[type] && !confirm(confirmMsgs[type])) return;
+  try {
+    const r = await fetch('/api/admin', {
+      method: 'POST',
+      headers: adminHeaders(),
+      body: JSON.stringify({ userId, type }),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Failed');
+    toast(type + ' applied to ' + userId, 'success');
+    loadAdmin();
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+async function adminSetMode(userId, mode) {
+  if (!mode) return;
+  try {
+    const r = await fetch('/api/admin', {
+      method: 'POST',
+      headers: adminHeaders(),
+      body: JSON.stringify({ userId, type: 'set_mode', mode }),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Failed');
+    toast('Plan updated to ' + mode, 'success');
+    loadAdmin();
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+async function adminDeleteUser(userId) {
+  if (!confirm('Permanently delete ALL data for ' + userId + '? This cannot be undone.')) return;
+  try {
+    const r = await fetch('/api/admin', {
+      method: 'POST',
+      headers: adminHeaders(),
+      body: JSON.stringify({ userId, type: 'delete' }),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Failed');
+    toast('User deleted', 'success');
+    loadAdmin();
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+function fmtTs(ts) {
+  if (!ts) return '—';
+  return new Date(ts).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function timeAgo(ts) {
+  if (!ts) return '—';
+  const diff = Date.now() - ts;
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return m + 'm ago';
+  const h = Math.floor(m / 60);
+  if (h < 24) return h + 'h ago';
+  return Math.floor(h / 24) + 'd ago';
+}
+
+// ── User mode / paywall ───────────────────────────────────────
+
+async function loadUserMode() {
+  if (!ST.user) return;
+  try {
+    const userId = ST.user.type === 'github' ? 'github:' + ST.user.username : 'google:' + ST.user.email;
+    const r = await fetch('/api/admin?action=user&id=' + encodeURIComponent(userId), {
+      headers: adminHeaders(),
+    });
+    if (r.ok) {
+      const d = await r.json();
+      ST.mode = d.user?.mode || 'sandbox';
+      ST.userStatus = d.user?.status || 'active';
+      applyPaywall();
+    }
+  } catch {}
+}
+
+function applyPaywall() {
+  // Show upgrade button more prominently on sandbox
+  const upgradeBtn = document.querySelector('.upgrade-btn');
+  if (upgradeBtn) {
+    if (ST.mode === 'sandbox') {
+      upgradeBtn.style.display = 'flex';
+    }
+  }
+  // Show/hide report button based on mode
+  const reportBtn = document.getElementById('reportBtnText');
+  if (reportBtn && ST.mode === 'sandbox') {
+    reportBtn.closest('button').title = 'Upgrade to Growth or higher to generate AI reports';
+  }
+}
+
+// ── Cancel subscription ───────────────────────────────────────
+
+function openCancelModal() {
+  document.getElementById('userDD')?.classList.remove('open');
+  if (ST.mode === 'sandbox') { toast('No active subscription to cancel', 'error'); return; }
+  document.getElementById('cancelSubModal').style.display = 'flex';
+}
+
+function closeCancelModal() {
+  document.getElementById('cancelSubModal').style.display = 'none';
+}
+
+async function confirmCancelSubscription() {
+  const btn = document.getElementById('cancelSubBtn');
+  btn.disabled = true; btn.textContent = 'Cancelling...';
+  try {
+    const userId = ST.user.type === 'github' ? 'github:' + ST.user.username : 'google:' + ST.user.email;
+    const r = await fetch('/api/billing', {
+      method: 'DELETE',
+      headers: authHeaders(),
+      body: JSON.stringify({ userId }),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Failed');
+    closeCancelModal();
+    toast('Subscription cancelled — you keep access until period end', 'success');
+  } catch (err) { toast(err.message, 'error'); }
+  btn.disabled = false; btn.textContent = 'Cancel My Subscription';
 }
 
 // ── Scroll reveal ─────────────────────────────────────────────
