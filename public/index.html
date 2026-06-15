@@ -456,16 +456,57 @@ header{
 }
 
 /* ── Responsive ──────────────────────────── */
+/* ── Hamburger button ────────────────── */
+.hamburger-btn{
+  display:none;flex-direction:column;justify-content:center;gap:5px;
+  width:36px;height:36px;border:none;background:none;cursor:pointer;padding:4px;
+  border-radius:6px;
+}
+.hamburger-btn span{display:block;height:2px;background:var(--text);border-radius:2px;transition:all .2s}
+.hamburger-btn:hover{background:var(--surface2)}
+/* Mobile nav item */
+.mob-nav-item{
+  padding:12px 16px;font-size:14px;font-weight:500;cursor:pointer;border-radius:8px;
+  display:flex;align-items:center;gap:10px;transition:background .1s;color:var(--text);
+}
+.mob-nav-item:hover{background:var(--surface2)}
+/* Onboarding steps */
+.onboard-step{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;background:#fff;border:1px solid #e2e8f0;border-radius:8px}
+.onboard-num{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+/* Hide username text on tight screens */
+.uc-name-desktop{display:inline}
+/* Mobile score panel compact */
+.score-number{font-family:var(--mono);font-size:42px;font-weight:600;line-height:1;letter-spacing:-.04em}
+
 @media(max-width:768px){
   .dash-grid{grid-template-columns:1fr}
-  .dash-score-panel{position:static}
+  .dash-score-panel{position:static;padding:16px}
+  .score-number{font-size:36px}
   .stat-grid{grid-template-columns:repeat(2,1fr)}
   .hdr-nav{display:none}
-  .page-inner{padding:14px}
+  .hamburger-btn{display:flex}
+  .uc-name-desktop{display:none}
+  .page-inner{padding:12px}
+  .page-inner-narrow{padding:12px}
+  .card{padding:14px}
+  header{padding:0 12px;gap:8px}
+  /* Admin stats wrap */
+  #adminStats{grid-template-columns:repeat(3,1fr)!important}
+  /* Trust grid */
+  .trust-grid{grid-template-columns:1fr!important}
 }
 @media(max-width:480px){
   .stat-grid{grid-template-columns:repeat(2,1fr)}
-  header{padding:0 14px}
+  header{padding:0 10px}
+  .page-inner{padding:10px}
+  .page-inner-narrow{padding:10px}
+  .card{padding:12px}
+  #adminStats{grid-template-columns:repeat(2,1fr)!important}
+  .lp-why-grid{grid-template-columns:1fr!important}
+  /* Make tables scroll horizontally instead of breaking layout */
+  .admin-table-wrap,.vendor-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  /* Dropdown full width on mobile */
+  .dropdown{min-width:240px;right:-10px}
 }
 
 /* ── Pricing modal ───────────────────────── */
@@ -632,9 +673,12 @@ header{
     <div class="hn" id="hn-platform" onclick="nav('platform')">Vendors & Alerts</div>
   </nav>
   <div class="hdr-right">
+    <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleMobileNav()" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
     <div class="user-chip" id="userChip" onclick="toggleDD()">
       <div class="uc-av" id="ucAv">U</div>
-      <span id="ucName">User</span>
+      <span id="ucName" class="uc-name-desktop">User</span>
       <div class="dropdown" id="userDD">
         <div class="dd-head">
           <div class="dd-name" id="ddName">—</div>
@@ -653,6 +697,30 @@ header{
     </div>
   </div>
 </header>
+
+<!-- Mobile nav drawer -->
+<div id="mobileNavOverlay" onclick="closeMobileNav()" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.4);z-index:150;backdrop-filter:blur(2px)"></div>
+<div id="mobileNavDrawer" style="display:none;position:fixed;top:0;left:0;bottom:0;width:280px;background:#fff;z-index:160;box-shadow:4px 0 24px rgba(15,23,42,.12);overflow-y:auto;padding:16px 0">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);margin-bottom:8px">
+    <div class="logo" onclick="closeMobileNav();nav('dashboard')">
+      <div class="logo-mark">AR</div>
+      <div class="logo-text"><span>Audit</span>Ready AI</div>
+    </div>
+    <button onclick="closeMobileNav()" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;padding:4px">✕</button>
+  </div>
+  <div style="padding:0 8px">
+    <div class="mob-nav-item" onclick="closeMobileNav();nav('dashboard')">📊 Dashboard</div>
+    <div class="mob-nav-item" onclick="closeMobileNav();nav('controls')">✅ Controls</div>
+    <div class="mob-nav-item" onclick="closeMobileNav();nav('integrations')">🔌 Integrations</div>
+    <div class="mob-nav-item" onclick="closeMobileNav();nav('locker')">🗄 Evidence Locker</div>
+    <div class="mob-nav-item" onclick="closeMobileNav();nav('trust')">🛡 Trust Page</div>
+    <div class="mob-nav-item" onclick="closeMobileNav();nav('platform')">📋 Vendors & Alerts</div>
+    <div class="mob-nav-item" id="mobAdminItem" style="display:none" onclick="closeMobileNav();nav('admin')">⚙️ Admin Panel</div>
+    <div style="height:1px;background:var(--border);margin:8px 8px"></div>
+    <div class="mob-nav-item" onclick="closeMobileNav();openCancelModal()">↩ Cancel Subscription</div>
+    <div class="mob-nav-item" style="color:var(--red)" onclick="logout()">↩ Sign out</div>
+  </div>
+</div>
 
 <!-- ── Login ────────────────────────────────────────────────── -->
 <div class="page" id="pg-login">
@@ -916,6 +984,35 @@ header{
       </div>
       <!-- Main -->
       <div class="dash-main">
+        <!-- Onboarding guide — shown only on first use -->
+        <div id="onboardingCard" class="card" style="margin-bottom:16px;display:none;border-color:rgba(37,99,235,.25);background:linear-gradient(135deg,#eff6ff,#f8fafc)">
+          <div class="section-heading" style="color:var(--accent)">GETTING STARTED</div>
+          <p style="font-size:13px;color:#374151;margin-bottom:14px;line-height:1.7">Welcome to AuditReady AI — your SOC 2 readiness command center. Here's how to get your compliance score in 3 steps:</p>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="onboard-step" id="os-scan">
+              <div class="onboard-num">1</div>
+              <div>
+                <div style="font-size:13px;font-weight:600;color:#0f172a">Run your first scan</div>
+                <div style="font-size:12px;color:#64748b;margin-top:2px">Click <strong>⚡ Scan Now</strong> — it checks your connected tools for compliance signals and auto-fills controls it can verify automatically.</div>
+              </div>
+            </div>
+            <div class="onboard-step" id="os-evidence">
+              <div class="onboard-num">2</div>
+              <div>
+                <div style="font-size:13px;font-weight:600;color:#0f172a">Add evidence for your top gaps</div>
+                <div style="font-size:12px;color:#64748b;margin-top:2px">Go to <strong>Controls</strong> and click any control to upload a policy link, file name, or screenshot. Each piece of evidence raises your score.</div>
+              </div>
+            </div>
+            <div class="onboard-step" id="os-report">
+              <div class="onboard-num">3</div>
+              <div>
+                <div style="font-size:13px;font-weight:600;color:#0f172a">Generate your AI readiness report</div>
+                <div style="font-size:12px;color:#64748b;margin-top:2px">Once your score hits 50%+, generate an AI report and share it with your auditor or customers via your Trust Page.</div>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" style="margin-top:14px;width:100%" onclick="triggerScan();document.getElementById('onboardingCard').style.display='none'">⚡ Run First Scan Now</button>
+        </div>
         <!-- Category breakdown -->
         <div class="card" style="margin-bottom:16px">
           <div class="section-heading">CATEGORY BREAKDOWN</div>
@@ -1292,7 +1389,7 @@ header{
         <div class="section-heading" style="margin-bottom:0">USERS</div>
         <input class="ev-input" id="adminUserSearch" placeholder="Search by ID or email..." style="width:220px;margin-bottom:0;font-size:12px" oninput="filterAdminUsers(this.value)"/>
       </div>
-      <div style="overflow-x:auto">
+      <div class="admin-table-wrap">
         <table id="adminUsersTable" style="width:100%;border-collapse:collapse;font-size:12px">
           <thead>
             <tr style="border-bottom:1px solid var(--border);background:var(--surface2)">
@@ -1514,6 +1611,9 @@ function renderScorePanel(d) {
   lb.textContent = d.label;
   lb.style.color = d.color;
   sb.textContent = d.verified + ' of ' + d.applicable + ' controls met';
+  // Show onboarding if first time (score is 0 and no evidence yet)
+  const ob = document.getElementById('onboardingCard');
+  if (ob) ob.style.display = (d.score === 0 || d.verified === 0) ? 'block' : 'none';
 
   // Add context below score
   const contextEl = document.getElementById('scoreContext');
@@ -2457,6 +2557,23 @@ function copyText(text) {
   toast('Copied to clipboard', 'success');
 }
 
+// ── Mobile nav drawer ─────────────────────────────────────────
+
+function toggleMobileNav() {
+  const drawer = document.getElementById('mobileNavDrawer');
+  const overlay = document.getElementById('mobileNavOverlay');
+  const isOpen = drawer.style.display !== 'none';
+  drawer.style.display = isOpen ? 'none' : 'block';
+  overlay.style.display = isOpen ? 'none' : 'block';
+  document.body.style.overflow = isOpen ? '' : 'hidden';
+}
+
+function closeMobileNav() {
+  document.getElementById('mobileNavDrawer').style.display = 'none';
+  document.getElementById('mobileNavOverlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
 // ── Vendors & Reminders ────────────────────────────────────────
 
 async function loadReminders() {
@@ -2533,7 +2650,7 @@ function renderVendors(vendors) {
   }
 
   const now = Date.now();
-  let html = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">' +
+  let html = '<div class="vendor-table-wrap"><table style="width:100%;border-collapse:collapse;font-size:12px;min-width:500px">' +
     '<thead><tr style="border-bottom:1px solid var(--border)">' +
     '<th style="text-align:left;padding:6px 8px;color:var(--muted);font-weight:500">Vendor</th>' +
     '<th style="text-align:left;padding:6px 8px;color:var(--muted);font-weight:500">Category</th>' +
