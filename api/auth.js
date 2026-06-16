@@ -1,14 +1,13 @@
 // ─────────────────────────────────────────────────────────────
 // api/auth.js
-// ACTION: MERGED from github-auth.js + google-auth.js
+// ACTION: MERGED from github-auth.js + google-auth.js + microsoft-auth.js
 //
-//   GET /api/auth?provider=github  → redirect to GitHub consent
-//   GET /api/github-callback       → GitHub OAuth callback (via vercel.json rewrite)
-//   GET /api/auth?provider=google  → redirect to Google consent
-//   GET /api/google-callback       → Google OAuth callback (via vercel.json rewrite)
-//
-// Logic: unchanged from originals. Router by ?provider= or ?code= presence.
-// For AuditReady, GitHub OAuth also used for integration scanning (read:org scope added).
+//   GET /api/auth?provider=github    → redirect to GitHub consent
+//   GET /api/github-callback         → GitHub OAuth callback (via vercel.json rewrite)
+//   GET /api/auth?provider=google    → redirect to Google consent
+//   GET /api/google-callback         → Google OAuth callback (via vercel.json rewrite)
+//   GET /api/auth?provider=microsoft → redirect to Microsoft consent
+//   GET /api/microsoft-callback      → Microsoft OAuth callback (via vercel.json rewrite)
 // ─────────────────────────────────────────────────────────────
 
 export default async function handler(req, res) {
@@ -16,11 +15,9 @@ export default async function handler(req, res) {
   const appUrl = process.env.APP_URL || `https://${req.headers.host}`;
 
   // ── Detect which provider this callback belongs to ──────────
-  // vercel.json rewrites /api/github-callback and /api/google-callback here.
-  // We distinguish by: state param format or by which rewrite hit us.
-  // Simplest: if code is present, check state for provider hint; fallback to URL path.
-  const isGoogleCallback = req.url?.includes('google-callback') || state === 'google';
-  const isGithubCallback = req.url?.includes('github-callback') || (!isGoogleCallback && code);
+  const isMicrosoftCallback = req.url?.includes('microsoft-callback') || state === 'microsoft';
+  const isGoogleCallback = !isMicrosoftCallback && (req.url?.includes('google-callback') || state === 'google');
+  const isGithubCallback = !isMicrosoftCallback && !isGoogleCallback && (req.url?.includes('github-callback') || code);
 
   // ─────────────────────────────────────────────────────────────
   // GITHUB — Callback (code present + github-callback path or provider=github)
@@ -134,5 +131,63 @@ export default async function handler(req, res) {
     return res.redirect(authUrl);
   }
 
-  return res.status(400).json({ error: 'Missing provider. Use ?provider=github or ?provider=google' });
+  // ─────────────────────────────────────────────────────────────
+  // MICROSOFT — Callback
+  // ─────────────────────────────────────────────────────────────
+  if (code && isMicrosoftCallback) {
+    try {
+      const redirectUri = `${appUrl}/api/microsoft-callback`;
+      const tokenRes = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          code,
+          client_id: process.env.MICROSOFT_CLIENT_ID,
+          client_secret: process.env.MICROSOFT_CLIENT_SECRET,
+          redirect_uri: redirectUri,
+          grant_type: 'authorization_code',
+        }),
+      });
+      const tokenData = await tokenRes.json();
+      if (!tokenData.access_token) {
+        console.error('Microsoft token error:', tokenData);
+        return res.status(400).send('Microsoft auth failed. Please try again.');
+      }
+      const userRes = await fetch('https://graph.microsoft.com/v1.0/me', {
+        headers: { Authorization: `Bearer ${tokenData.access_token}` },
+      });
+      const user = await userRes.json();
+      const userPayload = encodeURIComponent(JSON.stringify({
+        name: user.displayName || user.givenName || 'Microsoft User',
+        email: user.mail || user.userPrincipalName || '',
+        avatar: null,
+        type: 'microsoft',
+      }));
+      return res.redirect(`/?microsoft_user=${userPayload}`);
+    } catch (err) {
+      console.error('Microsoft callback error:', err);
+      return res.status(500).send('Auth server error: ' + err.message);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // MICROSOFT — Initiate OAuth
+  // ─────────────────────────────────────────────────────────────
+  if (provider === 'microsoft' || req.url?.includes('microsoft-oauth')) {
+    const clientId = process.env.MICROSOFT_CLIENT_ID;
+    if (!clientId) return res.status(500).send('MICROSOFT_CLIENT_ID not configured.');
+    const redirectUri = encodeURIComponent(`${appUrl}/api/microsoft-callback`);
+    const scope = encodeURIComponent('openid email profile User.Read');
+    const authUrl =
+      `https://login.microsoftonline.com/common/oauth2/v2.0/authorize` +
+      `?client_id=${clientId}` +
+      `&redirect_uri=${redirectUri}` +
+      `&response_type=code` +
+      `&scope=${scope}` +
+      `&state=microsoft` +
+      `&prompt=select_account`;
+    return res.redirect(authUrl);
+  }
+
+  return res.status(400).json({ error: 'Missing provider. Use ?provider=github, ?provider=google, or ?provider=microsoft' });
 }
