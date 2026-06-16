@@ -846,6 +846,7 @@ header{
       </button>
     </div>
     <p style="font-size:11px;color:#94a3b8;margin-top:14px">GitHub required for automated compliance scanning</p>
+    <p style="font-size:10.5px;color:#cbd5e1;margin-top:6px">By clicking "Continue", you agree to our <a href="/terms.html" target="_blank" style="color:#94a3b8;text-decoration:underline">Terms of Service</a> and <a href="/privacy.html" target="_blank" style="color:#94a3b8;text-decoration:underline">Privacy Policy</a>.</p>
   </div>
 
   <!-- dashboard mockup -->
@@ -1107,8 +1108,26 @@ header{
         </button>
       </div>
       <p style="font-size:11px;color:rgba(255,255,255,.4);margin-top:14px">No credit card · Setup in 10 minutes · Cancel anytime</p>
+      <p style="font-size:10.5px;color:rgba(255,255,255,.35);margin-top:6px">By clicking "Get your score free", you agree to our <a href="/terms.html" target="_blank" style="color:rgba(255,255,255,.55);text-decoration:underline">Terms of Service</a> and <a href="/privacy.html" target="_blank" style="color:rgba(255,255,255,.55);text-decoration:underline">Privacy Policy</a>.</p>
     </div>
   </section>
+
+  <!-- ── FOOTER ───────────────────────────────────────────────── -->
+  <footer style="background:#0f172a;padding:36px 28px 28px;text-align:center">
+    <div style="max-width:960px;margin:0 auto">
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px">
+        <div style="width:22px;height:22px;background:#2563eb;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff">AR</div>
+        <span style="font-size:13px;font-weight:700;color:#fff">AuditReady AI</span>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;margin-bottom:14px">
+        <a href="/terms.html" style="font-size:12px;color:#94a3b8;text-decoration:none">Terms of Service</a>
+        <a href="/privacy.html" style="font-size:12px;color:#94a3b8;text-decoration:none">Privacy Policy</a>
+        <a href="mailto:support@auditready.space" style="font-size:12px;color:#94a3b8;text-decoration:none">Contact</a>
+      </div>
+      <p style="font-size:11px;color:#475569;line-height:1.6;max-width:520px;margin:0 auto 10px">AuditReady AI provides self-reported SOC 2 readiness tracking and is not a certified auditing firm. Scores reflect documented controls and do not constitute an official SOC 2 report.</p>
+      <p style="font-size:11px;color:#475569">© 2026 AuditReady AI. All rights reserved.</p>
+    </div>
+  </footer>
 
 </div>
 
@@ -1367,10 +1386,12 @@ header{
       </div>
       <div id="stripeCardEl" style="background:#fff;border:1.5px solid #e2e8f0;border-radius:8px;padding:13px;margin-bottom:10px;min-height:46px"></div>
       <div id="payError" style="font-size:12px;color:#ef4444;margin-bottom:8px;min-height:16px"></div>
+      <div id="payRenewalNote" style="font-size:11px;color:#64748b;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:8px 10px;margin-bottom:10px;line-height:1.5"></div>
       <button class="pay-btn" id="paySubmitBtn" onclick="submitPricingPayment()">
         <span id="payBtnText">🔒 Pay & Activate</span>
       </button>
       <div class="pay-secure">🔒 Secured by Stripe · 256-bit encryption · Cancel anytime</div>
+      <div style="font-size:10px;color:#94a3b8;text-align:center;margin-top:8px;line-height:1.5">By clicking "Pay & Activate", you agree to our <a href="/terms.html" target="_blank" style="color:#2563eb">Terms of Service</a> and <a href="/privacy.html" target="_blank" style="color:#2563eb">Privacy Policy</a>.</div>
     </div>
 
     <div class="pm-free-note">Free sandbox: manual tracking, score dashboard, 1 scan/hour. No credit card required.</div>
@@ -1663,6 +1684,13 @@ function authTok() {
   if (ST.user.type === 'google') return 'google:' + ST.user.email;
   if (ST.user.type === 'slack') return 'slack:' + ST.user.email;
   return null;
+}
+
+function currentUserId() {
+  if (!ST.user) return '';
+  if (ST.user.type === 'github') return 'github:' + ST.user.username;
+  if (ST.user.type === 'slack') return 'slack:' + ST.user.email;
+  return 'google:' + ST.user.email;
 }
 
 function authHeaders() {
@@ -2641,6 +2669,8 @@ function setPmBilling(annual) {
     document.getElementById('payBillingNote').textContent = annual
       ? 'Billed annually · Cancel anytime'
       : 'Billed monthly · Cancel anytime';
+    const noteEl = document.getElementById('payRenewalNote');
+    if (noteEl) noteEl.textContent = 'Your subscription automatically renews ' + (annual ? 'annually' : 'monthly') + ' at $' + price + (annual ? '/mo (billed yearly)' : '/mo') + ' until canceled. Cancel anytime online via Account → Cancel Subscription — no phone call or email required.';
   }
 }
 
@@ -2675,6 +2705,7 @@ function selectPlan(name, priceId, amount) {
     ? 'Billed annually · Cancel anytime'
     : 'Billed monthly · Cancel anytime';
   document.getElementById('payError').textContent = '';
+  document.getElementById('payRenewalNote').textContent = 'Your subscription automatically renews ' + (_pmAnnual ? 'annually' : 'monthly') + ' at $' + price + (_pmAnnual ? '/mo (billed yearly)' : '/mo') + ' until canceled. Cancel anytime online via Account → Cancel Subscription — no phone call or email required.';
 
   if (_stripeCard) { try { _stripeCard.destroy(); } catch(e){} }
   if (!_stripe) { initStripe(); }
@@ -2712,7 +2743,7 @@ async function submitPricingPayment() {
   errEl.textContent = '';
 
   try {
-    const userId = ST.user?.type === 'github' ? 'github:' + ST.user.username : 'google:' + ST.user?.email;
+    const userId = currentUserId();
     const r = await fetch('/api/billing', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
@@ -3413,7 +3444,7 @@ function timeAgo(ts) {
 async function loadUserMode() {
   if (!ST.user) return;
   try {
-    const userId = ST.user.type === 'github' ? 'github:' + ST.user.username : 'google:' + ST.user.email;
+    const userId = currentUserId();
     const r = await fetch('/api/admin?action=user&id=' + encodeURIComponent(userId), {
       headers: adminHeaders(),
     });
@@ -3457,7 +3488,7 @@ async function confirmCancelSubscription() {
   const btn = document.getElementById('cancelSubBtn');
   btn.disabled = true; btn.textContent = 'Cancelling...';
   try {
-    const userId = ST.user.type === 'github' ? 'github:' + ST.user.username : 'google:' + ST.user.email;
+    const userId = currentUserId();
     const r = await fetch('/api/billing', {
       method: 'DELETE',
       headers: authHeaders(),

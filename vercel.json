@@ -11,6 +11,6 @@
     { "source": "/api/track",            "destination": "/api/telemetry" },
     { "source": "/api/log",              "destination": "/api/telemetry" },
     { "source": "/api/analytics",        "destination": "/api/telemetry" },
-    { "source": "/((?!api/).*)", "destination": "/public/index.html" }
+    { "source": "/((?!api/|terms\\.html|privacy\\.html).*)", "destination": "/public/index.html" }
   ]
 }

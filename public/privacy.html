@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy — AuditReady AI</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:760px;margin:0 auto;padding:48px 24px 80px;color:#0f172a;line-height:1.7;font-size:15px}
+  h1{font-size:28px;font-weight:800;letter-spacing:-.02em;margin-bottom:4px}
+  .updated{font-size:13px;color:#64748b;margin-bottom:32px}
+  h2{font-size:18px;font-weight:700;margin-top:36px;margin-bottom:10px}
+  p,li{color:#334155}
+  ul{padding-left:20px}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13px}
+  th,td{text-align:left;padding:8px 10px;border:1px solid #e2e8f0;vertical-align:top}
+  th{background:#f8fafc;font-weight:700}
+  a{color:#2563eb}
+  .back{display:inline-block;margin-bottom:24px;font-size:13px;color:#2563eb;text-decoration:none}
+</style>
+</head>
+<body>
+<a class="back" href="/">← Back to AuditReady AI</a>
+<h1>Privacy Policy</h1>
+<div class="updated">Last updated: June 16, 2026</div>
+
+<p>This Privacy Policy explains how AuditReady AI ("we", "us", "our") collects, uses, and protects personal information when you use our Service. We act as a <strong>Service Provider</strong> under the California Consumer Privacy Act (CCPA/CPRA) — we do not sell or share your personal information for cross-context behavioral advertising.</p>
+
+<h2>1. Information We Collect</h2>
+<table>
+<tr><th>Category</th><th>Examples</th><th>Source</th></tr>
+<tr><td>Account info</td><td>Name, email, profile photo</td><td>GitHub / Google / Slack OAuth</td></tr>
+<tr><td>Authentication tokens</td><td>OAuth access tokens</td><td>GitHub / Google / Slack</td></tr>
+<tr><td>Compliance scan data</td><td>Branch protection status, security policy files, repo metadata</td><td>GitHub API (read-only)</td></tr>
+<tr><td>Evidence you upload</td><td>Links, file names, notes you add to controls</td><td>You, directly</td></tr>
+<tr><td>Billing info</td><td>Payment method, billing address</td><td>Stripe (we never see full card numbers)</td></tr>
+<tr><td>Usage data</td><td>Pages visited, feature usage, login events</td><td>Automatically collected</td></tr>
+</table>
+
+<h2>2. How We Use Your Information</h2>
+<ul>
+  <li>To provide and operate the Service, including running compliance scans and generating reports.</li>
+  <li>To process subscription payments via Stripe.</li>
+  <li>To send service-related communications (e.g., scan results, billing notices).</li>
+  <li>To improve the Service and develop new features.</li>
+  <li>To detect, prevent, and respond to fraud, abuse, or security incidents.</li>
+</ul>
+
+<h2>3. Data Security</h2>
+<p>All data is stored using encrypted, access-controlled infrastructure. Evidence and account data at rest are encrypted (AES-256 equivalent) by our infrastructure providers. OAuth tokens are stored server-side and are never exposed to other users. We minimize the personal data we retain from connected integrations — for example, GitHub scans read repository configuration signals (e.g., whether branch protection is enabled) rather than file contents wherever possible.</p>
+
+<h2>4. Evidence You Upload</h2>
+<p>Files, links, and notes you add to the Evidence Locker are stored to support your own compliance tracking. We do not scan, sell, or share this content with third parties. You are responsible for not including unnecessary personal data (e.g., employee SSNs, passwords) in evidence you upload — only upload what's needed to demonstrate a control.</p>
+
+<h2>5. Third-Party Service Providers</h2>
+<p>We use the following processors to operate the Service:</p>
+<ul>
+  <li><strong>Stripe</strong> — payment processing</li>
+  <li><strong>Upstash</strong> — encrypted data storage (Redis)</li>
+  <li><strong>Vercel</strong> — hosting and infrastructure</li>
+  <li><strong>Groq</strong> — AI model inference for report and policy generation (no data retained for training)</li>
+  <li><strong>GitHub, Google, Slack</strong> — authentication and integration scanning, per the scopes you authorize</li>
+</ul>
+<p>These providers are contractually restricted from using your data for any purpose other than providing services to us.</p>
+
+<h2>6. Your California Privacy Rights (CCPA/CPRA)</h2>
+<p>If you are a California resident, you have the right to:</p>
+<ul>
+  <li><strong>Know</strong> what personal information we collect, use, and disclose.</li>
+  <li><strong>Delete</strong> your personal information, subject to certain exceptions.</li>
+  <li><strong>Correct</strong> inaccurate personal information.</li>
+  <li><strong>Opt out</strong> of the sale or sharing of personal information — we do not sell or share your data, so there is nothing to opt out of.</li>
+  <li><strong>Non-discrimination</strong> — we will not deny you service or charge different prices for exercising these rights.</li>
+</ul>
+<p>To exercise any of these rights, email <a href="mailto:support@auditready.space">support@auditready.space</a>. We will verify your identity before fulfilling requests.</p>
+
+<h2>7. Data Retention</h2>
+<p>We retain your account and compliance data for as long as your account is active. If you delete your account, we will delete or anonymize your personal data within 30 days, except where retention is required for legal, billing, or fraud-prevention purposes.</p>
+
+<h2>8. Children's Privacy</h2>
+<p>The Service is not directed to individuals under 18. We do not knowingly collect personal information from children.</p>
+
+<h2>9. International Users</h2>
+<p>Our infrastructure is hosted in the United States. By using the Service, you consent to the transfer and processing of your data in the United States.</p>
+
+<h2>10. Changes to This Policy</h2>
+<p>We may update this Privacy Policy from time to time. We will notify you of material changes via the Service or email.</p>
+
+<h2>11. Contact Us</h2>
+<p>Questions, requests, or concerns about this Privacy Policy? Contact us at <a href="mailto:support@auditready.space">support@auditready.space</a>.</p>
+
+</body>
+</html>

@@ -66,27 +66,50 @@ export async function scanGitHub(token) {
   if (!user) return { results, detectionDetails };
   const owner = user.login;
 
-  // Get orgs
-  const orgs = await ghGet('user/orgs', token) || [];
-  const orgLogin = orgs[0]?.login || null;
+  // Get orgs + repos in parallel
+  const [orgs, repos] = await Promise.all([
+    ghGet('user/orgs', token),
+    ghGet(`users/${owner}/repos?per_page=50&sort=updated`, token),
+  ]);
+  const orgLogin = (orgs || [])[0]?.login || null;
+  const mainRepo = (repos || [])[0] || null;
 
-  // Get repos
-  const repos = await ghGet(`users/${owner}/repos?per_page=50&sort=updated`, token) || [];
-  const mainRepo = repos[0] || null;
+  // ── Phase 2: fire all independent repo/org-level lookups in parallel ──
+  const repoBase = mainRepo ? `repos/${owner}/${mainRepo.name}` : null;
+  const [
+    branches, pulls, workflows, collaborators,
+    codeownersRoot, codeownersGh, dependabot, codeql,
+    secMdRoot, secMdGh, secretScan,
+    orgData, auditLog,
+  ] = await Promise.all([
+    repoBase ? ghGet(`${repoBase}/branches`, token) : null,
+    repoBase ? ghGet(`${repoBase}/pulls?state=closed&per_page=10`, token) : null,
+    repoBase ? ghGet(`${repoBase}/actions/workflows`, token) : null,
+    repoBase ? ghGet(`${repoBase}/collaborators`, token) : null,
+    repoBase ? ghGet(`${repoBase}/contents/CODEOWNERS`, token) : null,
+    repoBase ? ghGet(`${repoBase}/contents/.github/CODEOWNERS`, token) : null,
+    repoBase ? ghGet(`${repoBase}/contents/.github/dependabot.yml`, token) : null,
+    repoBase ? ghGet(`${repoBase}/code-scanning/alerts?per_page=1&state=open`, token) : null,
+    repoBase ? ghGet(`${repoBase}/contents/SECURITY.md`, token) : null,
+    repoBase ? ghGet(`${repoBase}/contents/.github/SECURITY.md`, token) : null,
+    repoBase ? ghGet(`${repoBase}/secret-scanning/alerts?per_page=1`, token) : null,
+    orgLogin ? ghGet(`orgs/${orgLogin}`, token) : null,
+    orgLogin ? ghGet(`orgs/${orgLogin}/audit-log?per_page=1`, token) : null,
+  ]);
 
-  // ── CC8.2 — Branch protection / required PR reviews ──────────
   if (mainRepo) {
-    const branches = await ghGet(`repos/${owner}/${mainRepo.name}/branches`, token) || [];
-    const mainBranch = branches.find(b => b.name === 'main' || b.name === 'master');
+    // ── CC8.2 — Branch protection / required PR reviews ──────────
+    const branchList = branches || [];
+    const mainBranch = branchList.find(b => b.name === 'main' || b.name === 'master');
     if (mainBranch) {
-      const protection = await ghGet(`repos/${owner}/${mainRepo.name}/branches/${mainBranch.name}/protection`, token);
+      const protection = await ghGet(`${repoBase}/branches/${mainBranch.name}/protection`, token);
       if (protection && protection.required_pull_request_reviews) {
         results['CC8.2'] = 'CONNECTED_AUTO';
         detectionDetails['CC8.2'] = `Branch protection enabled on ${mainBranch.name} branch of ${mainRepo.name} with required PR reviews`;
       }
     }
     // ── CC8.3 — Separate dev/staging/prod environments ──────────
-    const branchNames = branches.map(b => b.name);
+    const branchNames = branchList.map(b => b.name);
     const envBranches = branchNames.filter(n => n.includes('staging') || n.includes('develop') || n.includes('dev') || n.includes('prod'));
     if (envBranches.length > 0) {
       results['CC8.3'] = 'CONNECTED_AUTO';
@@ -94,21 +117,18 @@ export async function scanGitHub(token) {
     }
 
     // ── CC8.1 — Change management (PRs exist) ────────────────────
-    const pulls = await ghGet(`repos/${owner}/${mainRepo.name}/pulls?state=closed&per_page=10`, token) || [];
-    if (pulls.length > 0) {
+    if ((pulls || []).length > 0) {
       results['CC8.1'] = 'CONNECTED_AUTO';
       detectionDetails['CC8.1'] = `${pulls.length} closed pull requests found in ${mainRepo.name} — pull request workflow is in use`;
     }
 
     // ── CC8.4 — Deployment pipeline (workflows exist) ────────────
-    const workflows = await ghGet(`repos/${owner}/${mainRepo.name}/actions/workflows`, token);
     if (workflows?.workflows?.length > 0) {
       results['CC8.4'] = 'CONNECTED_AUTO';
       detectionDetails['CC8.4'] = `${workflows.workflows.length} GitHub Actions workflow(s) found in ${mainRepo.name}: ${workflows.workflows.slice(0, 2).map(w => w.name).join(', ')}`;
     }
 
     // ── CC5.2 — TLS enforced — directional signal only ───────────
-    // GitHub Pages ≠ company-wide TLS enforcement. Check homepage URL instead.
     if (mainRepo.homepage && mainRepo.homepage.startsWith('https://')) {
       results['CC5.2'] = 'IN_PROGRESS';
       detectionDetails['CC5.2'] = `Repo homepage URL uses HTTPS: ${mainRepo.homepage} — directional signal only, manual verification needed`;
@@ -126,53 +146,21 @@ export async function scanGitHub(token) {
         })?.name}`;
       }
     }
-  }
 
-  // ── CC6.2 — MFA enforced (org level) ─────────────────────────
-  if (orgLogin) {
-    const orgData = await ghGet(`orgs/${orgLogin}`, token);
-    if (orgData?.two_factor_requirement_enabled) {
-      results['CC6.2'] = 'CONNECTED_AUTO';
-      detectionDetails['CC6.2'] = `GitHub org ${orgLogin} has two-factor authentication requirement enabled for all members`;
-    }
-
-    // ── CC6.3 — Unique user accounts ─────────────────────────────
-    // Removed: having org members ≠ unique accounts policy.
-    // Unique accounts policy requires documentation, not just member existence.
-
-    // ── CC6.6 — Audit log access ─────────────────────────────────
-    // Audit log existing is directional but ≠ documented privileged access.
-    const auditLog = await ghGet(`orgs/${orgLogin}/audit-log?per_page=1`, token);
-    if (auditLog && Array.isArray(auditLog) && auditLog.length >= 0) {
-      results['CC6.6'] = 'IN_PROGRESS';
-      detectionDetails['CC6.6'] = `GitHub org audit log is accessible for ${orgLogin} — directional signal; document privileged access controls to meet this requirement fully`;
-    }
-  }
-
-  // ── CC6.1 — Access provisioning (collaborators exist with review) ─
-  if (mainRepo) {
-    const collaborators = await ghGet(`repos/${owner}/${mainRepo.name}/collaborators`, token) || [];
-    if (collaborators.length > 0) {
+    // ── CC6.1 — Access provisioning (collaborators exist) ────────
+    if ((collaborators || []).length > 0) {
       results['CC6.1'] = 'CONNECTED_AUTO';
       detectionDetails['CC6.1'] = `${collaborators.length} collaborator(s) found on ${mainRepo.name} — access provisioning via GitHub is in use`;
     }
-  }
 
-  // NOTE: CC6.7 (password policy) removed — GitHub does NOT enforce
-  // company password policies. This requires separate IdP documentation.
-
-  // ── Extra GitHub signals ──────────────────────────────────────
-  if (mainRepo) {
     // CODEOWNERS file → CC8.2 (code review ownership defined)
-    const codeowners = await ghGet(`repos/${owner}/${mainRepo.name}/contents/CODEOWNERS`, token) ||
-                       await ghGet(`repos/${owner}/${mainRepo.name}/contents/.github/CODEOWNERS`, token);
+    const codeowners = codeownersRoot || codeownersGh;
     if (codeowners && !codeowners.message) {
       results['CC8.2'] = 'CONNECTED_AUTO';
       detectionDetails['CC8.2'] = (detectionDetails['CC8.2'] || '') + ' | CODEOWNERS file found';
     }
 
     // Dependabot config → CC8.5 + CC7.4
-    const dependabot = await ghGet(`repos/${owner}/${mainRepo.name}/contents/.github/dependabot.yml`, token);
     if (dependabot && !dependabot.message) {
       results['CC8.5'] = results['CC8.5'] || 'CONNECTED_AUTO';
       results['CC7.4'] = results['CC7.4'] || 'IN_PROGRESS';
@@ -181,22 +169,19 @@ export async function scanGitHub(token) {
     }
 
     // CodeQL / code scanning → CC7.5
-    const codeql = await ghGet(`repos/${owner}/${mainRepo.name}/code-scanning/alerts?per_page=1&state=open`, token);
     if (Array.isArray(codeql)) {
       results['CC7.5'] = results['CC7.5'] || 'IN_PROGRESS';
       detectionDetails['CC7.5'] = 'Code scanning active on ' + mainRepo.name + ' — add formal pentest report for full credit';
     }
 
     // SECURITY.md → CC1.1 directional signal
-    const secMd = await ghGet(`repos/${owner}/${mainRepo.name}/contents/SECURITY.md`, token) ||
-                  await ghGet(`repos/${owner}/${mainRepo.name}/contents/.github/SECURITY.md`, token);
+    const secMd = secMdRoot || secMdGh;
     if (secMd && !secMd.message) {
       results['CC1.1'] = results['CC1.1'] || 'IN_PROGRESS';
       detectionDetails['CC1.1'] = 'SECURITY.md found — upload full Information Security Policy for full credit';
     }
 
     // Secret scanning enabled → CC6.2 additional signal
-    const secretScan = await ghGet(`repos/${owner}/${mainRepo.name}/secret-scanning/alerts?per_page=1`, token);
     if (Array.isArray(secretScan)) {
       results['CC6.2'] = results['CC6.2'] || 'IN_PROGRESS';
       detectionDetails['CC6.2'] = (detectionDetails['CC6.2'] || '') + ' | Secret scanning enabled';
@@ -209,6 +194,19 @@ export async function scanGitHub(token) {
         results['CC6.5'] = results['CC6.5'] || 'IN_PROGRESS';
         detectionDetails['CC6.5'] = 'Offboarding-related workflow detected — upload full procedure for credit';
       }
+    }
+  }
+
+  // ── CC6.2 — MFA enforced (org level) ─────────────────────────
+  if (orgLogin) {
+    if (orgData?.two_factor_requirement_enabled) {
+      results['CC6.2'] = 'CONNECTED_AUTO';
+      detectionDetails['CC6.2'] = `GitHub org ${orgLogin} has two-factor authentication requirement enabled for all members`;
+    }
+    // ── CC6.6 — Audit log access ─────────────────────────────────
+    if (auditLog && Array.isArray(auditLog) && auditLog.length >= 0) {
+      results['CC6.6'] = 'IN_PROGRESS';
+      detectionDetails['CC6.6'] = `GitHub org audit log is accessible for ${orgLogin} — directional signal; document privileged access controls to meet this requirement fully`;
     }
   }
 
