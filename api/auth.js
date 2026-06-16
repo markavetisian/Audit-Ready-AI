@@ -1,13 +1,13 @@
 // ─────────────────────────────────────────────────────────────
 // api/auth.js
-// ACTION: MERGED from github-auth.js + google-auth.js + microsoft-auth.js
+// ACTION: MERGED from github-auth.js + google-auth.js + slack-auth.js
 //
 //   GET /api/auth?provider=github    → redirect to GitHub consent
 //   GET /api/github-callback         → GitHub OAuth callback (via vercel.json rewrite)
 //   GET /api/auth?provider=google    → redirect to Google consent
 //   GET /api/google-callback         → Google OAuth callback (via vercel.json rewrite)
-//   GET /api/auth?provider=microsoft → redirect to Microsoft consent
-//   GET /api/microsoft-callback      → Microsoft OAuth callback (via vercel.json rewrite)
+//   GET /api/auth?provider=slack     → redirect to Slack consent
+//   GET /api/slack-callback          → Slack OAuth callback (via vercel.json rewrite)
 // ─────────────────────────────────────────────────────────────
 
 export default async function handler(req, res) {
@@ -15,9 +15,9 @@ export default async function handler(req, res) {
   const appUrl = process.env.APP_URL || `https://${req.headers.host}`;
 
   // ── Detect which provider this callback belongs to ──────────
-  const isMicrosoftCallback = req.url?.includes('microsoft-callback') || state === 'microsoft';
-  const isGoogleCallback = !isMicrosoftCallback && (req.url?.includes('google-callback') || state === 'google');
-  const isGithubCallback = !isMicrosoftCallback && !isGoogleCallback && (req.url?.includes('github-callback') || code);
+  const isSlackCallback = req.url?.includes('slack-callback') || state === 'slack';
+  const isGoogleCallback = !isSlackCallback && (req.url?.includes('google-callback') || state === 'google');
+  const isGithubCallback = !isSlackCallback && !isGoogleCallback && (req.url?.includes('github-callback') || code);
 
   // ─────────────────────────────────────────────────────────────
   // GITHUB — Callback (code present + github-callback path or provider=github)
@@ -132,62 +132,62 @@ export default async function handler(req, res) {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // MICROSOFT — Callback
+  // SLACK — Callback (uses OpenID Connect)
   // ─────────────────────────────────────────────────────────────
-  if (code && isMicrosoftCallback) {
+  if (code && isSlackCallback) {
     try {
-      const redirectUri = `${appUrl}/api/microsoft-callback`;
-      const tokenRes = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
+      const redirectUri = `${appUrl}/api/slack-callback`;
+      const tokenRes = await fetch('https://slack.com/api/openid.connect.token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
           code,
-          client_id: process.env.MICROSOFT_CLIENT_ID,
-          client_secret: process.env.MICROSOFT_CLIENT_SECRET,
+          client_id: process.env.SLACK_CLIENT_ID,
+          client_secret: process.env.SLACK_CLIENT_SECRET,
           redirect_uri: redirectUri,
           grant_type: 'authorization_code',
         }),
       });
       const tokenData = await tokenRes.json();
-      if (!tokenData.access_token) {
-        console.error('Microsoft token error:', tokenData);
-        return res.status(400).send('Microsoft auth failed. Please try again.');
+      if (!tokenData.ok || !tokenData.access_token) {
+        console.error('Slack token error:', tokenData);
+        return res.status(400).send('Slack auth failed. Please try again.');
       }
-      const userRes = await fetch('https://graph.microsoft.com/v1.0/me', {
+      const userRes = await fetch('https://slack.com/api/openid.connect.userInfo', {
         headers: { Authorization: `Bearer ${tokenData.access_token}` },
       });
       const user = await userRes.json();
       const userPayload = encodeURIComponent(JSON.stringify({
-        name: user.displayName || user.givenName || 'Microsoft User',
-        email: user.mail || user.userPrincipalName || '',
-        avatar: null,
-        type: 'microsoft',
+        name: user.name || user['https://slack.com/user_id'] || 'Slack User',
+        email: user.email || '',
+        avatar: user.picture || null,
+        type: 'slack',
+        slackTeam: user['https://slack.com/team_name'] || '',
       }));
-      return res.redirect(`/?microsoft_user=${userPayload}`);
+      return res.redirect(`/?slack_user=${userPayload}`);
     } catch (err) {
-      console.error('Microsoft callback error:', err);
+      console.error('Slack callback error:', err);
       return res.status(500).send('Auth server error: ' + err.message);
     }
   }
 
   // ─────────────────────────────────────────────────────────────
-  // MICROSOFT — Initiate OAuth
+  // SLACK — Initiate OAuth
   // ─────────────────────────────────────────────────────────────
-  if (provider === 'microsoft' || req.url?.includes('microsoft-oauth')) {
-    const clientId = process.env.MICROSOFT_CLIENT_ID;
-    if (!clientId) return res.status(500).send('MICROSOFT_CLIENT_ID not configured.');
-    const redirectUri = encodeURIComponent(`${appUrl}/api/microsoft-callback`);
-    const scope = encodeURIComponent('openid email profile User.Read');
+  if (provider === 'slack' || req.url?.includes('slack-oauth')) {
+    const clientId = process.env.SLACK_CLIENT_ID;
+    if (!clientId) return res.status(500).send('SLACK_CLIENT_ID not configured.');
+    const redirectUri = encodeURIComponent(`${appUrl}/api/slack-callback`);
+    const scope = encodeURIComponent('openid email profile');
     const authUrl =
-      `https://login.microsoftonline.com/common/oauth2/v2.0/authorize` +
+      `https://slack.com/openid/connect/authorize` +
       `?client_id=${clientId}` +
       `&redirect_uri=${redirectUri}` +
       `&response_type=code` +
       `&scope=${scope}` +
-      `&state=microsoft` +
-      `&prompt=select_account`;
+      `&state=slack`;
     return res.redirect(authUrl);
   }
 
-  return res.status(400).json({ error: 'Missing provider. Use ?provider=github, ?provider=google, or ?provider=microsoft' });
+  return res.status(400).json({ error: 'Missing provider. Use ?provider=github, ?provider=google, or ?provider=slack' });
 }
