@@ -250,7 +250,7 @@ export default async function handler(req, res) {
       const token = generateToken();
       const now = Date.now();
       const expiresAt = now + ttl * 24 * 60 * 60 * 1000;
-      const appUrl = process.env.APP_URL || 'https://auditready.ai';
+      const appUrl = process.env.APP_URL || 'https://auditready.space';
 
       const shareData = {
         token,
