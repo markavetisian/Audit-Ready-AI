@@ -75,6 +75,14 @@ export default async function handler(req, res) {
         headers: { Authorization: `Bearer ${tokenData.access_token}` },
       });
       const user = await userRes.json();
+      // ── Link mode: attach Drive to an existing (e.g. GitHub) account ──
+      if (state === 'google_link') {
+        const linkPayload = encodeURIComponent(JSON.stringify({
+          email: user.email,
+          googleToken: tokenData.access_token,
+        }));
+        return res.redirect(`/?google_link=${linkPayload}`);
+      }
       const userPayload = encodeURIComponent(JSON.stringify({
         name: user.name,
         email: user.email,
@@ -119,6 +127,8 @@ export default async function handler(req, res) {
     const redirectUri = encodeURIComponent(`${appUrl}/api/google-callback`);
     // AuditReady: drive.readonly added for evidence folder
     const scope = encodeURIComponent('openid email profile https://www.googleapis.com/auth/drive.readonly');
+    // link=1 → attach Drive to an existing account instead of logging in fresh
+    const stateParam = req.query.link === '1' ? 'google_link' : 'google';
     const authUrl =
       `https://accounts.google.com/o/oauth2/v2/auth` +
       `?client_id=${clientId}` +
@@ -127,7 +137,7 @@ export default async function handler(req, res) {
       `&scope=${scope}` +
       `&access_type=offline` +
       `&prompt=select_account` +
-      `&state=google`;
+      `&state=${stateParam}`;
     return res.redirect(authUrl);
   }
 

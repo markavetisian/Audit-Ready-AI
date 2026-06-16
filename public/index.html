@@ -1732,6 +1732,29 @@ function handleCallback() {
     return;
   }
 
+  // Google Drive link callback — attach Drive to existing account (e.g. GitHub)
+  const gl = p.get('google_link');
+  if (gl) {
+    history.replaceState({}, '', '/');
+    try {
+      const u = JSON.parse(decodeURIComponent(gl));
+      if (!ST.user) { nav('login'); return; }
+      ST.user.googleToken = u.googleToken;
+      ST.user.googleEmail = u.email;
+      saveUser();
+      // Persist the Drive integration server-side under the current account
+      fetch('/api/integrations', {
+        method: 'POST', headers: authHeaders(),
+        body: JSON.stringify({ provider: 'googleDrive', googleToken: u.googleToken }),
+      }).catch(() => {});
+      updateHeader();
+      toast('Google Drive connected — scanning for evidence…', 'success');
+      nav('integrations');
+      triggerScan();
+    } catch { nav('integrations'); }
+    return;
+  }
+
   // Google callback
   const gu = p.get('google_user');
   if (gu) {
@@ -2431,7 +2454,9 @@ async function rescanGitHub() {
 }
 
 function connectGoogleDrive() {
-  location.href = '/api/auth?provider=google';
+  // Link mode: attach Drive to the current account without replacing the session
+  // (a GitHub-logged-in user keeps their GitHub connection)
+  location.href = '/api/auth?provider=google&link=1';
 }
 
 async function disconnectInt(provider) {
