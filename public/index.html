@@ -717,6 +717,17 @@ header{
 .admin-stat{background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px 14px;box-shadow:0 1px 3px rgba(15,23,42,.04)}
 .admin-stat-num{font-family:var(--mono);font-size:20px;font-weight:700;line-height:1;letter-spacing:-.03em}
 .admin-stat-lbl{font-size:10px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.06em}
+.admin-cards{display:none}
+.admin-card{border:1px solid var(--border);border-radius:10px;padding:12px 14px;background:#fff}
+.admin-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
+.admin-card-id{font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:2px;word-break:break-all}
+.admin-card-meta{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11px;color:var(--muted);margin-bottom:10px}
+.admin-card-actions{display:flex;flex-wrap:wrap;gap:6px}
+.admin-card-actions select.ev-input{width:auto;flex:1 1 110px}
+@media(max-width:760px){
+  .admin-table-wrap{display:none}
+  .admin-cards{display:flex;flex-direction:column;gap:10px;margin-bottom:4px}
+}
 .admin-log-row{padding:4px 0;border-bottom:1px solid var(--border);color:var(--muted);line-height:1.5;word-break:break-all}
 .admin-log-row:last-child{border-bottom:none}
 .plan-badge{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;font-family:var(--mono);letter-spacing:.04em}
@@ -1633,6 +1644,7 @@ header{
         <div class="section-heading" style="margin-bottom:0">USERS</div>
         <input class="ev-input" id="adminUserSearch" placeholder="Search by ID or email..." style="width:220px;margin-bottom:0;font-size:12px" oninput="filterAdminUsers(this.value)"/>
       </div>
+      <div id="adminUserCards" class="admin-cards"></div>
       <div class="admin-table-wrap">
         <table id="adminUsersTable" style="width:100%;border-collapse:collapse;font-size:12px">
           <thead>
@@ -3270,23 +3282,12 @@ async function loadDashboardReminders() {
 
 let _adminData = null;
 
-function adminKey() {
-  // Use GitHub token as admin key
-  if (ST.user?.githubToken) return ST.user.githubToken;
-  return null;
-}
-
-function adminHeaders() {
-  const key = adminKey();
-  if (!key) return {};
-  return { 'X-Admin-Key': key, 'Content-Type': 'application/json' };
-}
+function adminHeaders() { return authHeaders(); }
 
 async function checkAdminAccess() {
-  const key = adminKey();
-  if (!key) return false;
+  if (!ST.user) return false;
   try {
-    const r = await fetch('/api/admin?action=check', { headers: { 'X-Admin-Key': key } });
+    const r = await fetch('/api/admin?action=check', { headers: authHeaders() });
     return r.ok;
   } catch { return false; }
 }
@@ -3331,10 +3332,32 @@ const PLAN_BADGES = {
   enterprise: '<span class="plan-badge plan-enterprise">ENTERPRISE</span>',
 };
 
+function _adminActionButtons(id, u) {
+  const isBlocked = u.status === 'banned' || u.status === 'suspended';
+  return `<select class="ev-input" style="padding:4px 7px;font-size:11px;margin-bottom:0" onchange="adminSetMode('${esc(id)}',this.value)">
+      <option value="">Set plan…</option>
+      <option value="sandbox">Sandbox</option>
+      <option value="starter">Starter</option>
+      <option value="growth">Growth</option>
+      <option value="enterprise">Enterprise</option>
+    </select>
+    ${isBlocked
+      ? `<button class="btn btn-sm btn-secondary" onclick="adminAction('${esc(id)}','${u.status==='banned'?'unban':'unsuspend'}')">Restore</button>`
+      : `<button class="btn btn-sm btn-secondary" onclick="adminAction('${esc(id)}','suspend')">Suspend</button>
+         <button class="btn btn-sm" style="background:var(--red-dim);color:var(--red);border:1px solid rgba(220,38,38,.2);font-size:11px;padding:4px 9px;border-radius:6px" onclick="adminAction('${esc(id)}','ban')">Ban</button>`}
+    <button class="btn btn-sm btn-secondary" onclick="adminAction('${esc(id)}','cancel_subscription')" title="Cancel Stripe subscription">↩ Sub</button>
+    <button class="btn btn-sm" style="background:var(--red-dim);color:var(--red);border:1px solid rgba(220,38,38,.2);font-size:11px;padding:4px 9px;border-radius:6px" onclick="adminDeleteUser('${esc(id)}')">Delete</button>`;
+}
+
 function renderAdminUsers(users) {
   const el = document.getElementById('adminUserRows');
+  const cardsEl = document.getElementById('adminUserCards');
   if (!el) return;
-  if (!users.length) { el.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">No users yet</td></tr>'; return; }
+  if (!users.length) {
+    el.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">No users yet</td></tr>';
+    if (cardsEl) cardsEl.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:12px">No users yet</div>';
+    return;
+  }
 
   el.innerHTML = users.map(u => {
     const id = u.displayId || u.userId || '—';
@@ -3342,8 +3365,7 @@ function renderAdminUsers(users) {
     const statusLabel = u.status || 'active';
     const lastActive = u.lastActivity ? timeAgo(u.lastActivity) : '—';
     const planBadge = PLAN_BADGES[u.mode || 'sandbox'] || PLAN_BADGES.sandbox;
-    const authIcon = u.authType === 'github' ? '⌥ GitHub' : u.authType === 'google' ? '▲ Google' : '—';
-    const isBlocked = u.status === 'banned' || u.status === 'suspended';
+    const authIcon = u.authType === 'github' ? '⌥ GitHub' : u.authType === 'google' ? '▲ Google' : u.authType === 'slack' ? '◆ Slack' : '—';
 
     return `<tr style="border-bottom:1px solid var(--border)" data-userid="${esc(id)}" data-email="${esc(u.email||'')}">
       <td style="padding:9px 12px">
@@ -3356,24 +3378,38 @@ function renderAdminUsers(users) {
       <td style="padding:9px 12px;font-size:11px;color:var(--muted)">${esc(lastActive)}</td>
       <td style="padding:9px 12px;font-family:var(--mono);font-size:11px;color:var(--muted)">${u.scanCount||0} / ${u.reportCount||0}</td>
       <td style="padding:9px 12px;text-align:right">
-        <div style="display:flex;gap:4px;justify-content:flex-end;flex-wrap:wrap">
-          <select class="ev-input" style="width:auto;padding:4px 7px;font-size:11px;margin-bottom:0" onchange="adminSetMode('${esc(id)}',this.value)">
-            <option value="">Set plan…</option>
-            <option value="sandbox">Sandbox</option>
-            <option value="starter">Starter</option>
-            <option value="growth">Growth</option>
-            <option value="enterprise">Enterprise</option>
-          </select>
-          ${isBlocked
-            ? `<button class="btn btn-sm btn-secondary" onclick="adminAction('${esc(id)}','${u.status==='banned'?'unban':'unsuspend'}')">Restore</button>`
-            : `<button class="btn btn-sm btn-secondary" onclick="adminAction('${esc(id)}','suspend')">Suspend</button>
-               <button class="btn btn-sm" style="background:var(--red-dim);color:var(--red);border:1px solid rgba(220,38,38,.2);font-size:11px;padding:4px 9px;border-radius:6px" onclick="adminAction('${esc(id)}','ban')">Ban</button>`}
-          <button class="btn btn-sm btn-secondary" onclick="adminAction('${esc(id)}','cancel_subscription')" title="Cancel Stripe subscription">↩ Sub</button>
-          <button class="btn btn-sm" style="background:var(--red-dim);color:var(--red);border:1px solid rgba(220,38,38,.2);font-size:11px;padding:4px 9px;border-radius:6px" onclick="adminDeleteUser('${esc(id)}')">Delete</button>
-        </div>
+        <div style="display:flex;gap:4px;justify-content:flex-end;flex-wrap:wrap">${_adminActionButtons(id, u)}</div>
       </td>
     </tr>`;
   }).join('');
+
+  if (cardsEl) {
+    cardsEl.innerHTML = users.map(u => {
+      const id = u.displayId || u.userId || '—';
+      const statusColor = u.status === 'banned' ? '#dc2626' : u.status === 'suspended' ? '#d97706' : '#059669';
+      const statusLabel = u.status || 'active';
+      const lastActive = u.lastActivity ? timeAgo(u.lastActivity) : '—';
+      const planBadge = PLAN_BADGES[u.mode || 'sandbox'] || PLAN_BADGES.sandbox;
+      const authIcon = u.authType === 'github' ? '⌥ GitHub' : u.authType === 'google' ? '▲ Google' : u.authType === 'slack' ? '◆ Slack' : '—';
+
+      return `<div class="admin-card" data-userid="${esc(id)}" data-email="${esc(u.email||'')}">
+        <div class="admin-card-top">
+          <div>
+            <div style="font-weight:600;font-size:13px">${esc(u.email || id)}</div>
+            <div class="admin-card-id">${esc(id)}</div>
+          </div>
+          <span style="font-size:11px;font-weight:700;color:${statusColor};flex-shrink:0">${esc(statusLabel.toUpperCase())}</span>
+        </div>
+        <div class="admin-card-meta">
+          <span>${esc(authIcon)}</span>
+          <span>${planBadge}</span>
+          <span>Active ${esc(lastActive)}</span>
+          <span>${u.scanCount||0} scans / ${u.reportCount||0} reports</span>
+        </div>
+        <div class="admin-card-actions">${_adminActionButtons(id, u)}</div>
+      </div>`;
+    }).join('');
+  }
 }
 
 function filterAdminUsers(query) {

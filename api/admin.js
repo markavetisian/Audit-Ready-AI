@@ -18,12 +18,35 @@ const redis = new Redis({
 
 const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY;
 
-function isAdmin(req) {
-  const auth = req.headers['x-admin-key'];
-  if (!auth) return false;
-  // Accept either raw github username or "github:username"
-  const username = auth.replace('github:', '').split(':').pop();
-  return username === process.env.ADMIN_GH;
+function adminList(envVar) {
+  return (process.env[envVar] || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+}
+
+async function resolveIdentity(authHeader) {
+  if (!authHeader?.startsWith('Bearer ')) return null;
+  const token = authHeader.slice(7);
+  if (token.startsWith('google:')) return { username: null, email: token.slice(7) };
+  if (token.startsWith('slack:')) return { username: null, email: token.slice(6) };
+  // Otherwise treat as a GitHub OAuth token — verify it against GitHub's API
+  // rather than trusting a client-asserted username.
+  try {
+    const r = await fetch('https://api.github.com/user', {
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'AuditReady-AI' },
+    });
+    if (!r.ok) return null;
+    const u = await r.json();
+    return { username: u.login || null, email: u.email || null };
+  } catch { return null; }
+}
+
+async function isAdmin(req) {
+  const identity = await resolveIdentity(req.headers.authorization);
+  if (!identity) return false;
+  const ghAdmins = adminList('ADMIN_GH');
+  const emailAdmins = adminList('ADMIN_EMAIL');
+  if (identity.username && ghAdmins.includes(identity.username.toLowerCase())) return true;
+  if (identity.email && emailAdmins.includes(identity.email.toLowerCase())) return true;
+  return false;
 }
 
 async function stripePatch(path, body) {
@@ -45,15 +68,17 @@ async function stripeGet(path) {
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Admin-Key');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
+
+  const admin = await isAdmin(req);
 
   // Auth check endpoint — public (returns 200/401)
   if (req.method === 'GET' && req.query.action === 'check') {
-    return res.status(isAdmin(req) ? 200 : 401).json({ ok: isAdmin(req) });
+    return res.status(admin ? 200 : 401).json({ ok: admin });
   }
 
-  if (!isAdmin(req)) return res.status(401).json({ error: 'Unauthorized' });
+  if (!admin) return res.status(401).json({ error: 'Unauthorized' });
 
   try {
     // ── GET: Dashboard data ──────────────────────────────────────
