@@ -92,8 +92,10 @@ export default async function handler(req, res) {
     try {
       const sub = await stripeGet(`subscriptions/${subscriptionId}`);
       if (sub.error) return res.status(400).json({ error: sub.error.message });
-      // Ownership check: the subscription must belong to this user.
-      if (sub.metadata?.userId && sub.metadata.userId !== userId) {
+      // Ownership check (fail closed): the subscription must positively belong
+      // to this user. A subscription with no/ mismatched userId metadata is
+      // rejected so a caller can't confirm someone else's (or a foreign) sub.
+      if (sub.metadata?.userId !== userId) {
         return res.status(403).json({ error: 'Subscription does not belong to this account' });
       }
       const priceId = sub.items?.data?.[0]?.price?.id;
