@@ -1205,16 +1205,22 @@ header{
       </div>
       <!-- Main -->
       <div class="dash-main">
-        <!-- Post-scan upsell — shown after scan when GitHub not connected and on sandbox -->
-        <div id="upsellCard" class="card" style="display:none;margin-bottom:16px;border-color:rgba(37,99,235,.3);background:linear-gradient(135deg,#eff6ff,#f8fafc)">
+        <!-- Value-gated upgrade CTA — shown to sandbox users once they have a score -->
+        <div id="upsellCard" class="card" style="display:none;margin-bottom:16px;border:1px solid rgba(37,99,235,.35);background:linear-gradient(135deg,#eef4ff,#f8fafc);box-shadow:0 4px 22px rgba(37,99,235,.09)">
           <div style="display:flex;align-items:flex-start;gap:14px">
-            <div style="font-size:28px;flex-shrink:0">🔍</div>
+            <div style="font-size:26px;flex-shrink:0">🚀</div>
             <div style="flex:1">
-              <div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:4px">Auto-detect 12+ controls instantly</div>
-              <div style="font-size:12px;color:#64748b;line-height:1.6;margin-bottom:12px">Connect GitHub, AWS, or Google Drive to automatically verify controls like access management, code review, and change management — no manual uploads needed.</div>
-              <div style="display:flex;gap:8px;flex-wrap:wrap">
-                <button class="btn btn-primary btn-sm" onclick="openPricingModal('growth');document.getElementById('upsellCard').style.display='none'">⚡ Upgrade to Growth</button>
-                <button class="btn btn-ghost btn-sm" onclick="document.getElementById('upsellCard').style.display='none'">Dismiss</button>
+              <div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:4px" id="upsellHeadline">Close the gap to audit-ready</div>
+              <div style="font-size:12.5px;color:#475569;line-height:1.6;margin-bottom:12px" id="upsellSub">Your free scan found the gaps. Unlock the tools to fix them — and prove it to your customers:</div>
+              <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:14px">
+                <div style="font-size:12.5px;color:#0f172a"><span style="color:#16a34a;font-weight:700">✓</span> Full AI audit-readiness report &amp; exportable PDF</div>
+                <div style="font-size:12.5px;color:#0f172a"><span style="color:#16a34a;font-weight:700">✓</span> Personalized 30 / 60 / 90-day fix plan</div>
+                <div style="font-size:12.5px;color:#0f172a"><span style="color:#16a34a;font-weight:700">✓</span> Shareable auditor &amp; customer Trust Page</div>
+                <div style="font-size:12.5px;color:#0f172a"><span style="color:#16a34a;font-weight:700">✓</span> Continuous auto-scan + renewal alerts</div>
+              </div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+                <button class="btn btn-primary btn-sm" onclick="openPricingModal('growth')">⚡ Unlock my fix plan →</button>
+                <span style="font-size:11px;color:#94a3b8">From $250/mo · cancel anytime</span>
               </div>
             </div>
           </div>
@@ -1972,6 +1978,7 @@ async function loadScore() {
     renderScorePanel(d);
     renderCategoryBars(d.categoryBreakdown);
     renderTopGaps(d.topGaps);
+    renderUpgradeCTA();
     // Load last scan meta
     const sr = await fetch('/api/scan', { headers: authHeaders() });
     if (sr.ok) {
@@ -2244,11 +2251,8 @@ async function triggerScan() {
     await loadControls();
     const hadChanges = _showScanChangeSummary(before);
     if (!hadChanges && d.controlsAutoFilled === 0) toast('Scan complete · No new signals detected', 'success');
-    // Show upsell if sandbox and GitHub not connected
-    if (ST.mode === 'sandbox' && !ST.user?.githubToken) {
-      const uc = document.getElementById('upsellCard');
-      if (uc) uc.style.display = 'block';
-    }
+    // loadScore() → renderUpgradeCTA() handles the post-scan upgrade prompt now,
+    // personalized with the user's actual score and remaining gaps.
   } catch (err) {
     toast(err.message || 'Scan failed', 'error');
   }
@@ -3753,6 +3757,30 @@ function applyPaywall() {
   if (reportBtn && ST.mode === 'sandbox') {
     reportBtn.closest('button').title = 'Upgrade to Growth or higher to generate AI reports';
   }
+  renderUpgradeCTA();
+}
+
+// Personalized, outcome-driven upgrade CTA shown at the peak-intent moment:
+// once a free (sandbox) user has a score and can see their gaps.
+function renderUpgradeCTA() {
+  const card = document.getElementById('upsellCard');
+  if (!card) return;
+  // Only for sandbox users who have actually engaged (have a computed score).
+  if (ST.mode !== 'sandbox' || !ST.score || typeof ST.score.score !== 'number') {
+    card.style.display = 'none';
+    return;
+  }
+  const score = ST.score.score;
+  const gaps = Math.max(0, (ST.score.applicable || 0) - (ST.score.verified || 0));
+  const head = document.getElementById('upsellHeadline');
+  const sub = document.getElementById('upsellSub');
+  if (head) head.textContent = "You're " + score + '% audit-ready — let’s close the gap';
+  if (sub) {
+    sub.textContent = gaps > 0
+      ? ('Your free scan found ' + gaps + ' control' + (gaps === 1 ? '' : 's') + ' still missing evidence. Unlock the tools to fix them — and prove it to your customers:')
+      : 'Unlock the tools to finish your audit prep — and prove it to your customers:';
+  }
+  card.style.display = 'block';
 }
 
 // ── Cancel subscription ───────────────────────────────────────
