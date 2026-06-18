@@ -21,6 +21,12 @@ const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY;
 
 const VALID_MODES = ['starter', 'growth', 'enterprise'];
 
+const PRICE_TO_MODE = {
+  'price_1ThZIZFQiRRnlhwuYRI3MfNX': 'starter',
+  'price_1ThZLSFQiRRnlhwueStdff4L': 'growth',
+  'price_1ThZNGFQiRRnlhwuH23alwzB': 'enterprise',
+};
+
 // Resolve the authenticated user's id server-side. Never trust a
 // client-supplied userId for billing actions.
 async function getUserId(authHeader) {
@@ -74,6 +80,43 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
+
+  // ── POST confirm: verify a paid subscription and unlock the plan ──
+  // This makes payment → unlock work immediately and reliably, instead of
+  // depending solely on the Stripe webhook (which may lag or be misconfigured).
+  if (req.method === 'POST' && req.body?.action === 'confirm') {
+    const userId = await getUserId(req.headers.authorization);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const { subscriptionId } = req.body || {};
+    if (!subscriptionId) return res.status(400).json({ error: 'Missing subscriptionId' });
+    try {
+      const sub = await stripeGet(`subscriptions/${subscriptionId}`);
+      if (sub.error) return res.status(400).json({ error: sub.error.message });
+      // Ownership check: the subscription must belong to this user.
+      if (sub.metadata?.userId && sub.metadata.userId !== userId) {
+        return res.status(403).json({ error: 'Subscription does not belong to this account' });
+      }
+      const priceId = sub.items?.data?.[0]?.price?.id;
+      const mode = PRICE_TO_MODE[priceId];
+      const paid = sub.status === 'active' || sub.status === 'trialing';
+      if (!paid || !mode) {
+        return res.status(200).json({ ok: false, status: sub.status, mode: null });
+      }
+      const userKey = `admin:user:${userId}`;
+      let userData = {};
+      try { userData = (await redis.get(userKey)) || {}; } catch {}
+      await redis.set(userKey, JSON.stringify({
+        ...userData,
+        mode,
+        stripeSubscriptionId: sub.id,
+        upgradedAt: Date.now(),
+      }));
+      return res.status(200).json({ ok: true, mode });
+    } catch (err) {
+      console.error('Confirm error:', err.message);
+      return res.status(500).json({ error: 'Could not confirm subscription' });
+    }
+  }
 
   // ── POST: Create Stripe subscription checkout ────────────────
   // Identical logic from stripe-checkout.js

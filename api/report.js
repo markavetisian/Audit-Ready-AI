@@ -205,14 +205,19 @@ export default async function handler(req, res) {
         return res.status(200).json(report);
       }
 
-      // List all report keys for this user
-      const keys = await redis.keys(`user:${userId}:report:*`);
-      if (!keys.length) return res.status(200).json({ reports: [] });
+      // List reports from a maintained per-user index (avoids O(N) KEYS scan).
+      let ids = await redis.lrange(`user:${userId}:reports`, 0, 19);
+      // Back-compat: if the index is empty, fall back to a one-time KEYS scan.
+      if (!ids || !ids.length) {
+        const keys = await redis.keys(`user:${userId}:report:*`);
+        ids = (keys || []).map(k => k.split(':').pop());
+      }
+      if (!ids.length) return res.status(200).json({ reports: [] });
 
       const reports = [];
-      for (const key of keys.slice(0, 20)) {
+      for (const id of ids.slice(0, 20)) {
         try {
-          const raw = await redis.get(key);
+          const raw = await redis.get(`user:${userId}:report:${id}`);
           if (raw) {
             const r = typeof raw === 'object' ? raw : JSON.parse(raw);
             // Return summary only (no full content) for listing
@@ -321,6 +326,9 @@ ${JSON.stringify(REPORT_SCHEMA)}`;
       };
 
       await redis.set(`user:${userId}:report:${reportId}`, JSON.stringify(reportData));
+      // Maintain a newest-first index so listing never needs a KEYS scan.
+      await redis.lpush(`user:${userId}:reports`, reportId);
+      await redis.ltrim(`user:${userId}:reports`, 0, 49);
       await trackUser(userId, 'report');
 
       return res.status(200).json({

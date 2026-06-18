@@ -450,6 +450,27 @@ header{
 }
 .modal-box h3{font-size:16px;font-weight:600;margin-bottom:6px;letter-spacing:-.02em}
 .modal-box p{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px}
+/* Full report viewer (also mirrored inline for the print/export window) */
+.rpt-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;border-bottom:2px solid #e2e8f0;padding-bottom:16px;margin-bottom:8px}
+.rpt-title{font-size:20px;font-weight:800;color:#0f172a;letter-spacing:-.02em}
+.rpt-sub{font-size:13px;color:#64748b;margin-top:3px}
+.rpt-score{text-align:center;flex-shrink:0}
+.rpt-score-num{font-size:30px;font-weight:800;color:#2563eb;line-height:1}
+.rpt-score-lbl{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+.rpt-eta{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 12px;font-size:13px;color:#1e40af;margin:14px 0}
+.rpt-h{font-size:15px;font-weight:700;color:#0f172a;margin:22px 0 8px}
+.rpt-p{font-size:13px;line-height:1.7;color:#334155;margin:0 0 8px}
+.rpt-gap{border:1px solid #e2e8f0;border-left:3px solid #dc2626;border-radius:6px;padding:10px 12px;margin-bottom:8px}
+.rpt-gap-top{display:flex;justify-content:space-between;align-items:center}
+.rpt-gap-id{font-family:monospace;font-size:12px;font-weight:700;color:#0f172a}
+.rpt-urg{font-size:10px;font-weight:700;letter-spacing:.05em}
+.rpt-gap-title{font-size:13px;font-weight:600;color:#0f172a;margin:3px 0}
+.rpt-gap-action{font-size:12px;color:#475569;line-height:1.6}
+.rpt-cat{margin-bottom:12px}
+.rpt-cat-name{font-size:13px;font-weight:700;color:#2563eb;margin-bottom:3px}
+.rpt-ul{margin:4px 0 8px;padding-left:20px}
+.rpt-ul li{font-size:13px;line-height:1.7;color:#334155}
+.rpt-disc{margin-top:24px;padding-top:14px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;line-height:1.6;font-style:italic}
 .share-url{
   display:flex;align-items:center;gap:6px;
   background:var(--surface2);border:1px solid var(--border);border-radius:6px;
@@ -1435,6 +1456,20 @@ header{
   </div>
 </div>
 
+<!-- ── Full Report Modal ─────────────────────────────────────── -->
+<div id="reportModal" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeReportModal()">
+  <div class="modal-box" style="max-width:720px;max-height:88vh;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px">
+      <h3 style="margin:0">Audit Readiness Report</h3>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary btn-sm" id="reportModalPrint">⬇ Download PDF</button>
+        <button class="btn btn-secondary btn-sm" onclick="closeReportModal()">Close</button>
+      </div>
+    </div>
+    <div id="reportModalBody" style="overflow-y:auto;padding:4px 2px"></div>
+  </div>
+</div>
+
 <!-- ── Evidence Locker ────────────────────────────────────────── -->
 <div class="page" id="pg-locker">
   <div class="page-inner-narrow" style="padding-top:24px">
@@ -1989,6 +2024,8 @@ function renderTopGaps(gaps) {
   }).join('');
 }
 
+let _latestReportId = null;
+
 async function loadLatestReport() {
   try {
     const r = await fetch('/api/report', { headers: authHeaders() });
@@ -1997,6 +2034,7 @@ async function loadLatestReport() {
     const reports = d.reports || [];
     if (!reports.length) return;
     const latest = reports[0];
+    _latestReportId = latest.id;
     const sec = document.getElementById('latestReportSection');
     const cont = document.getElementById('latestReportContent');
     sec.style.display = 'block';
@@ -2006,8 +2044,128 @@ async function loadLatestReport() {
       '<span style="font-family:var(--mono);font-size:11px;color:var(--muted)">' + dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' · Score: ' + (latest.score || 0) + '%</span>' +
       '<span class="badge badge-connected">' + esc(latest.overallRating || 'GENERATED') + '</span>' +
       '</div>' +
-      '<div class="report-summary">' + esc(latest.executiveSummary || '') + '</div>';
+      '<div class="report-summary">' + esc(latest.executiveSummary || '') + '</div>' +
+      '<div style="display:flex;gap:8px;margin-top:12px">' +
+      '<button class="btn btn-secondary btn-sm" onclick="viewFullReport(\'' + esc(latest.id) + '\')">📄 View Full Report</button>' +
+      '<button class="btn btn-primary btn-sm" onclick="downloadReportPdf(\'' + esc(latest.id) + '\')">⬇ Download PDF</button>' +
+      '</div>';
   } catch {}
+}
+
+// Build a full, formatted HTML body for a report (shared by viewer + export).
+function _buildReportHtml(R) {
+  const rep = R.report || {};
+  const cat = rep.readinessByCategory || {};
+  const gaps = rep.criticalGaps || [];
+  const ev = rep.evidenceSuggestions || {};
+  const ns = rep.nextSteps || {};
+  const dt = new Date(R.generatedAt || Date.now());
+  const urgencyColor = u => u === 'HIGH' ? '#dc2626' : u === 'MEDIUM' ? '#d97706' : '#2563eb';
+  let h = '';
+  h += '<div class="rpt-head"><div><div class="rpt-title">SOC 2 Audit Readiness Report</div>' +
+       '<div class="rpt-sub">' + esc(R.companyName || 'Your Company') + ' · ' + dt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) + '</div></div>' +
+       '<div class="rpt-score"><div class="rpt-score-num">' + (R.score || 0) + '%</div><div class="rpt-score-lbl">' + esc(rep.overallRating || 'GENERATED').replace(/_/g, ' ') + '</div></div></div>';
+  if (rep.estimatedTimeToAuditReady) {
+    h += '<div class="rpt-eta">⏱ Estimated time to audit-ready: <strong>' + esc(rep.estimatedTimeToAuditReady) + '</strong></div>';
+  }
+  h += '<h3 class="rpt-h">Executive Summary</h3><p class="rpt-p">' + esc(rep.executiveSummary || '') + '</p>';
+
+  if (gaps.length) {
+    h += '<h3 class="rpt-h">Critical Gaps</h3>';
+    for (const g of gaps) {
+      h += '<div class="rpt-gap"><div class="rpt-gap-top"><span class="rpt-gap-id">' + esc(g.controlId || '') + '</span>' +
+           '<span class="rpt-urg" style="color:' + urgencyColor(g.urgency) + '">' + esc(g.urgency || '') + '</span></div>' +
+           '<div class="rpt-gap-title">' + esc(g.title || '') + '</div>' +
+           '<div class="rpt-gap-action">' + esc(g.remediationAction || '') + '</div></div>';
+    }
+  }
+
+  const catKeys = Object.keys(cat);
+  if (catKeys.length) {
+    h += '<h3 class="rpt-h">Readiness by Category</h3>';
+    for (const k of catKeys) {
+      if (!cat[k]) continue;
+      h += '<div class="rpt-cat"><div class="rpt-cat-name">' + esc((CATEGORY_NAMES[k] || k)) + '</div><div class="rpt-p">' + esc(cat[k]) + '</div></div>';
+    }
+  }
+
+  const evKeys = Object.keys(ev);
+  if (evKeys.length) {
+    h += '<h3 class="rpt-h">Evidence to Gather</h3><ul class="rpt-ul">';
+    for (const k of evKeys) h += '<li><strong>' + esc(k) + ':</strong> ' + esc(ev[k]) + '</li>';
+    h += '</ul>';
+  }
+
+  const blocks = [['First 30 days', ns.thirtyDays], ['31–60 days', ns.sixtyDays], ['61–90 days', ns.ninetyDays]];
+  if (blocks.some(b => Array.isArray(b[1]) && b[1].length)) {
+    h += '<h3 class="rpt-h">Action Plan</h3>';
+    for (const [label, items] of blocks) {
+      if (!Array.isArray(items) || !items.length) continue;
+      h += '<div class="rpt-cat"><div class="rpt-cat-name">' + esc(label) + '</div><ul class="rpt-ul">';
+      for (const it of items) h += '<li>' + esc(it) + '</li>';
+      h += '</ul></div>';
+    }
+  }
+
+  h += '<div class="rpt-disc">' + esc(rep.disclaimer || 'This report was generated by AuditReady AI to help you prepare for a SOC 2 audit. It is not a certified audit opinion and does not replace an attestation by a licensed CPA firm.') + '</div>';
+  return h;
+}
+
+const _RPT_CSS =
+  '.rpt-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;border-bottom:2px solid #e2e8f0;padding-bottom:16px;margin-bottom:8px}' +
+  '.rpt-title{font-size:20px;font-weight:800;color:#0f172a;letter-spacing:-.02em}' +
+  '.rpt-sub{font-size:13px;color:#64748b;margin-top:3px}' +
+  '.rpt-score{text-align:center;flex-shrink:0}.rpt-score-num{font-size:30px;font-weight:800;color:#2563eb;line-height:1}' +
+  '.rpt-score-lbl{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-top:2px}' +
+  '.rpt-eta{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 12px;font-size:13px;color:#1e40af;margin:14px 0}' +
+  '.rpt-h{font-size:15px;font-weight:700;color:#0f172a;margin:22px 0 8px}' +
+  '.rpt-p{font-size:13px;line-height:1.7;color:#334155;margin:0 0 8px}' +
+  '.rpt-gap{border:1px solid #e2e8f0;border-left:3px solid #dc2626;border-radius:6px;padding:10px 12px;margin-bottom:8px}' +
+  '.rpt-gap-top{display:flex;justify-content:space-between;align-items:center}' +
+  '.rpt-gap-id{font-family:monospace;font-size:12px;font-weight:700;color:#0f172a}' +
+  '.rpt-urg{font-size:10px;font-weight:700;letter-spacing:.05em}' +
+  '.rpt-gap-title{font-size:13px;font-weight:600;color:#0f172a;margin:3px 0}' +
+  '.rpt-gap-action{font-size:12px;color:#475569;line-height:1.6}' +
+  '.rpt-cat{margin-bottom:12px}.rpt-cat-name{font-size:13px;font-weight:700;color:#2563eb;margin-bottom:3px}' +
+  '.rpt-ul{margin:4px 0 8px;padding-left:20px}.rpt-ul li{font-size:13px;line-height:1.7;color:#334155}' +
+  '.rpt-disc{margin-top:24px;padding-top:14px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;line-height:1.6;font-style:italic}';
+
+async function _fetchFullReport(id) {
+  const r = await fetch('/api/report?id=' + encodeURIComponent(id), { headers: authHeaders() });
+  if (!r.ok) throw new Error('Could not load report');
+  return r.json();
+}
+
+async function viewFullReport(id) {
+  try {
+    const R = await _fetchFullReport(id);
+    const modal = document.getElementById('reportModal');
+    document.getElementById('reportModalBody').innerHTML = _buildReportHtml(R);
+    document.getElementById('reportModalPrint').onclick = () => downloadReportPdf(id);
+    modal.style.display = 'flex';
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+function closeReportModal() {
+  const m = document.getElementById('reportModal');
+  if (m) m.style.display = 'none';
+}
+
+async function downloadReportPdf(id) {
+  try {
+    const R = await _fetchFullReport(id);
+    const w = window.open('', '_blank');
+    if (!w) { toast('Allow pop-ups to download the PDF', 'error'); return; }
+    w.document.write(
+      '<!DOCTYPE html><html><head><meta charset="utf-8"><title>SOC 2 Audit Readiness Report — ' + esc(R.companyName || 'Report') + '</title>' +
+      '<style>body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;max-width:760px;margin:0 auto;padding:40px 32px;color:#0f172a}' +
+      _RPT_CSS + '@media print{body{padding:0}}</style></head><body>' +
+      _buildReportHtml(R) +
+      '<scr' + 'ipt>window.onload=function(){setTimeout(function(){window.print();},250);};</scr' + 'ipt>' +
+      '</body></html>'
+    );
+    w.document.close();
+  } catch (err) { toast(err.message, 'error'); }
 }
 
 // ── Scan ──────────────────────────────────────────────────────
@@ -2821,9 +2979,28 @@ async function submitPricingPayment() {
       return;
     }
 
+    // Unlock immediately via a server-side check, rather than waiting on the
+    // Stripe webhook (which may lag or be misconfigured).
+    txtEl.innerHTML = '<span class="spinner"></span> Activating...';
+    try {
+      const cr = await fetch('/api/billing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ action: 'confirm', subscriptionId: d.subscriptionId }),
+      });
+      const cd = await cr.json();
+      if (cr.ok && cd.ok && cd.mode) {
+        ST.mode = cd.mode;
+        applyPaywall();
+      }
+    } catch {}
+
     // Success
     closePricingModal();
     toast('🎉 ' + _selectedPlan.name.charAt(0).toUpperCase() + _selectedPlan.name.slice(1) + ' plan activated!', 'success');
+    // Refresh the dashboard so unlocked features reflect immediately.
+    if (typeof loadUserMode === 'function') loadUserMode();
+    if (ST.view === 'dashboard' || true) { try { loadDashboard(); } catch {} }
 
   } catch(err) {
     errEl.textContent = err.message;
