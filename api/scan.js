@@ -16,7 +16,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { Redis } from '@upstash/redis';
-import { trackUser, isBlocked, checkRateLimit, logError } from './_telemetry.js';
+import { trackUser, isBlocked, checkRateLimit, logError, verifySession } from './_telemetry.js';
 
 // Give the scan extra headroom — multi-repo GitHub + Drive crawls can exceed
 // the default 10s serverless cap. 60s is the maximum on the Hobby plan.

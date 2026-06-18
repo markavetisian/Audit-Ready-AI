@@ -1753,6 +1753,31 @@ function authHeaders() {
   return { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' };
 }
 
+// Global safety net: if an authenticated /api call comes back 401, the session
+// is no longer valid (e.g. an old token after a deploy, or natural expiry).
+// Clear it and send the user to a clean re-login instead of showing "Failed".
+(function installAuthInterceptor() {
+  const _origFetch = window.fetch.bind(window);
+  let _reauthing = false;
+  window.fetch = async function (url, opts) {
+    const res = await _origFetch(url, opts);
+    try {
+      const u = typeof url === 'string' ? url : (url && url.url) || '';
+      // Exclude /api/admin (401 is expected for non-admins) and /api/share (public).
+      const isAuthApi = u.includes('/api/') && !u.includes('/api/admin') && !u.includes('/api/share');
+      if (res.status === 401 && isAuthApi && ST.user && !_reauthing) {
+        _reauthing = true;
+        ST.user = null; sessionStorage.removeItem('ar_user');
+        try { updateHeader(); } catch {}
+        try { toast('Your session expired — please sign in again', 'error'); } catch {}
+        try { nav('login'); } catch {}
+        setTimeout(() => { _reauthing = false; }, 3000);
+      }
+    } catch {}
+    return res;
+  };
+})();
+
 function saveUser() { if (ST.user) sessionStorage.setItem('ar_user', JSON.stringify(ST.user)); }
 function loadUser() {
   try { const s = sessionStorage.getItem('ar_user'); if (s) ST.user = JSON.parse(s); } catch {}
