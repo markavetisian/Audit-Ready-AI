@@ -10,6 +10,8 @@
 //   GET /api/slack-callback          → Slack OAuth callback (via vercel.json rewrite)
 // ─────────────────────────────────────────────────────────────
 
+import { trackUser } from './_telemetry.js';
+
 export default async function handler(req, res) {
   const { provider, code, state } = req.query;
   const appUrl = process.env.APP_URL || `https://${req.headers.host}`;
@@ -35,6 +37,17 @@ export default async function handler(req, res) {
       });
       const tokenData = await tokenRes.json();
       if (tokenData.access_token) {
+        // Track the login server-side with verified identity (telemetry endpoint
+        // is a shared module, not an HTTP route, so we record it here directly).
+        try {
+          const ghUserRes = await fetch('https://api.github.com/user', {
+            headers: { Authorization: `Bearer ${tokenData.access_token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'AuditReady-AI' },
+          });
+          if (ghUserRes.ok) {
+            const ghUser = await ghUserRes.json();
+            await trackUser('github:' + ghUser.login, 'login', ghUser.email || null, 'github');
+          }
+        } catch {}
         // AuditReady: no deploy flow — just redirect with token
         let redirectTo = `/?token=${tokenData.access_token}`;
         if (state && state.length > 0 && state !== 'github') {
@@ -82,6 +95,9 @@ export default async function handler(req, res) {
           googleToken: tokenData.access_token,
         }));
         return res.redirect(`/?google_link=${linkPayload}`);
+      }
+      if (user.email) {
+        try { await trackUser('google:' + user.email, 'login', user.email, 'google'); } catch {}
       }
       const userPayload = encodeURIComponent(JSON.stringify({
         name: user.name,
@@ -167,6 +183,9 @@ export default async function handler(req, res) {
         headers: { Authorization: `Bearer ${tokenData.access_token}` },
       });
       const user = await userRes.json();
+      if (user.email) {
+        try { await trackUser('slack:' + user.email, 'login', user.email, 'slack'); } catch {}
+      }
       const userPayload = encodeURIComponent(JSON.stringify({
         name: user.name || user['https://slack.com/user_id'] || 'Slack User',
         email: user.email || '',

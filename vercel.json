@@ -8,9 +8,6 @@
     { "source": "/api/slack-callback",      "destination": "/api/auth" },
     { "source": "/api/stripe-cancel",    "destination": "/api/billing" },
     { "source": "/api/stripe-checkout",  "destination": "/api/billing" },
-    { "source": "/api/track",            "destination": "/api/telemetry" },
-    { "source": "/api/log",              "destination": "/api/telemetry" },
-    { "source": "/api/analytics",        "destination": "/api/telemetry" },
     { "source": "/((?!api/|terms\\.html|privacy\\.html).*)", "destination": "/public/index.html" }
   ]
 }

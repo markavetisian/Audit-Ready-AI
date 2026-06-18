@@ -828,7 +828,7 @@ header{
     </div>
     <div class="lp-nav-links">
       <div class="lp-nav-link" onclick="openSoc2Modal()">How it works</div>
-      <div class="lp-nav-link">Pricing</div>
+      <div class="lp-nav-link" onclick="openPricingModal()">Pricing</div>
       <div class="lp-nav-link" onclick="openSoc2Modal()">SOC 2 Guide</div>
     </div>
     <button class="lp-nav-signin" onclick="location.href='/api/auth?provider=github'">Sign in</button>
@@ -1738,7 +1738,6 @@ function handleCallback() {
     }).then(r => r.json()).then(u => {
       ST.user = { name: u.name || u.login, email: u.email || u.login + '@github', avatar: u.avatar_url, type: 'github', githubToken: tok, username: u.login };
       saveUser(); history.replaceState({}, '', '/');
-      fetch('/api/telemetry?type=track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: 'github:' + u.login, type: 'login', email: u.email, authType: 'github' }) }).catch(() => {});
       updateHeader(); nav('dashboard'); loadDashboard();
     }).catch(() => nav('login'));
     return;
@@ -1774,7 +1773,6 @@ function handleCallback() {
       const u = JSON.parse(decodeURIComponent(gu));
       ST.user = { name: u.name, email: u.email, avatar: u.avatar, type: 'google', githubToken: null, googleToken: u.googleToken };
       saveUser(); history.replaceState({}, '', '/');
-      fetch('/api/telemetry?type=track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: 'google:' + u.email, type: 'login', email: u.email, authType: 'google' }) }).catch(() => {});
       updateHeader(); nav('dashboard'); loadDashboard();
     } catch { nav('login'); }
     return;
@@ -1787,7 +1785,6 @@ function handleCallback() {
       const u = JSON.parse(decodeURIComponent(su));
       ST.user = { name: u.name, email: u.email, avatar: u.avatar, type: 'slack', githubToken: null, slackTeam: u.slackTeam };
       saveUser(); history.replaceState({}, '', '/');
-      fetch('/api/telemetry?type=track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: 'slack:' + u.email, type: 'login', email: u.email, authType: 'slack' }) }).catch(() => {});
       updateHeader(); nav('dashboard'); loadDashboard();
     } catch { nav('login'); }
     return;
@@ -2646,6 +2643,13 @@ function esc(s) {
   const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML;
 }
 
+// Only allow http(s) URLs in href to block javascript:/data: injection.
+function safeUrl(u) {
+  if (!u) return '';
+  const t = String(u).trim();
+  return /^https?:\/\//i.test(t) ? esc(t) : '';
+}
+
 let _toastTimer;
 function toast(msg, type) {
   const existing = document.querySelector('.toast');
@@ -2917,10 +2921,11 @@ function renderLockerItems(items, filter) {
           (expDays < 0 ? 'EXPIRED' : expDays + 'd left') + '</span>'
         : '';
       const icon = DOC_TYPE_ICONS[item.documentType || 'OTHER'] || '📎';
-      const isLink = item.type === 'LINK' && item.value?.startsWith('http');
+      const itemVal = item.value || '';
+      const isLink = item.type === 'LINK' && /^https?:\/\//i.test(itemVal);
       const valEl = isLink
-        ? '<a href="' + esc(item.value) + '" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;font-size:12px">' + esc(item.value.slice(0, 70)) + '…</a>'
-        : '<span style="font-size:12px">' + esc(item.value.slice(0, 80)) + '</span>';
+        ? '<a href="' + esc(itemVal) + '" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;font-size:12px">' + esc(itemVal.slice(0, 70)) + '…</a>'
+        : '<span style="font-size:12px">' + esc(itemVal.slice(0, 80)) + '</span>';
 
       html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 10px;display:flex;align-items:center;gap:8px">' +
         '<span style="font-size:15px;flex-shrink:0">' + icon + '</span>' +
@@ -3019,7 +3024,7 @@ function renderTrustPreview(p) {
     (p.logoUrl ? '<img src="' + esc(p.logoUrl) + '" style="width:40px;height:40px;border-radius:8px;object-fit:cover"/>' : '<div style="width:40px;height:40px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px">' + esc((p.companyName || 'C')[0]) + '</div>') +
     '<div>' +
     '<div style="font-size:15px;font-weight:600">' + esc(p.companyName || 'Your Company') + '</div>' +
-    (p.website ? '<a href="' + esc(p.website) + '" target="_blank" style="font-size:11px;color:var(--accent)">' + esc(p.website) + '</a>' : '') +
+    (safeUrl(p.website) ? '<a href="' + safeUrl(p.website) + '" target="_blank" rel="noopener" style="font-size:11px;color:var(--accent)">' + esc(p.website) + '</a>' : '') +
     '</div></div>' +
     (p.description ? '<p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6">' + esc(p.description) + '</p>' : '') +
     '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">' + fws + '</div>' +
@@ -3190,11 +3195,11 @@ function renderVendors(vendors) {
 
     html += '<tr style="border-bottom:1px solid var(--border)">' +
       '<td style="padding:8px 8px"><div style="font-weight:500">' + esc(v.name) + '</div>' +
-      (v.website ? '<div><a href="' + esc(v.website) + '" target="_blank" style="color:var(--accent);font-size:10px">' + esc(v.website.replace('https://','')) + '</a></div>' : '') +
+      (safeUrl(v.website) ? '<div><a href="' + safeUrl(v.website) + '" target="_blank" rel="noopener" style="color:var(--accent);font-size:10px">' + esc(v.website.replace('https://','')) + '</a></div>' : '') +
       '</td>' +
       '<td style="padding:8px 8px;color:var(--muted)">' + esc(v.category || '—') + '</td>' +
       '<td style="padding:8px 8px"><span style="color:' + (RISK_COLORS[v.riskLevel] || '#6b7280') + ';font-family:var(--mono);font-size:11px;font-weight:600">' + esc(v.riskLevel || '—') + '</span></td>' +
-      '<td style="padding:8px 8px">' + (v.soc2ReportUrl ? '<a href="' + esc(v.soc2ReportUrl) + '" target="_blank" style="color:var(--accent)">View →</a>' : '<span style="color:var(--muted)">None</span>') + '</td>' +
+      '<td style="padding:8px 8px">' + (safeUrl(v.soc2ReportUrl) ? '<a href="' + safeUrl(v.soc2ReportUrl) + '" target="_blank" rel="noopener" style="color:var(--accent)">View →</a>' : '<span style="color:var(--muted)">None</span>') + '</td>' +
       '<td style="padding:8px 8px">' + expCell + '</td>' +
       '<td style="padding:8px 8px"><button class="btn btn-secondary btn-sm" onclick="removeVendor(\'' + esc(v.id) + '\')">×</button></td>' +
       '</tr>';
@@ -3282,12 +3287,23 @@ async function loadDashboardReminders() {
 
 let _adminData = null;
 
-function adminHeaders() { return authHeaders(); }
+function adminHeaders() {
+  // Admin requires a VERIFIABLE credential (not a bare email claim). Send the
+  // GitHub token, or the real Google access token under the gtoken: scheme.
+  if (ST.user?.githubToken) {
+    return { Authorization: 'Bearer ' + ST.user.githubToken, 'Content-Type': 'application/json' };
+  }
+  if (ST.user?.googleToken) {
+    return { Authorization: 'Bearer gtoken:' + ST.user.googleToken, 'Content-Type': 'application/json' };
+  }
+  return { 'Content-Type': 'application/json' };
+}
 
 async function checkAdminAccess() {
   if (!ST.user) return false;
+  if (!ST.user.githubToken && !ST.user.googleToken) return false;
   try {
-    const r = await fetch('/api/admin?action=check', { headers: authHeaders() });
+    const r = await fetch('/api/admin?action=check', { headers: adminHeaders() });
     return r.ok;
   } catch { return false; }
 }
@@ -3510,18 +3526,17 @@ function timeAgo(ts) {
 
 async function loadUserMode() {
   if (!ST.user) return;
+  // Fail closed: default to sandbox so paid features stay gated if this fails.
+  ST.mode = ST.mode || 'sandbox';
   try {
-    const userId = currentUserId();
-    const r = await fetch('/api/admin?action=user&id=' + encodeURIComponent(userId), {
-      headers: adminHeaders(),
-    });
+    const r = await fetch('/api/score', { headers: authHeaders() });
     if (r.ok) {
       const d = await r.json();
-      ST.mode = d.user?.mode || 'sandbox';
-      ST.userStatus = d.user?.status || 'active';
-      applyPaywall();
+      ST.mode = d.mode || 'sandbox';
+      ST.userStatus = d.status || 'active';
     }
   } catch {}
+  applyPaywall();
 }
 
 function applyPaywall() {

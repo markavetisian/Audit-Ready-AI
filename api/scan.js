@@ -18,6 +18,10 @@
 import { Redis } from '@upstash/redis';
 import { trackUser, isBlocked, checkRateLimit, logError } from './_telemetry.js';
 
+// Give the scan extra headroom — multi-repo GitHub + Drive crawls can exceed
+// the default 10s serverless cap. 60s is the maximum on the Hobby plan.
+export const config = { maxDuration: 60 };
+
 const redis = new Redis({
   url: process.env.KV_REST_API_URL,
   token: process.env.KV_REST_API_TOKEN,
@@ -29,6 +33,7 @@ async function getUserId(authHeader) {
   if (!authHeader?.startsWith('Bearer ')) return null;
   const token = authHeader.slice(7);
   if (token.startsWith('google:')) return token;
+  if (token.startsWith('slack:')) return token;
   try {
     const r = await fetch('https://api.github.com/user', {
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'AuditReady-AI' },
@@ -42,7 +47,7 @@ async function getUserId(authHeader) {
 function getGitHubToken(authHeader) {
   if (!authHeader?.startsWith('Bearer ')) return null;
   const token = authHeader.slice(7);
-  return token.startsWith('google:') ? null : token;
+  return (token.startsWith('google:') || token.startsWith('slack:')) ? null : token;
 }
 
 // ── GitHub scanning helpers ──────────────────────────────────
@@ -204,7 +209,9 @@ export async function scanGitHub(token) {
       detectionDetails['CC6.2'] = `GitHub org ${orgLogin} has two-factor authentication requirement enabled for all members`;
     }
     // ── CC6.6 — Audit log access ─────────────────────────────────
-    if (auditLog && Array.isArray(auditLog) && auditLog.length >= 0) {
+    // The signal is simply that the org audit-log endpoint is reachable and
+    // returns an array (length >= 0 was always true and thus meaningless).
+    if (Array.isArray(auditLog)) {
       results['CC6.6'] = 'IN_PROGRESS';
       detectionDetails['CC6.6'] = `GitHub org audit log is accessible for ${orgLogin} — directional signal; document privileged access controls to meet this requirement fully`;
     }

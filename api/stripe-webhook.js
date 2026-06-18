@@ -52,28 +52,41 @@ export default async function handler(req, res) {
   const sig = req.headers['stripe-signature'];
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-  if (webhookSecret && sig) {
-    try {
-      const { createHmac } = await import('crypto');
-      const parts = sig.split(',');
-      const ts = parts.find(p => p.startsWith('t='))?.slice(2);
-      const v1 = parts.find(p => p.startsWith('v1='))?.slice(3);
-      if (!ts || !v1) {
-        console.error('Stripe webhook: invalid signature format — missing t= or v1= parts. sig header:', sig?.slice(0, 60));
-        return res.status(400).json({ error: 'Invalid signature format' });
-      }
-      const payload = `${ts}.${rawBody.toString()}`;
-      const expected = createHmac('sha256', webhookSecret).update(payload).digest('hex');
-      if (expected !== v1) {
-        console.error('Stripe webhook: signature mismatch. Event timestamp:', ts, 'Body length:', rawBody.length);
-        return res.status(400).json({ error: 'Signature mismatch' });
-      }
-    } catch (err) {
-      console.error('Stripe webhook: signature verification exception:', err.message);
-      return res.status(400).json({ error: 'Signature verification failed' });
+  // Fail closed: never process an unverified event. A missing secret or
+  // signature means we cannot trust the payload, so we reject it outright.
+  if (!webhookSecret) {
+    console.error('Stripe webhook: STRIPE_WEBHOOK_SECRET not configured — rejecting event.');
+    return res.status(500).json({ error: 'Webhook not configured' });
+  }
+  if (!sig) {
+    return res.status(400).json({ error: 'Missing signature' });
+  }
+  try {
+    const { createHmac, timingSafeEqual } = await import('crypto');
+    const parts = sig.split(',');
+    const ts = parts.find(p => p.startsWith('t='))?.slice(2);
+    const v1 = parts.find(p => p.startsWith('v1='))?.slice(3);
+    if (!ts || !v1) {
+      console.error('Stripe webhook: invalid signature format. sig header:', sig?.slice(0, 60));
+      return res.status(400).json({ error: 'Invalid signature format' });
     }
-  } else if (!webhookSecret) {
-    console.warn('Stripe webhook: STRIPE_WEBHOOK_SECRET not set — skipping signature verification. Set this in production.');
+    // Reject events older than 5 minutes to prevent replay attacks.
+    const tsNum = Number(ts);
+    if (!Number.isFinite(tsNum) || Math.abs(Date.now() / 1000 - tsNum) > 300) {
+      console.error('Stripe webhook: timestamp outside tolerance.', ts);
+      return res.status(400).json({ error: 'Timestamp outside tolerance' });
+    }
+    const payload = `${ts}.${rawBody.toString()}`;
+    const expected = createHmac('sha256', webhookSecret).update(payload).digest('hex');
+    const expBuf = Buffer.from(expected);
+    const gotBuf = Buffer.from(v1);
+    if (expBuf.length !== gotBuf.length || !timingSafeEqual(expBuf, gotBuf)) {
+      console.error('Stripe webhook: signature mismatch. ts:', ts, 'len:', rawBody.length);
+      return res.status(400).json({ error: 'Signature mismatch' });
+    }
+  } catch (err) {
+    console.error('Stripe webhook: signature verification exception:', err.message);
+    return res.status(400).json({ error: 'Signature verification failed' });
   }
 
   let event;
@@ -119,7 +132,8 @@ export default async function handler(req, res) {
     const userId = sub.metadata?.userId;
     console.log(`Stripe customer.subscription.deleted: userId=${userId}, cancel_at_period_end=${sub.cancel_at_period_end}`);
     if (userId) {
-      if (!sub.cancel_at_period_end) await upgradeUserMode(userId, 'sandbox', null);
+      // Subscription no longer exists — always drop to sandbox.
+      await upgradeUserMode(userId, 'sandbox', null);
     } else {
       console.warn('Stripe webhook: subscription.deleted missing metadata.userId — subscription:', sub.id);
     }

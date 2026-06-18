@@ -25,8 +25,26 @@ function adminList(envVar) {
 async function resolveIdentity(authHeader) {
   if (!authHeader?.startsWith('Bearer ')) return null;
   const token = authHeader.slice(7);
-  if (token.startsWith('google:')) return { username: null, email: token.slice(7) };
-  if (token.startsWith('slack:')) return { username: null, email: token.slice(6) };
+
+  // Email-based admin must prove ownership with a REAL provider token, not a
+  // bare "google:email" claim (the admin email is public, so trusting the
+  // claim would let anyone authenticate as admin). The client sends the live
+  // Google access token under the `gtoken:` scheme for admin requests.
+  if (token.startsWith('gtoken:')) {
+    const googleToken = token.slice(7);
+    try {
+      const r = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+        headers: { Authorization: `Bearer ${googleToken}` },
+      });
+      if (!r.ok) return null;
+      const u = await r.json();
+      return { username: null, email: u.email || null };
+    } catch { return null; }
+  }
+
+  // Bare email claims are NOT trusted for admin.
+  if (token.startsWith('google:') || token.startsWith('slack:')) return null;
+
   // Otherwise treat as a GitHub OAuth token — verify it against GitHub's API
   // rather than trusting a client-asserted username.
   try {

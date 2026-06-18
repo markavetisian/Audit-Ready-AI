@@ -100,8 +100,11 @@ export async function checkRateLimit(userId, type) {
     let data = raw ? (typeof raw === 'object' ? raw : JSON.parse(raw)) : { count: 0, start: now };
     if ((now - data.start) / 1000 > cfg.window) { data = { count: 0, start: now }; }
     data.count++;
-    const ttl = cfg.window - Math.floor((now - data.start) / 1000);
-    await redis.set(key, JSON.stringify(data), { ex: cfg.window });
+    // Expire on the ORIGINAL window, not a fresh full window each call —
+    // otherwise repeated retries after hitting the limit keep extending the
+    // TTL and lock the user out indefinitely.
+    const ttl = Math.max(cfg.window - Math.floor((now - data.start) / 1000), 1);
+    await redis.set(key, JSON.stringify(data), { ex: ttl });
     if (data.count > cfg.max) {
       return { ok: false, retryAfter: ttl, remaining: 0 };
     }

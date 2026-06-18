@@ -24,6 +24,7 @@ async function getUserId(authHeader) {
   if (!authHeader?.startsWith('Bearer ')) return null;
   const token = authHeader.slice(7);
   if (token.startsWith('google:')) return token;
+  if (token.startsWith('slack:')) return token;
   try {
     const r = await fetch('https://api.github.com/user', {
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'AuditReady-AI' },
@@ -37,7 +38,7 @@ async function getUserId(authHeader) {
 function getGitHubToken(authHeader) {
   if (!authHeader?.startsWith('Bearer ')) return null;
   const token = authHeader.slice(7);
-  return token.startsWith('google:') ? null : token;
+  return (token.startsWith('google:') || token.startsWith('slack:')) ? null : token;
 }
 
 // ── Verify GitHub token and get user info ─────────────────────
@@ -199,13 +200,20 @@ export default async function handler(req, res) {
       delete stored[provider];
       await redis.set(intKey, JSON.stringify(stored));
 
-      // If disconnecting GitHub, clear auto-detected control statuses from GitHub
+      // If disconnecting GitHub, clear auto-detected control statuses from GitHub.
+      // Must cover the FULL 49-control set, otherwise auto-detected controls
+      // outside a truncated list stay stuck at CONNECTED_AUTO and inflate the score.
       if (provider === 'github') {
         const ALL_CONTROLS = [
-          'CC1.1','CC1.2','CC2.1','CC2.2','CC3.1','CC3.2','CC4.1','CC4.2',
-          'CC5.1','CC5.2','CC5.3','CC6.1','CC6.2','CC6.3','CC6.4','CC6.5',
-          'CC6.6','CC6.7','CC7.1','CC7.2','CC7.3','CC7.4','CC7.5',
-          'CC8.1','CC8.2','CC8.3','CC8.4','CC9.1','CC9.2','CC9.3','CC9.4','CC9.5','CC9.6',
+          'CC1.1','CC1.2','CC1.3','CC1.4',
+          'CC2.1','CC2.2','CC2.3',
+          'CC3.1','CC3.2','CC3.3',
+          'CC4.1','CC4.2',
+          'CC5.1','CC5.2','CC5.3','CC5.4','CC5.5',
+          'CC6.1','CC6.2','CC6.3','CC6.4','CC6.5','CC6.6','CC6.7','CC6.8','CC6.9',
+          'CC7.1','CC7.2','CC7.3','CC7.4','CC7.5','CC7.6',
+          'CC8.1','CC8.2','CC8.3','CC8.4','CC8.5','CC8.6',
+          'CC9.1','CC9.2','CC9.3','CC9.4','CC9.5','CC9.6','CC9.7','CC9.8','CC9.9','CC9.10','CC9.11',
         ];
         for (const id of ALL_CONTROLS) {
           const cRaw = await redis.get(`control:${userId}:${id}`);

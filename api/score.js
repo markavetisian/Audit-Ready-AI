@@ -11,6 +11,7 @@ async function getUserId(authHeader) {
   if (!authHeader?.startsWith('Bearer ')) return null;
   const token = authHeader.slice(7);
   if (token.startsWith('google:')) return token;
+  if (token.startsWith('slack:')) return token;
   try {
     const r = await fetch('https://api.github.com/user', {
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'AuditReady-AI' },
@@ -209,7 +210,18 @@ export default async function handler(req, res) {
       const result = await computeFullScore(userId);
       const entry = { score: result.score, ts: Date.now(), verified: result.verified, applicable: result.applicable };
       await redis.set(`user:${userId}:score`, JSON.stringify(entry));
-      return res.status(200).json(result);
+      // Surface the caller's own plan/status so the frontend can gate features
+      // without hitting the admin-only endpoint.
+      let mode = 'sandbox', status = 'active';
+      try {
+        const uRaw = await redis.get(`admin:user:${userId}`);
+        if (uRaw) {
+          const u = typeof uRaw === 'object' ? uRaw : JSON.parse(uRaw);
+          mode = u.mode || 'sandbox';
+          status = u.status || 'active';
+        }
+      } catch {}
+      return res.status(200).json({ ...result, mode, status });
     } catch (err) {
       return res.status(500).json({ error: err.message });
     }

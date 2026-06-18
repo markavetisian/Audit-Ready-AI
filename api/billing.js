@@ -18,6 +18,25 @@ const redis = new Redis({
 
 const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY;
 
+const VALID_MODES = ['starter', 'growth', 'enterprise'];
+
+// Resolve the authenticated user's id server-side. Never trust a
+// client-supplied userId for billing actions.
+async function getUserId(authHeader) {
+  if (!authHeader?.startsWith('Bearer ')) return null;
+  const token = authHeader.slice(7);
+  if (token.startsWith('google:')) return token;
+  if (token.startsWith('slack:')) return token;
+  try {
+    const r = await fetch('https://api.github.com/user', {
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'AuditReady-AI' },
+    });
+    if (!r.ok) return null;
+    const u = await r.json();
+    return 'github:' + u.login;
+  } catch { return null; }
+}
+
 async function stripePost(path, body) {
   const res = await fetch(`https://api.stripe.com/v1/${path}`, {
     method: 'POST',
@@ -58,9 +77,14 @@ export default async function handler(req, res) {
   // ── POST: Create Stripe subscription checkout ────────────────
   // Identical logic from stripe-checkout.js
   if (req.method === 'POST') {
-    const { priceId, userId, email, mode } = req.body || {};
-    if (!priceId || !userId || !email) {
-      return res.status(400).json({ error: 'Missing priceId, userId, or email' });
+    const userId = await getUserId(req.headers.authorization);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const { priceId, email, mode } = req.body || {};
+    if (!priceId || !email) {
+      return res.status(400).json({ error: 'Missing priceId or email' });
+    }
+    if (mode && !VALID_MODES.includes(mode)) {
+      return res.status(400).json({ error: 'Invalid mode' });
     }
     try {
       const userKey = `admin:user:${userId}`;
@@ -99,8 +123,8 @@ export default async function handler(req, res) {
   // ── DELETE: Cancel subscription at period end ────────────────
   // Identical logic from stripe-cancel.js
   if (req.method === 'DELETE') {
-    const { userId } = req.body || {};
-    if (!userId) return res.status(400).json({ error: 'Missing userId' });
+    const userId = await getUserId(req.headers.authorization);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
     try {
       const userKey = `admin:user:${userId}`;
       let userData = {};
@@ -122,12 +146,14 @@ export default async function handler(req, res) {
           if (!result.error.message?.includes('No such subscription')) {
             throw new Error(result.error.message);
           }
+          // Subscription doesn't exist on Stripe's side — nothing to mark pending.
+        } else {
+          await redis.set(userKey, JSON.stringify({
+            ...userData,
+            cancelPending: true,
+            cancelAt: result.current_period_end || null,
+          }));
         }
-        await redis.set(userKey, JSON.stringify({
-          ...userData,
-          cancelPending: true,
-          cancelAt: result.current_period_end || null,
-        }));
       }
 
       return res.status(200).json({
