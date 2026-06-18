@@ -10,6 +10,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { Redis } from '@upstash/redis';
+import { verifySession } from './_telemetry.js';
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL,
@@ -26,23 +27,18 @@ async function resolveIdentity(authHeader) {
   if (!authHeader?.startsWith('Bearer ')) return null;
   const token = authHeader.slice(7);
 
-  // Email-based admin must prove ownership with a REAL provider token, not a
-  // bare "google:email" claim (the admin email is public, so trusting the
-  // claim would let anyone authenticate as admin). The client sends the live
-  // Google access token under the `gtoken:` scheme for admin requests.
-  if (token.startsWith('gtoken:')) {
-    const googleToken = token.slice(7);
-    try {
-      const r = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-        headers: { Authorization: `Bearer ${googleToken}` },
-      });
-      if (!r.ok) return null;
-      const u = await r.json();
-      return { username: null, email: u.email || null };
-    } catch { return null; }
+  // Signed session token (google/slack users). The uid was issued only after
+  // the provider verified the user, so the embedded email is trustworthy.
+  if (token.startsWith('s1.')) {
+    const uid = verifySession(token);
+    if (!uid) return null;
+    if (uid.startsWith('google:')) return { username: null, email: uid.slice(7) };
+    if (uid.startsWith('slack:')) return { username: null, email: uid.slice(6) };
+    if (uid.startsWith('github:')) return { username: uid.slice(7), email: null };
+    return null;
   }
 
-  // Bare email claims are NOT trusted for admin.
+  // Bare email claims are NOT trusted for admin (the admin email is public).
   if (token.startsWith('google:') || token.startsWith('slack:')) return null;
 
   // Otherwise treat as a GitHub OAuth token — verify it against GitHub's API

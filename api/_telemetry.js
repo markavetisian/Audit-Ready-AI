@@ -15,11 +15,44 @@
 // ─────────────────────────────────────────────────────────────
 
 import { Redis } from '@upstash/redis';
+import { createHmac, timingSafeEqual } from 'crypto';
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL,
   token: process.env.KV_REST_API_TOKEN,
 });
+
+// ── Signed session tokens (stateless identity for google/slack) ──
+// We mint an HMAC-signed token AFTER the OAuth provider verifies the user,
+// so the backend can trust the embedded uid without a bare email claim that
+// anyone could forge. Falls back to existing server secrets so no new env
+// var is strictly required, but SESSION_SECRET is preferred.
+function sessionSecret() {
+  return process.env.SESSION_SECRET
+    || process.env.STRIPE_SECRET_KEY
+    || process.env.GITHUB_CLIENT_SECRET
+    || 'auditready-insecure-fallback-set-SESSION_SECRET';
+}
+
+export function mintSession(uid, ttlDays = 30) {
+  const payload = Buffer.from(JSON.stringify({ uid, exp: Date.now() + ttlDays * 86400000 })).toString('base64url');
+  const sig = createHmac('sha256', sessionSecret()).update(payload).digest('base64url');
+  return `s1.${payload}.${sig}`;
+}
+
+export function verifySession(token) {
+  try {
+    const parts = String(token).split('.');
+    if (parts.length !== 3 || parts[0] !== 's1') return null;
+    const expected = createHmac('sha256', sessionSecret()).update(parts[1]).digest('base64url');
+    const a = Buffer.from(parts[2]);
+    const b = Buffer.from(expected);
+    if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
+    const data = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
+    if (!data.uid || !data.exp || Date.now() > data.exp) return null;
+    return data.uid;
+  } catch { return null; }
+}
 
 // ── Exported helpers (used by scan.js, controls.js, report.js) ─
 

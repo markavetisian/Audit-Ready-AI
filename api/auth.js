@@ -10,7 +10,7 @@
 //   GET /api/slack-callback          → Slack OAuth callback (via vercel.json rewrite)
 // ─────────────────────────────────────────────────────────────
 
-import { trackUser } from './_telemetry.js';
+import { trackUser, mintSession } from './_telemetry.js';
 
 export default async function handler(req, res) {
   const { provider, code, state } = req.query;
@@ -105,6 +105,7 @@ export default async function handler(req, res) {
         avatar: user.picture,
         type: 'google',
         googleToken: tokenData.access_token,
+        sessionToken: user.email ? mintSession('google:' + user.email) : null,
       }));
       return res.redirect(`/?google_user=${userPayload}`);
     } catch (err) {
@@ -192,6 +193,7 @@ export default async function handler(req, res) {
         avatar: user.picture || null,
         type: 'slack',
         slackTeam: user['https://slack.com/team_name'] || '',
+        sessionToken: user.email ? mintSession('slack:' + user.email) : null,
       }));
       return res.redirect(`/?slack_user=${userPayload}`);
     } catch (err) {

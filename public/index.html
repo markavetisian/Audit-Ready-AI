@@ -1699,8 +1699,9 @@ let ST = {
 function authTok() {
   if (!ST.user) return null;
   if (ST.user.githubToken) return ST.user.githubToken;
-  if (ST.user.type === 'google') return 'google:' + ST.user.email;
-  if (ST.user.type === 'slack') return 'slack:' + ST.user.email;
+  // Google/Slack users authenticate with a server-signed session token
+  // (a bare provider:email claim is forgeable and no longer accepted).
+  if (ST.user.sessionToken) return ST.user.sessionToken;
   return null;
 }
 
@@ -1720,6 +1721,11 @@ function authHeaders() {
 function saveUser() { if (ST.user) sessionStorage.setItem('ar_user', JSON.stringify(ST.user)); }
 function loadUser() {
   try { const s = sessionStorage.getItem('ar_user'); if (s) ST.user = JSON.parse(s); } catch {}
+  // Drop stale google/slack sessions that predate signed session tokens so the
+  // user gets a clean re-login instead of a 401'd, broken dashboard.
+  if (ST.user && !ST.user.githubToken && !ST.user.sessionToken) {
+    ST.user = null; sessionStorage.removeItem('ar_user');
+  }
 }
 function logout() {
   ST.user = null; ST.score = null; ST.controls = [];
@@ -1771,7 +1777,7 @@ function handleCallback() {
   if (gu) {
     try {
       const u = JSON.parse(decodeURIComponent(gu));
-      ST.user = { name: u.name, email: u.email, avatar: u.avatar, type: 'google', githubToken: null, googleToken: u.googleToken };
+      ST.user = { name: u.name, email: u.email, avatar: u.avatar, type: 'google', githubToken: null, googleToken: u.googleToken, sessionToken: u.sessionToken };
       saveUser(); history.replaceState({}, '', '/');
       updateHeader(); nav('dashboard'); loadDashboard();
     } catch { nav('login'); }
@@ -1783,7 +1789,7 @@ function handleCallback() {
   if (su) {
     try {
       const u = JSON.parse(decodeURIComponent(su));
-      ST.user = { name: u.name, email: u.email, avatar: u.avatar, type: 'slack', githubToken: null, slackTeam: u.slackTeam };
+      ST.user = { name: u.name, email: u.email, avatar: u.avatar, type: 'slack', githubToken: null, slackTeam: u.slackTeam, sessionToken: u.sessionToken };
       saveUser(); history.replaceState({}, '', '/');
       updateHeader(); nav('dashboard'); loadDashboard();
     } catch { nav('login'); }
@@ -3288,20 +3294,13 @@ async function loadDashboardReminders() {
 let _adminData = null;
 
 function adminHeaders() {
-  // Admin requires a VERIFIABLE credential (not a bare email claim). Send the
-  // GitHub token, or the real Google access token under the gtoken: scheme.
-  if (ST.user?.githubToken) {
-    return { Authorization: 'Bearer ' + ST.user.githubToken, 'Content-Type': 'application/json' };
-  }
-  if (ST.user?.googleToken) {
-    return { Authorization: 'Bearer gtoken:' + ST.user.googleToken, 'Content-Type': 'application/json' };
-  }
-  return { 'Content-Type': 'application/json' };
+  // Admin uses the same verifiable credential as every other endpoint:
+  // a GitHub token or a server-signed session token (never a bare claim).
+  return authHeaders();
 }
 
 async function checkAdminAccess() {
-  if (!ST.user) return false;
-  if (!ST.user.githubToken && !ST.user.googleToken) return false;
+  if (!ST.user || !authTok()) return false;
   try {
     const r = await fetch('/api/admin?action=check', { headers: adminHeaders() });
     return r.ok;

@@ -29,8 +29,8 @@ const redis = new Redis({
 async function getUserId(authHeader) {
   if (!authHeader?.startsWith('Bearer ')) return null;
   const token = authHeader.slice(7);
-  if (token.startsWith('google:')) return token;
-  if (token.startsWith('slack:')) return token;
+  if (token.startsWith('s1.')) return verifySession(token);
+  if (token.startsWith('google:') || token.startsWith('slack:')) return null;
   try {
     const r = await fetch('https://api.github.com/user', {
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'AuditReady-AI' },
