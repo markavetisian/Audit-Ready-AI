@@ -1,0 +1,297 @@
+1. Richard — Mavericks AI
+To: richard@blackbox.ai
+Subject: Mavericks AI + SOC 2
+
+Richard, multiagent AI systems touching customer workflows tend to get the security questionnaire earlier than founders expect, especially once enterprise buyers are involved. Where's Mavericks at on SOC 2?
+
+I built a tool that scans your stack and scores real readiness in minutes, plus generates the policy docs, way cheaper than Vanta/Drata. Free to run if useful.
+
+So what do you think, Richard?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+2. Gregory Brown — CashU Fintech
+To: gregory.brown@cashu.com.br
+Subject: CashU + SOC 2
+
+Gregory, fintech platforms handling credit and payments data get hit with security review constantly, especially from bank and merchant partners. Where's CashU at on SOC 2?
+
+Built a tool that scores your real readiness off your stack and writes the policy docs, a fraction of the usual cost. Free scan if useful.
+
+So what do you think, Gregory?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+3. Will Kinard — CodeCargo
+To: will@codecargo.com
+Subject: CodeCargo + SOC 2
+
+Will, dev tooling that touches client codebases tends to hit the security questionnaire stage faster than people plan for. Where's CodeCargo at on SOC 2?
+
+I built a tool that scans your stack and scores real readiness, plus generates the policy docs — way cheaper than the legacy platforms. Free to run if useful.
+
+So what do you think, Will?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+4. Patricio Palladino — Nomic Foundation
+To: patricio@nomic.foundation
+Subject: Nomic Foundation + SOC 2
+
+Patricio, web3 dev tooling serving enterprise teams usually means security review shows up earlier than expected. Has SOC 2 come up for Nomic yet?
+
+Built a tool that scans your stack and scores real readiness in minutes, plus writes the policy docs, a fraction of the usual cost. Free scan if useful.
+
+So what do you think, Patricio?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+5. Andreu Figueras — Awaait Artificial Intelligence
+To: andreu.figueras@awaait.com
+Subject: Awaait AI + SOC 2
+
+Andreu, video analytics AI touching client camera/operational data tends to get security-reviewed hard by enterprise customers. Where's Awaait at on SOC 2?
+
+I built a tool that scans your stack and scores real readiness, plus generates the policy docs, way cheaper than Vanta/Drata. Free to run if useful.
+
+So what do you think, Andreu?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+6. Hardik Shingala — Traycer
+To: hardik@traycer.ai
+Subject: Traycer + SOC 2
+
+Hardik, dev tools that plug into customer codebases usually get the SOC 2 question constantly once you're in bigger team deals. Has that hit Traycer yet?
+
+Built a tool that scores your real readiness off your stack in minutes, plus writes the policy docs, a fraction of the usual cost. Free scan if useful.
+
+So what do you think, Hardik?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+7. Sellappa — OSYTE
+To: sellappa@osyte.com
+Subject: OSYTE + SOC 2
+
+Sellappa, portfolio management platforms handling client financial data tend to get the security questionnaire treatment from institutional customers early. Where's OSYTE at on SOC 2?
+
+I built a tool that scans your stack and scores real readiness, plus generates the policy docs, way cheaper than the legacy platforms. Free to run if useful.
+
+So what do you think, Sellappa?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+8. Ricardo Parra — Anastasia (Artificial Intelligence)
+To: ricardo.parra@anastasia.ai
+Subject: Anastasia AI + SOC 2
+
+Ricardo, AI virtual assistants handling customer conversations and data tend to get the SOC 2 ask earlier than founders expect. Has that come up for Anastasia yet?
+
+Built a tool that scores your real readiness off your stack in minutes, plus writes the policy docs, a fraction of the usual cost. Free scan if useful.
+
+So what do you think, Ricardo?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+9. Matt Lintel — Intrinio
+To: mvonlintel@intrinio.com
+Subject: Intrinio + SOC 2
+
+Matt, financial data APIs feeding other fintechs and trading platforms basically live and die by trust signals like SOC 2. Curious how that process looks for Intrinio today.
+
+I built a faster, cheaper alternative to the legacy compliance platforms, scans your stack and scores real readiness in minutes. Happy to run a free scan if useful, no pitch if you're already covered.
+
+So what do you think, Matt?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+10. Martin Tapia — PhantomBuster
+To: martin@phantombuster.com
+Subject: PhantomBuster + SOC 2
+
+Martin, automation tools that touch customer accounts and data tend to get flagged in security reviews once you're in bigger team deals. Where's PhantomBuster at on SOC 2?
+
+Built a tool that scans your stack and scores real readiness, plus generates the policy docs, way cheaper than Vanta/Drata. Free scan if useful.
+
+So what do you think, Martin?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+11. Ido Shamun — daily.dev
+To: ido@daily.dev
+Subject: daily.dev + SOC 2
+
+Ido, as daily.dev grows into team/business plans, procurement teams tend to ask for SOC 2 evidence before signing off. Has that come up yet?
+
+I built a tool that scans your stack and gives a real readiness score plus the actual gaps, a fraction of the $20k+/yr legacy tools. Want me to run it and send you the results?
+
+So what do you think, Ido?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+12. Jeremy Freeman — Allstacks
+To: jeremy.freeman@allstacks.com
+Subject: Allstacks + SOC 2
+
+Jeremy, engineering analytics tools pulling data straight from client repos tend to hit security review fast. Where's Allstacks at on SOC 2?
+
+Built a tool that scores your real readiness off your stack and writes the policy docs, way cheaper than the usual route. Free to run if useful.
+
+So what do you think, Jeremy?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+13. Oskari Virtaoja — Swarmia
+To: oskari@swarmia.com
+Subject: Swarmia + SOC 2
+
+Oskari, engineering metrics tools connected to client GitHub orgs tend to get the security questionnaire treatment early. Has SOC 2 come up for Swarmia yet?
+
+I built a tool that scans your stack and scores real readiness in minutes, plus writes the policy docs, a fraction of the usual cost. Free scan if useful.
+
+So what do you think, Oskari?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+14. Mason McLead — Software.com
+To: mason.mclead@software.com
+Subject: Software.com + SOC 2
+
+Mason, dev analytics tools connected to client codebases tend to get security-reviewed hard once enterprise teams are involved. Where's Software.com at on SOC 2?
+
+Built a tool that scores your real readiness off your stack and generates the policy docs, way cheaper than Vanta/Drata. Free to run if useful.
+
+So what do you think, Mason?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+15. Dhiren — Potpie AI
+To: dhiren@momentum.sh
+Subject: Potpie AI + SOC 2
+
+Dhiren, AI dev tools touching client codebases tend to hit the security questionnaire stage faster than founders expect. Where's Potpie at on SOC 2?
+
+I built a tool that scans your stack and scores real readiness, plus generates the policy docs, a fraction of the usual cost. Free scan if useful.
+
+So what do you think, Dhiren?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+16. Sina — 8090 Solutions
+To: sina@8090.inc
+Subject: 8090 Solutions + SOC 2
+
+Sina, delivering software for enterprise and fintech clients usually means SOC 2 gets asked about during vendor review. Has that come up for 8090?
+
+Built a tool that scans your stack and scores real readiness, plus writes the policy docs, way cheaper than the usual route. Free to run if useful.
+
+So what do you think, Sina?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+17. Dan Gordon — FinTech Services Australia
+To: dan.g@fintech-services.com.au
+Subject: FinTech Services Australia + SOC 2
+
+Dan, financial data privacy platforms get hit with security review constantly, it's practically a prerequisite for enterprise deals. Where's FinTech Services Australia at on SOC 2?
+
+I built a tool that scans your stack and scores real readiness in minutes, plus generates the policy docs, a fraction of what Vanta/Drata charge. Free scan if useful.
+
+So what do you think, Dan?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+18. Marcelo Piovan — DATA H - Artificial Intelligence Inc.
+To: marcelo.piovan@datah.ai
+Subject: DATA H + SOC 2
+
+Marcelo, AI products built on top of IBM Watson and handling client data tend to get the SOC 2 ask early from enterprise buyers. Where's DATA H at on this?
+
+Built a tool that scores your real readiness off your stack and writes the policy docs, way cheaper than the legacy platforms. Free to run if useful.
+
+So what do you think, Marcelo?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+19. Sajid Ali — Techling (Private) Limited
+To: sajid@techling.tech
+Subject: Techling + SOC 2
+
+Sajid, IT services and consulting firms handling client systems usually get their own security posture vetted during onboarding. Has SOC 2 come up for Techling?
+
+I built a tool that scans your stack and scores real readiness, plus generates the policy docs, a fraction of the usual cost. Free scan if useful.
+
+So what do you think, Sajid?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+20. Joel — Duckie
+To: joel@duckie.ai
+Subject: Duckie + SOC 2
+
+Joel, AI support tools handling customer tickets and data tend to hit security review earlier than founders expect. Where's Duckie at on SOC 2?
+
+Built a tool that scans your stack and scores real readiness in minutes, plus writes the policy docs, way cheaper than Vanta/Drata. Free to run if useful.
+
+So what do you think, Joel?
+
+Vlad Avetisian
+auditready.space
