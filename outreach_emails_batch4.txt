@@ -1,0 +1,297 @@
+1. Deep — SaleAssist
+To: deep@saleassist.ai
+Subject: SaleAssist + SOC 2
+
+Deep, conversational sales AI that touches customer and lead data tends to get the security questionnaire earlier than founders expect, especially once enterprise buyers come in. Where's SaleAssist at on SOC 2?
+
+I built a tool that scans your stack and scores real readiness in minutes, plus generates the policy docs, way cheaper than Vanta/Drata. Free to run if useful.
+
+So what do you think, Deep?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+2. Dave — ClientSuccess
+To: dave@clientsuccess.com
+Subject: ClientSuccess + SOC 2
+
+Dave, customer success platforms holding a customer's entire account and usage data get hit with security review constantly, it's basically a prerequisite for enterprise deals. Where's ClientSuccess at on SOC 2?
+
+Built a tool that scores your real readiness off your stack and writes the policy docs, a fraction of the usual cost. Free scan if useful.
+
+So what do you think, Dave?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+3. Zach — Copact
+To: zach.beegal@copact.ai
+Subject: Copact + SOC 2
+
+Zach, AI tools touching customer workflows tend to hit the security questionnaire stage faster than people plan for, especially with enterprise buyers involved. Where's Copact at on SOC 2?
+
+I built a tool that scans your stack and scores real readiness, plus generates the policy docs, way cheaper than the legacy platforms. Free to run if useful.
+
+So what do you think, Zach?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+4. Shahani — Emojot
+To: shahani@emojot.com
+Subject: Emojot + SOC 2
+
+Shahani, experience management platforms collecting customer sentiment and operational data usually get the SOC 2 ask early from enterprise customers. Has that come up for Emojot yet?
+
+Built a tool that scores your real readiness off your stack in minutes, plus writes the policy docs, a fraction of the usual cost. Free scan if useful.
+
+So what do you think, Shahani?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+5. Caleb — Tilled
+To: cavery@tilled.com
+Subject: Tilled + SOC 2
+
+Caleb, payments infrastructure handling card and merchant data gets security-reviewed harder than almost anything, it's table stakes for the partners you sell to. Where's Tilled at on SOC 2?
+
+I built a faster, cheaper alternative to the legacy compliance platforms, scans your stack and scores real readiness in minutes. Happy to run a free scan if useful, no pitch if you're already covered.
+
+So what do you think, Caleb?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+6. Itzik — Entro Security
+To: itzik.alvas@entro.security
+Subject: Entro + SOC 2
+
+Itzik, when you're securing other companies' secrets, your own SOC 2 posture is one of the first things prospects scrutinize. Curious how that process looks for Entro today.
+
+I built a tool that scans your stack and scores real readiness in minutes, plus generates the policy docs, a fraction of what Vanta/Drata charge. Free scan if useful.
+
+So what do you think, Itzik?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+7. Raghu — Synergetics.ai
+To: raghu@synergetics.ai
+Subject: Synergetics + SOC 2
+
+Raghu, AI platforms processing customer data tend to get the SOC 2 question earlier than founders expect once enterprise deals are in play. Where's Synergetics at on this?
+
+Built a tool that scores your real readiness off your stack and writes the policy docs, way cheaper than the usual route. Free to run if useful.
+
+So what do you think, Raghu?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+8. Martin — Passage
+To: martin@passage.com
+Subject: Passage + SOC 2
+
+Martin, identity and authentication tools sit right in the trust path, so SOC 2 tends to come up in nearly every enterprise security review. Where's Passage at on it?
+
+I built a tool that scans your stack and scores real readiness in minutes, plus generates the policy docs, way cheaper than Vanta/Drata. Free scan if useful.
+
+So what do you think, Martin?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+9. Rado — Storied Data
+To: rado.kotorov@guutit.com
+Subject: Storied Data + SOC 2
+
+Rado, data analytics platforms handling client datasets usually get their security posture vetted hard during procurement. Where's Storied Data at on SOC 2?
+
+Built a tool that scores your real readiness off your stack in minutes, plus writes the policy docs, a fraction of the usual cost. Free scan if useful.
+
+So what do you think, Rado?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+10. Richard — Sorcero
+To: richard@sorcero.com
+Subject: Sorcero + SOC 2
+
+Richard, AI for life sciences means handling regulated, sensitive data, which puts SOC 2 near the top of every enterprise buyer's checklist. Where's Sorcero at on it?
+
+I built a tool that scans your stack and scores real readiness, plus generates the policy docs, way cheaper than the legacy platforms. Free to run if useful.
+
+So what do you think, Richard?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+11. Roi — Spotlight.ai
+To: roi@spotlight.ai
+Subject: Spotlight + SOC 2
+
+Roi, AI tools touching customer data tend to hit the security questionnaire stage faster than founders expect. Where's Spotlight at on SOC 2?
+
+Built a tool that scans your stack and scores real readiness in minutes, plus writes the policy docs, a fraction of the usual cost. Free scan if useful.
+
+So what do you think, Roi?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+12. Saurabh — Taiyo.ai
+To: saurabh@taiyo.ai
+Subject: Taiyo + SOC 2
+
+Saurabh, AI data platforms serving enterprise and institutional clients usually get the SOC 2 ask during vendor review. Has that come up for Taiyo yet?
+
+I built a tool that scans your stack and scores real readiness, plus generates the policy docs, way cheaper than Vanta/Drata. Free to run if useful.
+
+So what do you think, Saurabh?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+13. Anirudh — Lyzr AI
+To: anirudh@lyzr.ai
+Subject: Lyzr + SOC 2
+
+Anirudh, agent platforms that plug into customer data and systems get security-reviewed hard, especially once enterprise teams are building on top of you. Where's Lyzr at on SOC 2?
+
+I built a tool that scans your stack and scores real readiness in minutes, plus generates the policy docs, a fraction of the $20k+/yr legacy tools. Want me to run it and send you the results?
+
+So what do you think, Anirudh?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+14. Jeffrey — MassPay
+To: jeff@masspay.io
+Subject: MassPay + SOC 2
+
+Jeffrey, global payments platforms handling money movement and KYC data get hit with security review constantly, it's practically a prerequisite for the partners you work with. Where's MassPay at on SOC 2?
+
+I built a tool that scans your stack and scores real readiness in minutes, plus generates the policy docs, a fraction of what Vanta/Drata charge. Free scan if useful.
+
+So what do you think, Jeffrey?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+15. Swetabh — Elucidata
+To: swetabh.pathak@elucidata.io
+Subject: Elucidata + SOC 2
+
+Swetabh, biomedical data platforms handling sensitive research data sit under heavy security scrutiny from pharma and enterprise customers. Where's Elucidata at on SOC 2?
+
+Built a tool that scores your real readiness off your stack and writes the policy docs, way cheaper than the legacy platforms. Free to run if useful.
+
+So what do you think, Swetabh?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+16. James — AdviNOW Medical
+To: james.bates@advinow.com
+Subject: AdviNOW + SOC 2
+
+James, medical AI handling patient and clinical data sits under serious security and privacy scrutiny, and SOC 2 usually comes up early with enterprise health partners. Where's AdviNOW at on it?
+
+I built a tool that scans your stack and scores real readiness, plus generates the policy docs, a fraction of the usual cost. Free scan if useful.
+
+So what do you think, James?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+17. Zach — Mobly
+To: zach@getmobly.com
+Subject: Mobly + SOC 2
+
+Zach, sales tech that captures and syncs customer and prospect data tends to get flagged in security reviews once you're in bigger team deals. Where's Mobly at on SOC 2?
+
+Built a tool that scans your stack and scores real readiness, plus generates the policy docs, way cheaper than Vanta/Drata. Free to run if useful.
+
+So what do you think, Zach?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+18. Guru — Murphi.ai
+To: guru@murphi.ai
+Subject: Murphi + SOC 2
+
+Guru, AI tools touching customer data tend to hit the security questionnaire stage faster than founders expect once enterprise buyers are involved. Where's Murphi at on SOC 2?
+
+I built a tool that scans your stack and scores real readiness in minutes, plus writes the policy docs, a fraction of the usual cost. Free scan if useful.
+
+So what do you think, Guru?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+19. Justin — Normal
+To: justin@normalfinance.io
+Subject: Normal + SOC 2
+
+Justin, fintech platforms handling user financial data get security-reviewed constantly, it's basically table stakes for enterprise and partner deals. Where's Normal at on SOC 2?
+
+I built a tool that scans your stack and scores real readiness in minutes, plus generates the policy docs, a fraction of what Vanta/Drata charge. Free scan if useful.
+
+So what do you think, Justin?
+
+Vlad Avetisian
+auditready.space
+
+==================================================
+
+20. Eddie — Qualifi
+To: eddie@goqualifi.com
+Subject: Qualifi + SOC 2
+
+Eddie, lending and financial platforms handling borrower data get hit with security review early, it's a prerequisite for most enterprise partnerships. Where's Qualifi at on SOC 2?
+
+Built a tool that scores your real readiness off your stack and writes the policy docs, way cheaper than the legacy platforms. Free to run if useful.
+
+So what do you think, Eddie?
+
+Vlad Avetisian
+auditready.space
