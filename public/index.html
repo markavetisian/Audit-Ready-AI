@@ -1981,7 +1981,7 @@ function renderScoreTrend(history) {
 async function loadScore() {
   try {
     const r = await fetch('/api/score', { headers: authHeaders() });
-    if (!r.ok) return;
+    if (!r.ok) { showScoreError(); return null; }
     const d = await r.json();
     ST.score = d;
     renderScorePanel(d);
@@ -2005,7 +2005,21 @@ async function loadScore() {
         meta.textContent = 'Last scan: ' + ageStr + ' · ' + sd.controlsAutoFilled + ' auto-filled' + rescanNote;
       }
     }
-  } catch (err) { console.error('loadScore error:', err); }
+    return d;
+  } catch (err) {
+    console.error('loadScore error:', err);
+    showScoreError();
+    return null;
+  }
+}
+
+function showScoreError() {
+  const retry = '<button onclick="loadScore()" style="margin-top:6px;font-size:12px;color:#2563eb;background:none;border:none;cursor:pointer;text-decoration:underline">Retry</button>';
+  const msg = '<div style="color:var(--muted);font-size:12px;padding:8px 0">Could not load this data. ' + retry + '</div>';
+  const bars = document.getElementById('categoryBars');
+  if (bars) bars.innerHTML = msg;
+  const gaps = document.getElementById('topGapsList');
+  if (gaps) gaps.innerHTML = msg;
 }
 
 function renderScorePanel(d) {
@@ -2242,6 +2256,13 @@ function _showScanChangeSummary(before) {
 async function triggerScan() {
   const btn = document.getElementById('scanBtn');
   const txt = document.getElementById('scanBtnText');
+  // A scan with no connected integration is a guaranteed no-op — point the user
+  // to Integrations instead of letting them click into an empty "no signals".
+  if (!ST.user?.githubToken && !ST.user?.googleToken) {
+    toast('Connect GitHub or Google Drive first to run a scan', 'error');
+    nav('integrations');
+    return;
+  }
   btn.disabled = true;
   txt.innerHTML = '<span class="spinner"></span> Scanning...';
 
@@ -2255,20 +2276,20 @@ async function triggerScan() {
       headers: authHeaders(),
       body: JSON.stringify(body),
     });
-    const d = await r.json();
+    // Guard against a non-JSON body (e.g. a 504 timeout HTML page).
+    const d = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(d.error || 'Scan failed');
 
     await loadScore();
     await loadControls();
     const hadChanges = _showScanChangeSummary(before);
     if (!hadChanges && d.controlsAutoFilled === 0) toast('Scan complete · No new signals detected', 'success');
-    // loadScore() → renderUpgradeCTA() handles the post-scan upgrade prompt now,
-    // personalized with the user's actual score and remaining gaps.
   } catch (err) {
     toast(err.message || 'Scan failed', 'error');
+  } finally {
+    btn.disabled = false;
+    txt.innerHTML = '⚡ Scan Now';
   }
-  btn.disabled = false;
-  txt.innerHTML = '⚡ Scan Now';
 }
 
 async function quietScan() {
@@ -2302,7 +2323,9 @@ async function generateReport() {
     return;
   }
   const btn = document.getElementById('reportBtnText');
-  btn.innerHTML = '<span class="spinner"></span> Generating...';
+  const btnEl = btn?.closest('button');
+  if (btnEl) btnEl.disabled = true; // prevent double-submit (and double LLM cost)
+  btn.innerHTML = '<span class="spinner"></span> Generating… (~20s)';
   try {
     const companyName = ST.user?.name?.split(' ')[0] || 'Company';
     const r = await fetch('/api/report', {
@@ -2310,12 +2333,16 @@ async function generateReport() {
       headers: authHeaders(),
       body: JSON.stringify({ companyName }),
     });
-    const d = await r.json();
-    if (!r.ok) throw new Error(d.error || 'Report failed');
+    const d = await r.json().catch(() => ({}));
+    if (r.status === 402) { openPricingModal('growth'); throw new Error(d.error || 'Requires a paid plan'); }
+    if (!r.ok) throw new Error(d.error || 'Report failed. Please try again.');
     toast('Report generated', 'success');
     loadLatestReport();
-  } catch (err) { toast(err.message, 'error'); }
-  btn.innerHTML = '📄 Generate Report';
+  } catch (err) { toast(err.message || 'Report failed', 'error'); }
+  finally {
+    if (btnEl) btnEl.disabled = false;
+    btn.innerHTML = '📄 Generate Report';
+  }
 }
 
 // ── Controls ──────────────────────────────────────────────────
@@ -2477,10 +2504,12 @@ async function loadEvidenceForControl(controlId) {
   if (!el) return;
   try {
     const r = await fetch('/api/evidence?controlId=' + controlId, { headers: authHeaders() });
-    if (!r.ok) return;
+    if (!r.ok) { el.innerHTML = '<div style="font-size:11px;color:var(--muted)">Could not load evidence. <button onclick="loadEvidenceForControl(\'' + controlId + '\')" style="font-size:11px;color:#2563eb;background:none;border:none;cursor:pointer;text-decoration:underline">Retry</button></div>'; return; }
     const d = await r.json();
     renderEvidence(controlId, d.items || []);
-  } catch {}
+  } catch {
+    el.innerHTML = '<div style="font-size:11px;color:var(--muted)">Could not load evidence. <button onclick="loadEvidenceForControl(\'' + controlId + '\')" style="font-size:11px;color:#2563eb;background:none;border:none;cursor:pointer;text-decoration:underline">Retry</button></div>';
+  }
 }
 
 function renderEvidence(controlId, items) {
@@ -2708,6 +2737,8 @@ function closeShareModal() {
 
 async function createShareLink() {
   const btn = document.getElementById('shareBtnText');
+  const wrapBtn = btn?.closest('button');
+  if (wrapBtn) wrapBtn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>';
   try {
     const r = await fetch('/api/share', {
@@ -2715,15 +2746,16 @@ async function createShareLink() {
       headers: authHeaders(),
       body: JSON.stringify({ companyName: ST.user?.name || 'Company', ttlDays: 30 }),
     });
-    const d = await r.json();
-    if (!r.ok) throw new Error(d.error);
+    const d = await r.json().catch(() => ({}));
+    if (r.status === 402) { openPricingModal('growth'); throw new Error(d.error || 'Public Trust Pages require a paid plan.'); }
+    if (!r.ok) throw new Error(d.error || 'Could not create link');
     const box = document.getElementById('shareUrlBox');
     const urlEl = document.getElementById('shareUrlText');
     urlEl.textContent = d.shareUrl;
     box.style.display = 'block';
     navigator.clipboard?.writeText(d.shareUrl).catch(() => {});
   } catch (err) { toast(err.message, 'error'); }
-  btn.textContent = '🔗 Generate Link';
+  finally { if (wrapBtn) wrapBtn.disabled = false; btn.textContent = '🔗 Generate Link'; }
 }
 
 function copyShareUrl() {
@@ -2774,19 +2806,30 @@ async function generatePolicy(controlId) {
   const btn = document.getElementById('policyBtn-' + controlId);
   const out = document.getElementById('policyOutput-' + controlId);
   if (!btn || !out) return;
-  btn.textContent = '⏳ Generating...';
+  ST.policies = ST.policies || {};
+  // Already generated this session → restore instantly, no re-call to the LLM.
+  if (ST.policies[controlId]) {
+    out.style.display = 'block';
+    out.textContent = ST.policies[controlId];
+    btn.textContent = '📋 Copy Policy';
+    btn.onclick = (e) => { e.stopPropagation(); copyText(ST.policies[controlId]); toast('Policy copied to clipboard', 'success'); };
+    return;
+  }
+  btn.textContent = '⏳ Generating… (~20s)';
   btn.disabled = true;
   try {
     const r = await fetch('/api/report?type=policy&controlId=' + encodeURIComponent(controlId), { headers: authHeaders() });
-    const d = await r.json();
+    const d = await r.json().catch(() => ({}));
+    if (r.status === 402) { openPricingModal('growth'); throw new Error(d.error || 'Requires a paid plan'); }
     if (!r.ok) throw new Error(d.error || 'Failed to generate policy');
+    ST.policies[controlId] = d.text || '';
     out.style.display = 'block';
     out.textContent = d.text || '';
     btn.textContent = '📋 Copy Policy';
     btn.disabled = false;
     btn.onclick = (e) => { e.stopPropagation(); copyText(d.text); toast('Policy copied to clipboard', 'success'); };
   } catch (err) {
-    toast(err.message, 'error');
+    toast(err.message || 'Failed to generate policy', 'error');
     btn.textContent = '📝 Generate Policy Template';
     btn.disabled = false;
   }
@@ -3024,28 +3067,35 @@ async function submitPricingPayment() {
       return;
     }
 
-    // Unlock immediately via a server-side check, rather than waiting on the
-    // Stripe webhook (which may lag or be misconfigured).
+    // The card succeeded. Try to unlock immediately via a server-side check
+    // (instead of waiting on the webhook). If the server can't confirm yet,
+    // tell the truth rather than claiming the plan is active.
     txtEl.innerHTML = '<span class="spinner"></span> Activating...';
+    let activated = false;
     try {
       const cr = await fetch('/api/billing', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({ action: 'confirm', subscriptionId: d.subscriptionId }),
       });
-      const cd = await cr.json();
+      const cd = await cr.json().catch(() => ({}));
       if (cr.ok && cd.ok && cd.mode) {
         ST.mode = cd.mode;
         applyPaywall();
+        activated = true;
       }
     } catch {}
 
-    // Success
     closePricingModal();
-    toast('🎉 ' + _selectedPlan.name.charAt(0).toUpperCase() + _selectedPlan.name.slice(1) + ' plan activated!', 'success');
+    if (activated) {
+      toast('🎉 ' + _selectedPlan.name.charAt(0).toUpperCase() + _selectedPlan.name.slice(1) + ' plan activated!', 'success');
+    } else {
+      // Payment captured but activation is still settling — never imply it failed.
+      toast('Payment received — activating your plan. If features stay locked, refresh in a minute.', 'success');
+    }
     // Refresh the dashboard so unlocked features reflect immediately.
     if (typeof loadUserMode === 'function') loadUserMode();
-    if (ST.view === 'dashboard' || true) { try { loadDashboard(); } catch {} }
+    try { loadDashboard(); } catch {}
 
   } catch(err) {
     errEl.textContent = err.message;
@@ -3070,9 +3120,10 @@ async function loadLocker() {
   el.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:48px 0"><span class="spinner"></span></div>';
 
   try {
-    // Fetch all evidence across controls — use expiring=9999 to get all
-    const r = await fetch('/api/evidence?expiring=9999', { headers: authHeaders() });
-    if (!r.ok) throw new Error('Failed');
+    // Fetch ALL evidence across controls (manual items have no expiry date, so
+    // the old expiring=9999 filter hid them — ?all=true returns everything).
+    const r = await fetch('/api/evidence?all=true', { headers: authHeaders() });
+    if (!r.ok) throw new Error('Could not load your evidence. Please retry.');
     const d = await r.json();
 
     // Build stats
@@ -3175,6 +3226,7 @@ let _profile = {};
 
 async function loadTrustPage() {
   if (!ST.user) return;
+  if (!ST.score) { try { await loadScore(); } catch {} }
   try {
     const r = await fetch('/api/platform?type=profile', { headers: authHeaders() });
     if (r.ok) {
@@ -3270,7 +3322,7 @@ async function loadTrustLinks() {
   if (!el) return;
   try {
     const r = await fetch('/api/share?list=true', { headers: authHeaders() });
-    if (!r.ok) return;
+    if (!r.ok) { el.innerHTML = '<div style="font-size:12px;color:var(--muted)">Could not load trust links. <button onclick="loadTrustLinks()" style="font-size:12px;color:#2563eb;background:none;border:none;cursor:pointer;text-decoration:underline">Retry</button></div>'; return; }
     const d = await r.json();
     const shares = d.shares || [];
     if (!shares.length) { el.innerHTML = '<div style="font-size:12px;color:var(--muted)">No active trust links. Generate one below.</div>'; return; }
@@ -3281,9 +3333,26 @@ async function loadTrustLinks() {
         '<div style="flex:1;min-width:0"><div style="font-size:11px;color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(url) + '</div>' +
         '<div style="font-size:10px;color:var(--muted);margin-top:1px">Expires ' + exp + ' · ' + (s.viewCount || 0) + ' views</div></div>' +
         '<button class="btn btn-secondary btn-sm" onclick="copyText(\'' + esc(url) + '\')">Copy</button>' +
+        '<button class="btn btn-secondary btn-sm" onclick="revokeTrustLink(\'' + esc(s.token) + '\')" style="color:#dc2626">Revoke</button>' +
         '</div>';
     }).join('');
-  } catch {}
+  } catch {
+    el.innerHTML = '<div style="font-size:12px;color:var(--muted)">Could not load trust links. <button onclick="loadTrustLinks()" style="font-size:12px;color:#2563eb;background:none;border:none;cursor:pointer;text-decoration:underline">Retry</button></div>';
+  }
+}
+
+async function revokeTrustLink(token) {
+  if (!confirm('Revoke this trust link? Anyone with the link will lose access immediately.')) return;
+  try {
+    const r = await fetch('/api/share?token=' + encodeURIComponent(token), {
+      method: 'DELETE',
+      headers: authHeaders(),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Could not revoke link');
+    toast('Trust link revoked', 'success');
+    loadTrustLinks();
+  } catch (err) { toast(err.message, 'error'); }
 }
 
 async function createTrustLink() {
@@ -3292,19 +3361,23 @@ async function createTrustLink() {
     toast('Trust Page requires a paid plan', 'error');
     return;
   }
+  const btn = event?.target?.closest?.('button');
   try {
+    if (btn) { btn.disabled = true; btn.dataset._t = btn.innerHTML; btn.innerHTML = '<span class="spinner"></span> Creating…'; }
     const companyName = document.getElementById('tpCompanyName')?.value.trim() || _profile.companyName || 'Company';
     const r = await fetch('/api/share', {
       method: 'POST',
       headers: authHeaders(),
       body: JSON.stringify({ companyName, ttlDays: 30 }),
     });
-    const d = await r.json();
+    const d = await r.json().catch(() => ({}));
+    if (r.status === 402) { openPricingModal('growth'); throw new Error(d.error || 'Trust Page requires a paid plan'); }
     if (!r.ok) throw new Error(d.error || 'Failed');
     toast('Trust link created', 'success');
     copyText(d.shareUrl);
     loadTrustLinks();
   } catch (err) { toast(err.message, 'error'); }
+  finally { if (btn) { btn.disabled = false; btn.innerHTML = btn.dataset._t || btn.innerHTML; } }
 }
 
 function copyText(text) {
