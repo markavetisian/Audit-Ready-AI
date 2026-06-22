@@ -10,7 +10,7 @@
 //   GET /api/slack-callback          → Slack OAuth callback (via vercel.json rewrite)
 // ─────────────────────────────────────────────────────────────
 
-import { trackUser, mintSession, stashAuthCode, takeAuthCode } from './_telemetry.js';
+import { trackUser, mintSession, stashAuthCode, takeAuthCode, verifySession, revokeSessions } from './_telemetry.js';
 
 export default async function handler(req, res) {
   const { provider, code, state } = req.query;
@@ -27,6 +27,24 @@ export default async function handler(req, res) {
     const payload = await takeAuthCode(supplied);
     if (!payload) return res.status(400).json({ error: 'Invalid or expired code' });
     return res.status(200).json(payload);
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // LOGOUT — revoke the caller's session tokens server-side.
+  // POST /api/auth?logout=1  (Authorization: Bearer <session token>)
+  // Stamps a revocation cutoff so the token (and any other session for this
+  // user) stops validating immediately, even before its 30-day expiry.
+  // GitHub-token sessions aren't server-revocable here (that's GitHub's token),
+  // so the client just clears them locally.
+  // ─────────────────────────────────────────────────────────────
+  if (req.method === 'POST' && (req.query.logout || req.url?.includes('logout'))) {
+    const auth = req.headers.authorization || '';
+    const token = auth.replace(/^Bearer\s+/i, '');
+    if (token.startsWith('s1.')) {
+      const uid = await verifySession(token);
+      if (uid) await revokeSessions(uid);
+    }
+    return res.status(200).json({ ok: true });
   }
 
   // ── Detect which provider this callback belongs to ──────────

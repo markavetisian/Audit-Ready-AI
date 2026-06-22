@@ -35,12 +35,16 @@ function sessionSecret() {
 }
 
 export function mintSession(uid, ttlDays = 30) {
-  const payload = Buffer.from(JSON.stringify({ uid, exp: Date.now() + ttlDays * 86400000 })).toString('base64url');
+  const payload = Buffer.from(JSON.stringify({ uid, iat: Date.now(), exp: Date.now() + ttlDays * 86400000 })).toString('base64url');
   const sig = createHmac('sha256', sessionSecret()).update(payload).digest('base64url');
   return `s1.${payload}.${sig}`;
 }
 
-export function verifySession(token) {
+// verifySession validates the HMAC signature AND honours server-side
+// revocation. "Sign out everywhere" stamps a cutoff timestamp per user; any
+// token issued at/before that cutoff is rejected even though its signature is
+// still cryptographically valid — making leaked or stolen tokens killable.
+export async function verifySession(token) {
   try {
     const parts = String(token).split('.');
     if (parts.length !== 3 || parts[0] !== 's1') return null;
@@ -50,8 +54,22 @@ export function verifySession(token) {
     if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
     const data = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
     if (!data.uid || !data.exp || Date.now() > data.exp) return null;
+    try {
+      const cutoff = await redis.get(`sess:revafter:${data.uid}`);
+      // If a cutoff exists, reject tokens issued before it. Legacy tokens with
+      // no iat are also rejected once a cutoff is set (they predate it).
+      if (cutoff && (!data.iat || data.iat <= Number(cutoff))) return null;
+    } catch {}
     return data.uid;
   } catch { return null; }
+}
+
+// Revoke every session for a user (e.g. on logout or suspected compromise).
+export async function revokeSessions(uid) {
+  if (!uid) return;
+  try {
+    await redis.set(`sess:revafter:${uid}`, String(Date.now()), { ex: 60 * 60 * 24 * 60 });
+  } catch {}
 }
 
 // ── One-time auth codes (keep OAuth credentials out of the URL) ──

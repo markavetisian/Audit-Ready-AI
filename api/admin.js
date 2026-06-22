@@ -30,7 +30,7 @@ async function resolveIdentity(authHeader) {
   // Signed session token (google/slack users). The uid was issued only after
   // the provider verified the user, so the embedded email is trustworthy.
   if (token.startsWith('s1.')) {
-    const uid = verifySession(token);
+    const uid = await verifySession(token);
     if (!uid) return null;
     if (uid.startsWith('google:')) return { username: null, email: uid.slice(7) };
     if (uid.startsWith('slack:')) return { username: null, email: uid.slice(6) };
