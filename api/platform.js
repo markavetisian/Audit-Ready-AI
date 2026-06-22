@@ -1,5 +1,7 @@
 // api/platform.js
-// Multi-purpose platform endpoint (uses the last available Vercel function slot)
+// Multi-purpose platform endpoint (uses the last available Vercel function slot
+// — Vercel Hobby caps a deployment at 12 Serverless Functions, so new routes
+// get added here as a `type=` action instead of as a new api/*.js file)
 //
 //   GET  /api/platform?type=vendors            → list vendors
 //   POST /api/platform  {type:'vendor',...}    → add vendor
@@ -7,9 +9,12 @@
 //   GET  /api/platform?type=profile            → get company profile
 //   POST /api/platform  {type:'profile',...}   → save company profile
 //   GET  /api/platform?type=reminders          → upcoming renewals + expiring evidence
+//   GET  /api/platform?type=export             → full self-service data export (GDPR/CCPA)
+//   DELETE /api/platform?type=account          → self-service account + data deletion
 
 import { Redis } from '@upstash/redis';
-import { verifySession } from './_telemetry.js';
+import { verifySession, logError } from './_telemetry.js';
+import { CONTROL_DEFINITIONS } from './controls.js';
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL,
@@ -180,6 +185,48 @@ export default async function handler(req, res) {
       } catch (err) { return res.status(500).json({ error: 'Internal error. Please try again.' }); }
     }
 
+    if (type === 'export') {
+      try {
+        const controlIds = CONTROL_DEFINITIONS.map(d => d.id);
+        const controls = {};
+        const evidence = {};
+        for (const cid of controlIds) {
+          const c = parseJson(await redis.get(`control:${userId}:${cid}`).catch(() => null));
+          if (c) controls[cid] = c;
+          const e = parseJson(await redis.get(`user:${userId}:evidence:${cid}`).catch(() => null));
+          if (e) evidence[cid] = e;
+        }
+
+        const profile = parseJson(await redis.get(`user:${userId}:profile`).catch(() => null)) || {};
+        const vendors = parseJson(await redis.get(`user:${userId}:vendors`).catch(() => null)) || [];
+        const score = parseJson(await redis.get(`user:${userId}:score`).catch(() => null));
+        const scoreHistoryRaw = await redis.lrange(`user:${userId}:scoreHistory`, 0, 89).catch(() => []);
+        const scoreHistory = (scoreHistoryRaw || []).map(parseJson).filter(Boolean);
+
+        const reportIds = await redis.lrange(`user:${userId}:reports`, 0, 49).catch(() => []);
+        const reports = [];
+        for (const id of (reportIds || [])) {
+          const r = parseJson(await redis.get(`user:${userId}:report:${id}`).catch(() => null));
+          if (r) reports.push(r);
+        }
+
+        return res.status(200).json({
+          exportedAt: new Date().toISOString(),
+          userId,
+          profile,
+          controls,
+          evidence,
+          vendors,
+          score,
+          scoreHistory,
+          reports,
+        });
+      } catch (err) {
+        console.error('Export error:', err.message);
+        return res.status(500).json({ error: 'Could not generate export. Please try again.' });
+      }
+    }
+
     return res.status(400).json({ error: 'Missing or invalid type parameter' });
   }
 
@@ -246,8 +293,46 @@ export default async function handler(req, res) {
         return res.status(200).json({ ok: true });
       } catch (err) { return res.status(500).json({ error: 'Internal error. Please try again.' }); }
     }
+
+    // Self-service account + data deletion (GDPR Art. 17 / CCPA right to delete).
+    // Erases the same full key set as the admin "delete" action, but is
+    // callable by the user themselves against their own account only.
+    if (type === 'account') {
+      try {
+        const [controlKeys, evidenceKeys, reportKeys] = await Promise.all([
+          redis.keys(`control:${userId}:*`).catch(() => []),
+          redis.keys(`user:${userId}:evidence:*`).catch(() => []),
+          redis.keys(`user:${userId}:report:*`).catch(() => []),
+        ]);
+        const keysToDelete = [
+          `admin:user:${userId}`,
+          `blocked:${userId}`,
+          `banned:${userId}`,
+          `user:${userId}:score`,
+          `user:${userId}:scoreHistory`,
+          `user:${userId}:vendors`,
+          `user:${userId}:profile`,
+          `user:${userId}:shares`,
+          `user:${userId}:lastScan`,
+          `user:${userId}:reports`,
+          `user:${userId}:seeded`,
+          ...controlKeys, ...evidenceKeys, ...reportKeys,
+        ];
+        await Promise.all(keysToDelete.map(k => redis.del(k).catch(() => {})));
+        return res.status(200).json({ ok: true, deleted: true });
+      } catch (err) {
+        await logError('account_delete_error', { msg: err.message, userId });
+        return res.status(500).json({ error: 'Could not delete account. Please try again or contact support.' });
+      }
+    }
+
     return res.status(400).json({ error: 'Missing type or id' });
   }
 
   return res.status(405).json({ error: 'Method not allowed' });
+}
+
+function parseJson(raw) {
+  if (!raw) return null;
+  return typeof raw === 'object' ? raw : JSON.parse(raw);
 }

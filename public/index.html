@@ -1783,7 +1783,7 @@ function authHeaders() {
 // snapshot of everything stored for this account.
 async function exportMyData() {
   try {
-    const r = await fetch('/api/export', { headers: authHeaders() });
+    const r = await fetch('/api/platform?type=export', { headers: authHeaders() });
     if (!r.ok) { toast('Could not generate export. Please try again.'); return; }
     const data = await r.json();
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1807,7 +1807,7 @@ async function deleteMyAccount() {
   const reallySure = confirm('Are you absolutely sure? Type OK to permanently erase your account.');
   if (!reallySure) return;
   try {
-    const r = await fetch('/api/account', { method: 'DELETE', headers: authHeaders() });
+    const r = await fetch('/api/platform?type=account', { method: 'DELETE', headers: authHeaders() });
     if (!r.ok) { toast('Could not delete account. Please try again or contact support.'); return; }
     toast('Account deleted.');
     logout();
