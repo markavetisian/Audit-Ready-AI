@@ -2,14 +2,14 @@
 // api/controls.js
 // ACTION: REFACTORED from api/agents.js
 //
-//   GET   /api/controls                   → return all 50 controls + statuses
+//   GET   /api/controls                   → return all 49 controls + statuses
 //   GET   /api/controls?category=CC6      → filter by category
 //   GET   /api/controls?status=NOT_STARTED → filter by status
 //   PATCH /api/controls                   → update control status / not-applicable toggle
 //
 // KEPT:    Redis client, auth middleware, CORS headers
 // REMOVED: Agent CRUD, GitHub repo deletion, agent upsert logic
-// ADDED:   50-control SOC 2 seed on first access, status filter,
+// ADDED:   49-control SOC 2 seed on first access, status filter,
 //          not-applicable toggle, category grouping,
 //          evidenceGuidance field per control for actionable guidance
 // ─────────────────────────────────────────────────────────────
@@ -39,7 +39,7 @@ async function getUserId(authHeader) {
   } catch { return null; }
 }
 
-// ── SOC 2 Control Definitions (50 controls) ──────────────────
+// ── SOC 2 Control Definitions (49 controls) ──────────────────
 
 const CONTROL_DEFINITIONS = [
   // ── CC1: Control Environment ─────────────────────────────────
@@ -123,7 +123,7 @@ const CONTROL_DEFINITIONS = [
     id: 'CC4.1', category: 'CC4',
     title: 'Security monitoring and logging enabled',
     description: 'The entity monitors system components and the operation of controls.',
-    autoDetectable: true, autoSource: 'aws',
+    autoDetectable: false, autoSource: null, // AWS scanning not live yet — don't promise auto-fill
     evidenceGuidance: 'For AWS: export a screenshot of CloudTrail enabled across all regions, and CloudWatch alarms configured. For other providers: export your logging configuration dashboard showing audit logs are enabled.',
   },
   {
@@ -139,7 +139,7 @@ const CONTROL_DEFINITIONS = [
     id: 'CC5.1', category: 'CC5',
     title: 'Encryption at rest implemented',
     description: 'The entity uses encryption to protect data at rest from unauthorized access.',
-    autoDetectable: true, autoSource: 'aws',
+    autoDetectable: false, autoSource: null, // AWS scanning not live yet — don't promise auto-fill
     evidenceGuidance: 'For AWS: screenshot of S3 bucket encryption settings (SSE-S3 or SSE-KMS enabled) and RDS encryption enabled. For other providers: export encryption configuration. Include your encryption policy document.',
   },
   {
@@ -241,14 +241,14 @@ const CONTROL_DEFINITIONS = [
     id: 'CC7.1', category: 'CC7',
     title: 'System availability monitored',
     description: 'The entity monitors system availability and capacity to meet its objectives.',
-    autoDetectable: true, autoSource: 'aws',
+    autoDetectable: false, autoSource: null, // AWS scanning not live yet — don't promise auto-fill
     evidenceGuidance: 'Screenshot your uptime monitoring dashboard (Datadog, PagerDuty, StatusPage, AWS CloudWatch). Show configured alerts for availability thresholds. Include your uptime SLA documentation.',
   },
   {
     id: 'CC7.2', category: 'CC7',
     title: 'Backup procedures documented and tested',
     description: 'The entity backs up data and systems and tests recovery procedures.',
-    autoDetectable: true, autoSource: 'aws',
+    autoDetectable: false, autoSource: null, // AWS scanning not live yet — don't promise auto-fill
     evidenceGuidance: 'Screenshot your backup configuration (AWS Backup, RDS automated backups, etc.) showing backup frequency and retention. Upload a backup restoration test report — showing you actually tested a restore is critical for auditors.',
   },
   {
@@ -492,7 +492,7 @@ export default async function handler(req, res) {
   const userId = await getUserId(req.headers.authorization);
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-  // ── GET: Return all 50 controls (optionally filtered) ────────
+  // ── GET: Return all 49 controls (optionally filtered) ────────
   if (req.method === 'GET') {
     try {
       const { category, status, grouped } = req.query;
@@ -502,7 +502,7 @@ export default async function handler(req, res) {
       }
       return res.status(200).json({ controls, total: controls.length });
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      return res.status(500).json({ error: 'Internal error. Please try again.' });
     }
   }
 
@@ -550,7 +550,7 @@ export default async function handler(req, res) {
 
       return res.status(200).json({ ok: true, control, newScore });
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      return res.status(500).json({ error: 'Internal error. Please try again.' });
     }
   }
 

@@ -16,7 +16,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { Redis } from '@upstash/redis';
-import { trackUser, isBlocked, checkRateLimit, logError, verifySession } from './_telemetry.js';
+import { trackUser, isBlocked, checkRateLimit, logError, verifySession, getUserMode } from './_telemetry.js';
 
 // Give the scan extra headroom — multi-repo GitHub + Drive crawls can exceed
 // the default 10s serverless cap. 60s is the maximum on the Hobby plan.
@@ -359,13 +359,14 @@ export default async function handler(req, res) {
       const scan = typeof raw === 'object' ? raw : JSON.parse(raw);
       return res.status(200).json(scan);
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      console.error('Scan status error:', err.message);
+      return res.status(500).json({ error: 'Could not load scan status.' });
     }
   }
 
   // ── POST: Trigger scan ────────────────────────────────────────
   if (req.method === 'POST') {
-    const rl = await checkRateLimit(userId, 'scan');
+    const rl = await checkRateLimit(userId, 'scan', await getUserMode(userId));
     if (!rl.ok) {
       return res.status(429).json({ error: `Scan rate limit. Retry in ${rl.retryAfter}s.`, retryAfter: rl.retryAfter });
     }
@@ -425,7 +426,7 @@ export default async function handler(req, res) {
 
     } catch (err) {
       await logError('scan_error', { msg: err.message, userId });
-      return res.status(500).json({ error: err.message });
+      return res.status(500).json({ error: 'Scan failed. Please try again.' });
     }
   }
 

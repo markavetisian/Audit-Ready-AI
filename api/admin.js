@@ -42,14 +42,16 @@ async function resolveIdentity(authHeader) {
   if (token.startsWith('google:') || token.startsWith('slack:')) return null;
 
   // Otherwise treat as a GitHub OAuth token — verify it against GitHub's API
-  // rather than trusting a client-asserted username.
+  // rather than trusting a client-asserted username. NOTE: we deliberately do
+  // NOT return the GitHub profile email — it can be an unverified public email,
+  // so GitHub admins must be allowlisted by username (ADMIN_GH), never by email.
   try {
     const r = await fetch('https://api.github.com/user', {
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'AuditReady-AI' },
     });
     if (!r.ok) return null;
     const u = await r.json();
-    return { username: u.login || null, email: u.email || null };
+    return { username: u.login || null, email: null };
   } catch { return null; }
 }
 
@@ -227,7 +229,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   } catch (err) {
     console.error('Admin error:', err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Internal error. Please try again.' });
   }
 }
 

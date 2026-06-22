@@ -17,7 +17,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { Redis } from '@upstash/redis';
-import { trackUser, checkRateLimit, logError, verifySession } from './_telemetry.js';
+import { trackUser, checkRateLimit, logError, verifySession, getUserMode, isPaidMode } from './_telemetry.js';
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL,
@@ -159,6 +159,11 @@ export default async function handler(req, res) {
       const { controlId } = req.query;
       if (!controlId) return res.status(400).json({ error: 'Missing controlId' });
       if (!process.env.GROQ_API_KEY) return res.status(500).json({ error: 'GROQ_API_KEY not configured' });
+      // AI policy generation is a paid feature — enforce server-side, not just
+      // in the UI, so a free user can't call this endpoint directly.
+      if (!isPaidMode(await getUserMode(userId))) {
+        return res.status(402).json({ error: 'AI policy generation requires a paid plan.' });
+      }
       const cacheKey = `policy:${controlId}`;
       const cached = await redis.get(cacheKey);
       if (cached) return res.status(200).json(typeof cached === 'object' ? cached : JSON.parse(cached));
@@ -191,7 +196,7 @@ export default async function handler(req, res) {
         const result = { controlId, policyName: policyInfo.name, text, generatedAt: new Date().toISOString() };
         await redis.set(cacheKey, JSON.stringify(result), { ex: 7 * 24 * 3600 });
         return res.status(200).json(result);
-      } catch (err) { return res.status(500).json({ error: err.message }); }
+      } catch (err) { console.error('Policy gen error:', err.message); return res.status(500).json({ error: 'Could not generate policy. Please try again.' }); }
     }
 
     try {
@@ -236,7 +241,8 @@ export default async function handler(req, res) {
       reports.sort((a, b) => (b.generatedAt || 0) - (a.generatedAt || 0));
       return res.status(200).json({ reports });
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      console.error('Report list error:', err.message);
+      return res.status(500).json({ error: 'Could not load reports.' });
     }
   }
 
@@ -246,7 +252,13 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'GROQ_API_KEY not configured.' });
     }
 
-    const rl = await checkRateLimit(userId, 'report');
+    // AI report generation is a paid feature — enforce server-side.
+    const mode = await getUserMode(userId);
+    if (!isPaidMode(mode)) {
+      return res.status(402).json({ error: 'AI report generation requires a paid plan.' });
+    }
+
+    const rl = await checkRateLimit(userId, 'report', mode);
     if (!rl.ok) {
       return res.status(429).json({ error: `Report rate limit. Retry in ${rl.retryAfter}s.`, retryAfter: rl.retryAfter });
     }
@@ -343,7 +355,7 @@ ${JSON.stringify(REPORT_SCHEMA)}`;
 
     } catch (err) {
       await logError('report_error', { msg: err.message, userId });
-      return res.status(500).json({ error: err.message });
+      return res.status(500).json({ error: 'Could not generate report. Please try again.' });
     }
   }
 

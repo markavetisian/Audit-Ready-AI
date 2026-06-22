@@ -19,13 +19,20 @@ const redis = new Redis({
 
 const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY;
 
-const VALID_MODES = ['starter', 'growth', 'enterprise'];
-
 const PRICE_TO_MODE = {
   'price_1ThZIZFQiRRnlhwuYRI3MfNX': 'starter',
   'price_1ThZLSFQiRRnlhwueStdff4L': 'growth',
   'price_1ThZNGFQiRRnlhwuH23alwzB': 'enterprise',
 };
+
+// Restrict CORS to known app origins (not "*") on this money-handling endpoint.
+function setCors(req, res) {
+  const origin = req.headers.origin || '';
+  const allowed = /^https:\/\/(auditready\.space|[a-z0-9-]+\.vercel\.app)$/i.test(origin);
+  res.setHeader('Access-Control-Allow-Origin', allowed ? origin : 'https://auditready.space');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+}
 
 // Resolve the authenticated user's id server-side. Never trust a
 // client-supplied userId for billing actions.
@@ -76,9 +83,7 @@ async function stripePatch(path, body) {
 }
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  setCors(req, res);
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   // ── POST confirm: verify a paid subscription and unlock the plan ──
@@ -90,8 +95,8 @@ export default async function handler(req, res) {
     const { subscriptionId } = req.body || {};
     if (!subscriptionId) return res.status(400).json({ error: 'Missing subscriptionId' });
     try {
-      const sub = await stripeGet(`subscriptions/${subscriptionId}`);
-      if (sub.error) return res.status(400).json({ error: sub.error.message });
+      const sub = await stripeGet(`subscriptions/${subscriptionId}?expand[]=latest_invoice`);
+      if (sub.error) return res.status(400).json({ error: 'Could not verify subscription' });
       // Ownership check (fail closed): the subscription must positively belong
       // to this user. A subscription with no/ mismatched userId metadata is
       // rejected so a caller can't confirm someone else's (or a foreign) sub.
@@ -100,7 +105,11 @@ export default async function handler(req, res) {
       }
       const priceId = sub.items?.data?.[0]?.price?.id;
       const mode = PRICE_TO_MODE[priceId];
-      const paid = sub.status === 'active' || sub.status === 'trialing';
+      // Only unlock once the FIRST invoice is actually paid — not merely because
+      // the subscription reports "active" (it can briefly before capture). This
+      // prevents granting paid access without a captured payment.
+      const invoicePaid = sub.latest_invoice?.status === 'paid';
+      const paid = (sub.status === 'active' && invoicePaid) || sub.status === 'trialing';
       if (!paid || !mode) {
         return res.status(200).json({ ok: false, status: sub.status, mode: null });
       }
@@ -121,16 +130,18 @@ export default async function handler(req, res) {
   }
 
   // ── POST: Create Stripe subscription checkout ────────────────
-  // Identical logic from stripe-checkout.js
   if (req.method === 'POST') {
     const userId = await getUserId(req.headers.authorization);
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const { priceId, email, mode } = req.body || {};
+    const { priceId, email } = req.body || {};
     if (!priceId || !email) {
       return res.status(400).json({ error: 'Missing priceId or email' });
     }
-    if (mode && !VALID_MODES.includes(mode)) {
-      return res.status(400).json({ error: 'Invalid mode' });
+    // Derive the plan from the price table server-side. The client never gets to
+    // assert its own `mode`, and only known price IDs are accepted.
+    const mode = PRICE_TO_MODE[priceId];
+    if (!mode) {
+      return res.status(400).json({ error: 'Unknown price' });
     }
     try {
       const userKey = `admin:user:${userId}`;
@@ -143,6 +154,9 @@ export default async function handler(req, res) {
         if (customer.error) throw new Error(customer.error.message);
         customerId = customer.id;
         await redis.set(userKey, JSON.stringify({ ...userData, stripeCustomerId: customerId }));
+        // Reverse index so the webhook can resolve userId from a customer id
+        // without ever falling back to a raw (user-controlled) email.
+        await redis.set(`stripe:customer:${customerId}`, userId).catch(() => {});
       }
 
       const subscription = await stripePost('subscriptions', {
@@ -162,7 +176,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ clientSecret, subscriptionId: subscription.id });
     } catch (err) {
       console.error('Stripe checkout error:', err.message);
-      return res.status(500).json({ error: err.message });
+      return res.status(500).json({ error: 'Could not start checkout. Please try again.' });
     }
   }
 
@@ -208,7 +222,7 @@ export default async function handler(req, res) {
       });
     } catch (err) {
       console.error('Cancel error:', err.message);
-      return res.status(500).json({ error: err.message });
+      return res.status(500).json({ error: 'Could not cancel subscription. Please try again.' });
     }
   }
 

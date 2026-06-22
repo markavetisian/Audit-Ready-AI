@@ -13,7 +13,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { Redis } from '@upstash/redis';
-import { verifySession } from './_telemetry.js';
+import { verifySession, getUserMode, isPaidMode } from './_telemetry.js';
 import { createHash, randomBytes } from 'crypto';
 
 const redis = new Redis({
@@ -169,8 +169,10 @@ async function buildPublicPayload(userId, options = {}) {
 // ── Main handler ─────────────────────────────────────────────
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  const origin = req.headers.origin || '';
+  const allowedOrigin = /^https:\/\/(auditready\.space|[a-z0-9-]+\.vercel\.app)$/i.test(origin);
+  res.setHeader('Access-Control-Allow-Origin', allowedOrigin ? origin : 'https://auditready.space');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -206,7 +208,8 @@ export default async function handler(req, res) {
         }
         return res.status(200).json({ shares });
       } catch (err) {
-        return res.status(500).json({ error: err.message });
+        console.error('Share list error:', err.message);
+        return res.status(500).json({ error: 'Could not load share links.' });
       }
     }
 
@@ -237,14 +240,20 @@ export default async function handler(req, res) {
 
       return res.status(200).json(payload);
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      console.error('Share view error:', err.message);
+      return res.status(500).json({ error: 'Could not load shared page.' });
     }
   }
 
-  // ── POST: Create shareable token (requires auth) ──────────────
+  // ── POST: Create shareable token (requires auth + paid plan) ──
   if (req.method === 'POST') {
     const userId = await getUserId(req.headers.authorization);
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    // Public Trust Pages are a paid feature — enforce server-side.
+    if (!isPaidMode(await getUserMode(userId))) {
+      return res.status(402).json({ error: 'Public Trust Pages require a paid plan.' });
+    }
 
     try {
       const { companyName, ttlDays, includeReport, reportId } = req.body || {};
@@ -285,7 +294,44 @@ export default async function handler(req, res) {
         ttlDays: ttl,
       });
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      console.error('Share create error:', err.message);
+      return res.status(500).json({ error: 'Could not create share link.' });
+    }
+  }
+
+  // ── DELETE: Revoke a share link (requires auth + ownership) ───
+  if (req.method === 'DELETE') {
+    const userId = await getUserId(req.headers.authorization);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const token = req.query.token || req.body?.token;
+    if (!token) return res.status(400).json({ error: 'Missing token' });
+    try {
+      // Verify the token belongs to this user before deleting anything.
+      const raw = await redis.get(`share:${token}`);
+      if (raw) {
+        const data = typeof raw === 'object' ? raw : JSON.parse(raw);
+        if (data.userId !== userId) {
+          return res.status(403).json({ error: 'This link does not belong to your account' });
+        }
+        await redis.del(`share:${token}`);
+        await redis.del(`share:${token}:views`).catch(() => {});
+      }
+      // Remove it from the user's share list regardless (idempotent revoke).
+      const userSharesKey = `user:${userId}:shares`;
+      try {
+        const list = await redis.lrange(userSharesKey, 0, 49);
+        await redis.del(userSharesKey);
+        for (const item of (list || [])) {
+          try {
+            const s = typeof item === 'object' ? item : JSON.parse(item);
+            if (s.token !== token) await redis.rpush(userSharesKey, JSON.stringify(s));
+          } catch {}
+        }
+      } catch {}
+      return res.status(200).json({ ok: true, revoked: token });
+    } catch (err) {
+      console.error('Share revoke error:', err.message);
+      return res.status(500).json({ error: 'Could not revoke share link.' });
     }
   }
 

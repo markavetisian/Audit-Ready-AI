@@ -28,10 +28,14 @@ const redis = new Redis({
 // anyone could forge. Falls back to existing server secrets so no new env
 // var is strictly required, but SESSION_SECRET is preferred.
 function sessionSecret() {
-  return process.env.SESSION_SECRET
+  // Prefer a dedicated SESSION_SECRET. Fall back to other server-only secrets
+  // so existing deployments keep working, but NEVER to a hardcoded constant —
+  // a public fallback would let anyone forge a valid session for any user.
+  const s = process.env.SESSION_SECRET
     || process.env.STRIPE_SECRET_KEY
-    || process.env.GITHUB_CLIENT_SECRET
-    || 'auditready-insecure-fallback-set-SESSION_SECRET';
+    || process.env.GITHUB_CLIENT_SECRET;
+  if (!s) throw new Error('No session secret configured (set SESSION_SECRET).');
+  return s;
 }
 
 export function mintSession(uid, ttlDays = 30) {
@@ -163,9 +167,29 @@ export async function isBlocked(userId) {
   } catch { return null; }
 }
 
-export async function checkRateLimit(userId, type) {
-  const limits = { scan: { window: 3600, max: 20 }, report: { window: 3600, max: 10 } };
-  const cfg = limits[type];
+const PAID_MODES = ['starter', 'growth', 'enterprise'];
+export function isPaidMode(mode) { return PAID_MODES.includes(mode); }
+
+// Resolve a user's current plan from their stored record (defaults to sandbox).
+export async function getUserMode(userId) {
+  if (!userId) return 'sandbox';
+  try {
+    const raw = await redis.get(`admin:user:${userId}`);
+    if (!raw) return 'sandbox';
+    const u = typeof raw === 'object' ? raw : JSON.parse(raw);
+    return u.mode || 'sandbox';
+  } catch { return 'sandbox'; }
+}
+
+// Per-tier rate limits. Paid plans get a much higher ceiling; sandbox is kept
+// tight to control LLM/scan cost and match the published free-tier allowance.
+export async function checkRateLimit(userId, type, mode = 'sandbox') {
+  const LIMITS = {
+    scan:   { sandbox: { window: 3600, max: 3 },  paid: { window: 3600, max: 30 } },
+    report: { sandbox: { window: 3600, max: 2 },  paid: { window: 3600, max: 20 } },
+  };
+  const tier = isPaidMode(mode) ? 'paid' : 'sandbox';
+  const cfg = LIMITS[type]?.[tier];
   if (!cfg) return { ok: true };
   const now = Date.now();
   const key = `rl:${type}:${userId}`;
@@ -183,7 +207,41 @@ export async function checkRateLimit(userId, type) {
       return { ok: false, retryAfter: ttl, remaining: 0 };
     }
     return { ok: true, remaining: cfg.max - data.count };
-  } catch { return { ok: true }; }
+  } catch {
+    // Fail CLOSED: if we can't verify the limit (Redis error), deny rather than
+    // allow unbounded, costly LLM/scan calls. A short retry keeps it recoverable.
+    return { ok: false, retryAfter: 60, remaining: 0, degraded: true };
+  }
+}
+
+// Admin check based on the already-verified userId (github:login / google:email
+// / slack:email) against env allowlists. More robust than matching an
+// unverified provider profile email.
+export function isAdminUserId(userId) {
+  if (!userId) return false;
+  const list = (v) => (process.env[v] || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+  const ghAdmins = list('ADMIN_GH');
+  const emailAdmins = list('ADMIN_EMAIL');
+  if (userId.startsWith('github:')) return ghAdmins.includes(userId.slice(7).toLowerCase());
+  if (userId.startsWith('google:')) return emailAdmins.includes(userId.slice(7).toLowerCase());
+  if (userId.startsWith('slack:')) return emailAdmins.includes(userId.slice(6).toLowerCase());
+  return false;
+}
+
+// Resolve the authenticated userId from an Authorization header (shared pattern).
+async function resolveUserId(authHeader) {
+  if (!authHeader?.startsWith('Bearer ')) return null;
+  const token = authHeader.slice(7);
+  if (token.startsWith('s1.')) return await verifySession(token);
+  if (token.startsWith('google:') || token.startsWith('slack:')) return null;
+  try {
+    const r = await fetch('https://api.github.com/user', {
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'AuditReady-AI' },
+    });
+    if (!r.ok) return null;
+    const u = await r.json();
+    return 'github:' + u.login;
+  } catch { return null; }
 }
 
 export async function logError(msg, ctx = {}) {
@@ -204,8 +262,14 @@ export default async function handler(req, res) {
 
   const type = req.query.type || req.body?.type;
 
-  // ── GET: Platform-level analytics for admin ──────────────────
+  // Authenticate every request. The authenticated userId is the ONLY identity
+  // we trust — body-supplied userId/email are ignored to prevent record/log
+  // poisoning by unauthenticated callers.
+  const authUserId = await resolveUserId(req.headers.authorization);
+
+  // ── GET: Platform-level analytics — ADMIN ONLY ───────────────
   if (req.method === 'GET') {
+    if (!isAdminUserId(authUserId)) return res.status(403).json({ error: 'Forbidden' });
     try {
       const [totalUsers, totalScans, totalReports, failedScans, totalErrors] = await Promise.all([
         redis.get('admin:stats:total_users').then(v => Number(v || 0)),
@@ -215,43 +279,30 @@ export default async function handler(req, res) {
         redis.get('admin:stats:total_errors').then(v => Number(v || 0)),
       ]);
       return res.status(200).json({ totalUsers, totalScans, totalReports, failedScans, totalErrors });
-    } catch (err) {
-      return res.status(500).json({ error: err.message });
+    } catch {
+      return res.status(500).json({ error: 'Internal error' });
     }
   }
 
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (!authUserId) return res.status(401).json({ error: 'Unauthorized' });
 
   try {
-    // ── type=track: user event tracking (from track.js) ─────────
-    if (type === 'track' || (!type && req.body?.userId)) {
-      const { userId, type: evType, email, authType } = req.body || {};
-      if (userId && evType) await trackUser(userId, evType, email, authType);
-      return res.status(200).json({ ok: true });
-    }
+    const authType = authUserId.split(':')[0];
 
-    // ── type=log: event logging (from log.js) ───────────────────
-    // AuditReady repurposes this for compliance event logging
+    // ── type=log: event logging, always under the authenticated user ──
     if (type === 'log') {
-      const { userId, event, data } = req.body;
-      if (!userId || !event) return res.status(400).json({ error: 'Missing fields' });
+      const { event, data } = req.body || {};
+      if (!event) return res.status(400).json({ error: 'Missing fields' });
       const ts = Date.now();
-      await redis.lpush('admin:logs:events', JSON.stringify({ userId, event, data, ts }));
+      await redis.lpush('admin:logs:events', JSON.stringify({ userId: authUserId, event, data, ts }));
       await redis.ltrim('admin:logs:events', 0, 499);
       return res.status(200).json({ ok: true });
     }
 
-    // ── type=analytics: usage analytics write ───────────────────
-    if (type === 'analytics') {
-      const { userId, event, data } = req.body;
-      if (!userId) return res.status(400).json({ error: 'Missing userId' });
-      await trackUser(userId, event || 'page_view', data?.email, data?.authType);
-      return res.status(200).json({ ok: true });
-    }
-
-    // ── Fallback: accept any POST with userId/type ───────────────
-    const { userId, event, email, authType } = req.body || {};
-    if (userId && event) await trackUser(userId, event, email, authType);
+    // ── track / analytics: record an event for the authenticated user only ──
+    const evType = req.body?.event || req.body?.type === 'track' ? (req.body?.event || 'page_view') : 'page_view';
+    if (evType) await trackUser(authUserId, evType, null, authType);
     return res.status(200).json({ ok: true });
 
   } catch (err) {

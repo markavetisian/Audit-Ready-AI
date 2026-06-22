@@ -94,9 +94,41 @@ export default async function handler(req, res) {
   const userId = await getUserId(req.headers.authorization);
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-  // ── GET: Fetch evidence (by control or expiring within N days) ───
+  const ALL_CONTROL_IDS = [
+    'CC1.1','CC1.2','CC1.3','CC1.4',
+    'CC2.1','CC2.2','CC2.3',
+    'CC3.1','CC3.2','CC3.3',
+    'CC4.1','CC4.2',
+    'CC5.1','CC5.2','CC5.3','CC5.4','CC5.5',
+    'CC6.1','CC6.2','CC6.3','CC6.4','CC6.5','CC6.6','CC6.7','CC6.8','CC6.9',
+    'CC7.1','CC7.2','CC7.3','CC7.4','CC7.5','CC7.6',
+    'CC8.1','CC8.2','CC8.3','CC8.4','CC8.5','CC8.6',
+    'CC9.1','CC9.2','CC9.3','CC9.4','CC9.5','CC9.6','CC9.7','CC9.8','CC9.9','CC9.10','CC9.11',
+  ];
+
+  // ── GET: Fetch evidence (by control, all items, or expiring soon) ───
   if (req.method === 'GET') {
-    const { controlId, expiring } = req.query;
+    const { controlId, expiring, all } = req.query;
+
+    // GET ?all=true — every evidence item across all controls (Evidence Locker).
+    // Must NOT filter by expiryDate: manually added items have none and would
+    // otherwise be invisible in the locker.
+    if (all === 'true') {
+      try {
+        const items = [];
+        for (const cid of ALL_CONTROL_IDS) {
+          const raw = await redis.get(`user:${userId}:evidence:${cid}`);
+          if (!raw) continue;
+          const list = typeof raw === 'object' ? raw : JSON.parse(raw);
+          for (const item of list) items.push({ ...item, controlId: cid });
+        }
+        items.sort((a, b) => new Date(b.uploadedAt || 0) - new Date(a.uploadedAt || 0));
+        return res.status(200).json({ items, count: items.length });
+      } catch (err) {
+        console.error('Evidence all error:', err.message);
+        return res.status(500).json({ error: 'Could not load evidence.' });
+      }
+    }
 
     // GET ?expiring=30 — all evidence expiring within N days across controls
     if (expiring) {
@@ -129,7 +161,7 @@ export default async function handler(req, res) {
         expiring_items.sort((a, b) => new Date(a.expiryDate) - new Date(b.expiryDate));
         return res.status(200).json({ items: expiring_items, count: expiring_items.length });
       } catch (err) {
-        return res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: 'Internal error. Please try again.' });
       }
     }
 
@@ -141,7 +173,7 @@ export default async function handler(req, res) {
       const items = raw ? (typeof raw === 'object' ? raw : JSON.parse(raw)) : [];
       return res.status(200).json({ items, count: items.length });
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      return res.status(500).json({ error: 'Internal error. Please try again.' });
     }
   }
 
@@ -236,7 +268,7 @@ export default async function handler(req, res) {
 
       return res.status(201).json({ ok: true, item, newScore });
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      return res.status(500).json({ error: 'Internal error. Please try again.' });
     }
   }
 
@@ -290,7 +322,7 @@ export default async function handler(req, res) {
       const newScore = await recomputeScore(userId);
       return res.status(200).json({ ok: true, deleted: id, remaining: items.length, newScore });
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      return res.status(500).json({ error: 'Internal error. Please try again.' });
     }
   }
 

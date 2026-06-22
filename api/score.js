@@ -204,7 +204,7 @@ export default async function handler(req, res) {
         entries.reverse();
         return res.status(200).json({ history: entries });
       } catch (err) {
-        return res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: 'Internal error. Please try again.' });
       }
     }
     try {
@@ -224,7 +224,7 @@ export default async function handler(req, res) {
       } catch {}
       return res.status(200).json({ ...result, mode, status });
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      return res.status(500).json({ error: 'Internal error. Please try again.' });
     }
   }
 
@@ -237,7 +237,7 @@ export default async function handler(req, res) {
       await redis.ltrim(`user:${userId}:scoreHistory`, 0, 89);
       return res.status(200).json({ ok: true, ...result });
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      return res.status(500).json({ error: 'Internal error. Please try again.' });
     }
   }
 

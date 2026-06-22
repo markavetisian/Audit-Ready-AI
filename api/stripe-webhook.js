@@ -16,7 +16,41 @@ const PRICE_TO_MODE = {
   'price_1ThZNGFQiRRnlhwuH23alwzB': 'enterprise',
 };
 
+const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY;
+
 export const config = { api: { bodyParser: false } };
+
+// Only ever key account state on a real app user id (github:/google:/slack:).
+function isValidUserKey(uid) {
+  return typeof uid === 'string' && /^(github:|google:|slack:)/.test(uid);
+}
+
+// Resolve the app userId for a Stripe event WITHOUT trusting a raw email.
+// Order: subscription/invoice metadata → reverse index (written at checkout) →
+// live Stripe customer.metadata.userId. Returns null if it can't be resolved.
+async function resolveUserId(metaUserId, customerId) {
+  if (isValidUserKey(metaUserId)) return metaUserId;
+  if (customerId) {
+    try {
+      const mapped = await redis.get(`stripe:customer:${customerId}`);
+      if (isValidUserKey(mapped)) return mapped;
+    } catch {}
+    if (STRIPE_SECRET) {
+      try {
+        const r = await fetch(`https://api.stripe.com/v1/customers/${customerId}`, {
+          headers: { Authorization: `Bearer ${STRIPE_SECRET}` },
+        });
+        const cust = await r.json();
+        if (isValidUserKey(cust?.metadata?.userId)) {
+          // Backfill the reverse index for next time.
+          await redis.set(`stripe:customer:${customerId}`, cust.metadata.userId).catch(() => {});
+          return cust.metadata.userId;
+        }
+      } catch {}
+    }
+  }
+  return null;
+}
 
 async function getRawBody(req) {
   return new Promise((resolve, reject) => {
@@ -96,46 +130,67 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid JSON' });
   }
 
+  // Idempotency: Stripe redelivers events. Process each event id at most once so
+  // duplicates/out-of-order deliveries can't double-apply or resurrect a plan.
+  if (event.id) {
+    try {
+      const fresh = await redis.set(`webhook:evt:${event.id}`, '1', { nx: true, ex: 604800 });
+      if (fresh === null) return res.status(200).json({ received: true, duplicate: true });
+    } catch {}
+  }
+
+  // Subscription statuses that mean "not in good standing" → drop to sandbox.
+  const DOWNGRADE_STATUSES = ['past_due', 'unpaid', 'canceled', 'incomplete_expired', 'paused'];
+
   if (event.type === 'invoice.payment_succeeded') {
     const invoice = event.data.object;
     const subscriptionId = invoice.subscription;
-    // Try multiple metadata locations for userId
-    const userId =
-      invoice.subscription_details?.metadata?.userId ||
-      invoice.metadata?.userId ||
-      invoice.customer_email; // fallback to email as userId key
+    const userId = await resolveUserId(
+      invoice.subscription_details?.metadata?.userId || invoice.metadata?.userId,
+      invoice.customer
+    );
     const priceId = invoice.lines?.data?.[0]?.price?.id;
     const mode = PRICE_TO_MODE[priceId];
-    console.log(`Stripe invoice.payment_succeeded: userId=${userId}, priceId=${priceId}, mode=${mode}, subscriptionId=${subscriptionId}`);
     if (userId && mode) {
       await upgradeUserMode(userId, mode, subscriptionId);
     } else {
-      console.warn('Stripe webhook: invoice.payment_succeeded — could not resolve userId or mode', { userId, priceId, mode });
+      console.warn('Stripe webhook: invoice.payment_succeeded — could not resolve userId or mode', { priceId, mode });
     }
+  }
+
+  if (event.type === 'invoice.payment_failed') {
+    const invoice = event.data.object;
+    const userId = await resolveUserId(
+      invoice.subscription_details?.metadata?.userId || invoice.metadata?.userId,
+      invoice.customer
+    );
+    // Don't kill access on the very first retry-able failure; Stripe will move
+    // the subscription to past_due/unpaid, which we downgrade on below. Just log.
+    console.warn('Stripe webhook: invoice.payment_failed', { userId, sub: invoice.subscription });
   }
 
   if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.created') {
     const sub = event.data.object;
-    const userId = sub.metadata?.userId;
+    const userId = await resolveUserId(sub.metadata?.userId, sub.customer);
     const priceId = sub.items?.data?.[0]?.price?.id;
     const mode = PRICE_TO_MODE[priceId];
-    console.log(`Stripe ${event.type}: userId=${userId}, priceId=${priceId}, mode=${mode}, status=${sub.status}`);
-    if (userId && mode && sub.status === 'active') {
+    if (!userId) {
+      console.warn('Stripe webhook: subscription event could not resolve userId — subscription:', sub.id);
+    } else if (sub.status === 'active' && mode) {
       await upgradeUserMode(userId, mode, sub.id);
-    } else if (!userId) {
-      console.warn('Stripe webhook: subscription event missing metadata.userId — subscription:', sub.id);
+    } else if (DOWNGRADE_STATUSES.includes(sub.status)) {
+      // Card failed / sub no longer active → revoke paid access (no "paid forever").
+      await upgradeUserMode(userId, 'sandbox', null);
     }
   }
 
   if (event.type === 'customer.subscription.deleted') {
     const sub = event.data.object;
-    const userId = sub.metadata?.userId;
-    console.log(`Stripe customer.subscription.deleted: userId=${userId}, cancel_at_period_end=${sub.cancel_at_period_end}`);
+    const userId = await resolveUserId(sub.metadata?.userId, sub.customer);
     if (userId) {
-      // Subscription no longer exists — always drop to sandbox.
       await upgradeUserMode(userId, 'sandbox', null);
     } else {
-      console.warn('Stripe webhook: subscription.deleted missing metadata.userId — subscription:', sub.id);
+      console.warn('Stripe webhook: subscription.deleted could not resolve userId — subscription:', sub.id);
     }
   }
 

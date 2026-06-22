@@ -89,7 +89,7 @@ export default async function handler(req, res) {
         const raw = await redis.get(`user:${userId}:vendors`);
         const vendors = raw ? (typeof raw === 'object' ? raw : JSON.parse(raw)) : [];
         return res.status(200).json({ vendors });
-      } catch (err) { return res.status(500).json({ error: err.message }); }
+      } catch (err) { return res.status(500).json({ error: 'Internal error. Please try again.' }); }
     }
 
     if (type === 'profile') {
@@ -97,7 +97,7 @@ export default async function handler(req, res) {
         const raw = await redis.get(`user:${userId}:profile`);
         const profile = raw ? (typeof raw === 'object' ? raw : JSON.parse(raw)) : {};
         return res.status(200).json({ profile });
-      } catch (err) { return res.status(500).json({ error: err.message }); }
+      } catch (err) { return res.status(500).json({ error: 'Internal error. Please try again.' }); }
     }
 
     if (type === 'reminders') {
@@ -175,7 +175,7 @@ export default async function handler(req, res) {
           total: reminders.length,
           urgent: reminders.filter(r => r.urgent).length,
         });
-      } catch (err) { return res.status(500).json({ error: err.message }); }
+      } catch (err) { return res.status(500).json({ error: 'Internal error. Please try again.' }); }
     }
 
     return res.status(400).json({ error: 'Missing or invalid type parameter' });
@@ -206,7 +206,7 @@ export default async function handler(req, res) {
         vendors.push(vendor);
         await redis.set(key, JSON.stringify(vendors));
         return res.status(201).json({ ok: true, vendor });
-      } catch (err) { return res.status(500).json({ error: err.message }); }
+      } catch (err) { return res.status(500).json({ error: 'Internal error. Please try again.' }); }
     }
 
     if (body.type === 'profile') {
@@ -226,7 +226,7 @@ export default async function handler(req, res) {
         };
         await redis.set(key, JSON.stringify(profile));
         return res.status(200).json({ ok: true, profile });
-      } catch (err) { return res.status(500).json({ error: err.message }); }
+      } catch (err) { return res.status(500).json({ error: 'Internal error. Please try again.' }); }
     }
 
     return res.status(400).json({ error: 'Missing or invalid type' });
@@ -242,7 +242,7 @@ export default async function handler(req, res) {
         vendors = vendors.filter(v => v.id !== id);
         await redis.set(key, JSON.stringify(vendors));
         return res.status(200).json({ ok: true });
-      } catch (err) { return res.status(500).json({ error: err.message }); }
+      } catch (err) { return res.status(500).json({ error: 'Internal error. Please try again.' }); }
     }
     return res.status(400).json({ error: 'Missing type or id' });
   }

@@ -135,7 +135,7 @@ export default async function handler(req, res) {
 
       return res.status(200).json({ integrations });
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      return res.status(500).json({ error: 'Internal error. Please try again.' });
     }
   }
 
@@ -186,7 +186,7 @@ export default async function handler(req, res) {
 
       return res.status(400).json({ error: `Unknown provider: ${provider}` });
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      return res.status(500).json({ error: 'Internal error. Please try again.' });
     }
   }
 
@@ -232,7 +232,7 @@ export default async function handler(req, res) {
 
       return res.status(200).json({ ok: true, provider, disconnected: true });
     } catch (err) {
-      return res.status(500).json({ error: err.message });
+      return res.status(500).json({ error: 'Internal error. Please try again.' });
     }
   }
 
