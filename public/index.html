@@ -1932,7 +1932,8 @@ document.addEventListener('click', e => {
 
 async function loadDashboard() {
   if (!ST.user) return;
-  await Promise.all([loadScore(), loadLatestReport(), loadDashboardReminders(), loadUserMode()]);
+  const scoreData = await loadScore();
+  await Promise.all([loadLatestReport(), loadDashboardReminders(), loadUserMode(scoreData)]);
   // Load score history for trend display
   try {
     const hr = await fetch('/api/score?history=true', { headers: authHeaders() });
@@ -2601,8 +2602,12 @@ async function toggleNA(controlId, checked) {
 }
 
 function updateScoreQuick(score) {
+  // Update the number immediately for snappy feedback, then refresh the
+  // full panel (label/color/category bars/top gaps) so they never end up
+  // contradicting the number shown.
   const el = document.getElementById('scoreNum');
   if (el) el.textContent = score + '%';
+  loadScore();
 }
 
 // ── Integrations ──────────────────────────────────────────────
@@ -3818,14 +3823,16 @@ function timeAgo(ts) {
 
 // ── User mode / paywall ───────────────────────────────────────
 
-async function loadUserMode() {
+async function loadUserMode(scoreData) {
   if (!ST.user) return;
   // Fail closed: default to sandbox so paid features stay gated if this fails.
   ST.mode = ST.mode || 'sandbox';
   try {
-    const r = await fetch('/api/score', { headers: authHeaders() });
-    if (r.ok) {
-      const d = await r.json();
+    const d = scoreData || await (async () => {
+      const r = await fetch('/api/score', { headers: authHeaders() });
+      return r.ok ? r.json() : null;
+    })();
+    if (d) {
       ST.mode = d.mode || 'sandbox';
       ST.userStatus = d.status || 'active';
     }
