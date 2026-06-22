@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { Redis } from '@upstash/redis';
+import { withLock } from './_telemetry.js';
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL,
@@ -65,14 +66,19 @@ async function upgradeUserMode(userId, mode, subscriptionId) {
   if (!userId || !mode) return;
   try {
     const key = `admin:user:${userId}`;
-    let userData = {};
-    try { userData = (await redis.get(key)) || {}; } catch {}
-    await redis.set(key, JSON.stringify({
-      ...userData,
-      mode,
-      stripeSubscriptionId: subscriptionId,
-      upgradedAt: Date.now(),
-    }));
+    // Same admin:${userId} lock used by billing.js/admin.js/_telemetry.js's
+    // trackUser, so a webhook-triggered upgrade can't race a concurrent
+    // login or admin action and clobber its write.
+    await withLock(`admin:${userId}`, async () => {
+      let userData = {};
+      try { userData = (await redis.get(key)) || {}; } catch {}
+      await redis.set(key, JSON.stringify({
+        ...userData,
+        mode,
+        stripeSubscriptionId: subscriptionId,
+        upgradedAt: Date.now(),
+      }));
+    });
     console.log(`✅ Upgraded ${userId} to ${mode}`);
   } catch (err) {
     console.error('upgradeUserMode error:', err.message);

@@ -16,7 +16,8 @@
 // ─────────────────────────────────────────────────────────────
 
 import { Redis } from '@upstash/redis';
-import { trackUser, isBlocked, checkRateLimit, logError, verifySession, getUserMode } from './_telemetry.js';
+import { trackUser, isBlocked, checkRateLimit, logError, verifySession, getUserMode, withLock } from './_telemetry.js';
+import { seedControlsIfNeeded } from './controls.js';
 
 // Give the scan extra headroom — multi-repo GitHub + Drive crawls can exceed
 // the default 10s serverless cap. 60s is the maximum on the Hobby plan.
@@ -292,24 +293,28 @@ async function applyGitHubScanResults(userId, scanResults, detectionDetails) {
   for (const [controlId, status] of Object.entries(scanResults)) {
     const key = `control:${userId}:${controlId}`;
     try {
-      let control = {};
-      const raw = await redis.get(key);
-      if (raw) control = typeof raw === 'object' ? raw : JSON.parse(raw);
-      // Only upgrade status, never downgrade
-      const statusRank = { NOT_STARTED: 0, IN_PROGRESS: 1, EVIDENCE_UPLOADED: 2, CONNECTED_AUTO: 3, NOT_APPLICABLE: -1 };
-      const currentRank = statusRank[control.status] ?? 0;
-      const newRank = statusRank[status] ?? 0;
-      if (newRank > currentRank) {
-        control.status = status;
-        control.lastUpdated = now;
-        control.autoSource = 'github';
-        // Add descriptive note about what was detected
-        if (detectionDetails && detectionDetails[controlId]) {
-          control.autoNote = 'GitHub: ' + detectionDetails[controlId];
+      await withLock(`control:${userId}:${controlId}`, async () => {
+        let control = {};
+        const raw = await redis.get(key);
+        if (raw) control = typeof raw === 'object' ? raw : JSON.parse(raw);
+        // Only upgrade status, never downgrade
+        const statusRank = { NOT_STARTED: 0, IN_PROGRESS: 1, EVIDENCE_UPLOADED: 2, CONNECTED_AUTO: 3, NOT_APPLICABLE: -1 };
+        const currentRank = statusRank[control.status] ?? 0;
+        const newRank = statusRank[status] ?? 0;
+        if (newRank > currentRank) {
+          control.status = status;
+          control.lastUpdated = now;
+          control.autoSource = 'github';
+          // Add descriptive note about what was detected
+          if (detectionDetails && detectionDetails[controlId]) {
+            control.autoNote = 'GitHub: ' + detectionDetails[controlId];
+          }
+          await redis.set(key, JSON.stringify(control));
         }
-        await redis.set(key, JSON.stringify(control));
-      }
-    } catch {}
+      });
+    } catch (err) {
+      await logError('scan_apply_github_error', { msg: err.message, userId, controlId });
+    }
   }
 }
 
@@ -318,21 +323,25 @@ async function applyDriveScanResults(userId, scanResults, detectionDetails) {
   for (const [controlId, status] of Object.entries(scanResults)) {
     const key = `control:${userId}:${controlId}`;
     try {
-      let control = {};
-      const raw = await redis.get(key);
-      if (raw) control = typeof raw === 'object' ? raw : JSON.parse(raw);
-      const statusRank = { NOT_STARTED: 0, IN_PROGRESS: 1, EVIDENCE_UPLOADED: 2, CONNECTED_AUTO: 3, NOT_APPLICABLE: -1 };
-      const currentRank = statusRank[control.status] ?? 0;
-      const newRank = statusRank[status] ?? 0;
-      if (newRank > currentRank) {
-        control.status = status;
-        control.lastUpdated = now;
-        control.autoSource = 'google_drive';
-        // Add note that Google Drive matches require human confirmation
-        control.autoNote = 'Google Drive: Document keyword match — please verify this document meets the control requirement';
-        await redis.set(key, JSON.stringify(control));
-      }
-    } catch {}
+      await withLock(`control:${userId}:${controlId}`, async () => {
+        let control = {};
+        const raw = await redis.get(key);
+        if (raw) control = typeof raw === 'object' ? raw : JSON.parse(raw);
+        const statusRank = { NOT_STARTED: 0, IN_PROGRESS: 1, EVIDENCE_UPLOADED: 2, CONNECTED_AUTO: 3, NOT_APPLICABLE: -1 };
+        const currentRank = statusRank[control.status] ?? 0;
+        const newRank = statusRank[status] ?? 0;
+        if (newRank > currentRank) {
+          control.status = status;
+          control.lastUpdated = now;
+          control.autoSource = 'google_drive';
+          // Add note that Google Drive matches require human confirmation
+          control.autoNote = 'Google Drive: Document keyword match — please verify this document meets the control requirement';
+          await redis.set(key, JSON.stringify(control));
+        }
+      });
+    } catch (err) {
+      await logError('scan_apply_drive_error', { msg: err.message, userId, controlId });
+    }
   }
 }
 
@@ -440,6 +449,8 @@ export default async function handler(req, res) {
 
 export async function recomputeScore(userId) {
   try {
+    await seedControlsIfNeeded(userId);
+
     // Get all control IDs (expanded set)
     const ALL_CONTROLS = [
       'CC1.1','CC1.2','CC1.3','CC1.4',
@@ -474,9 +485,11 @@ export async function recomputeScore(userId) {
     const histKey = `user:${userId}:scoreHistory`;
     const entry = { score, ts: Date.now(), verified, applicable };
 
-    await redis.set(scoreKey, JSON.stringify(entry));
-    await redis.lpush(histKey, JSON.stringify(entry));
-    await redis.ltrim(histKey, 0, 89); // Keep 90 entries
+    await withLock(`score:${userId}`, async () => {
+      await redis.set(scoreKey, JSON.stringify(entry));
+      await redis.lpush(histKey, JSON.stringify(entry));
+      await redis.ltrim(histKey, 0, 89); // Keep 90 entries
+    });
 
     return score;
   } catch (err) {

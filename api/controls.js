@@ -15,7 +15,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { Redis } from '@upstash/redis';
-import { verifySession } from './_telemetry.js';
+import { verifySession, withLock, logError } from './_telemetry.js';
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL,
@@ -41,7 +41,7 @@ async function getUserId(authHeader) {
 
 // ── SOC 2 Control Definitions (49 controls) ──────────────────
 
-const CONTROL_DEFINITIONS = [
+export const CONTROL_DEFINITIONS = [
   // ── CC1: Control Environment ─────────────────────────────────
   {
     id: 'CC1.1', category: 'CC1',
@@ -406,7 +406,7 @@ const CONTROL_DEFINITIONS = [
 
 // ── Seed controls for a new user ─────────────────────────────
 
-async function seedControlsIfNeeded(userId) {
+export async function seedControlsIfNeeded(userId) {
   const seedKey = `user:${userId}:seeded`;
   const seeded = await redis.get(seedKey);
   if (seeded) return;
@@ -465,9 +465,19 @@ async function getControlsForUser(userId, filterCategory, filterStatus) {
       if (filterCategory && control.category !== filterCategory) continue;
       if (filterStatus && control.status !== filterStatus) continue;
       controls.push(control);
-    } catch {}
+    } catch (err) {
+      await logError('get_controls_error', { msg: err.message, userId, controlId: def.id });
+    }
   }
   return controls;
+}
+
+// SOC2 control id, e.g. "CC6.2" — used to validate any client-supplied controlId
+// before it's used to build a Redis key, so a caller can't spray unbounded
+// "phantom control" keys into their own namespace.
+const CONTROL_ID_RE = /^CC([1-9])\.(\d{1,2})$/;
+export function isValidControlId(id) {
+  return typeof id === 'string' && CONTROL_ID_RE.test(id) && CONTROL_DEFINITIONS.some(d => d.id === id);
 }
 
 // ── Group controls by category ────────────────────────────────
@@ -513,6 +523,7 @@ export default async function handler(req, res) {
     try {
       const { controlId, status, notApplicable, note } = req.body || {};
       if (!controlId) return res.status(400).json({ error: 'Missing controlId' });
+      if (!isValidControlId(controlId)) return res.status(400).json({ error: 'Unknown controlId' });
 
       const validStatuses = ['NOT_STARTED', 'IN_PROGRESS', 'EVIDENCE_UPLOADED', 'CONNECTED_AUTO', 'NOT_APPLICABLE'];
       if (status && !validStatuses.includes(status)) {
@@ -520,31 +531,34 @@ export default async function handler(req, res) {
       }
 
       const key = `control:${userId}:${controlId}`;
-      let control = {};
-      const raw = await redis.get(key);
-      if (raw) control = typeof raw === 'object' ? raw : JSON.parse(raw);
+      let control;
+      await withLock(`control:${userId}:${controlId}`, async () => {
+        control = {};
+        const raw = await redis.get(key);
+        if (raw) control = typeof raw === 'object' ? raw : JSON.parse(raw);
 
-      // Prevent overwriting auto-detected statuses with lower ones
-      const statusRank = { NOT_STARTED: 0, IN_PROGRESS: 1, EVIDENCE_UPLOADED: 2, CONNECTED_AUTO: 3, NOT_APPLICABLE: -1 };
-      if (status) {
-        const currentRank = statusRank[control.status] ?? 0;
-        const newRank = statusRank[status] ?? 0;
-        // Allow explicit NOT_APPLICABLE toggle, and upgrades
-        if (status === 'NOT_APPLICABLE' || newRank >= currentRank) {
-          control.status = status;
+        // Prevent overwriting auto-detected statuses with lower ones
+        const statusRank = { NOT_STARTED: 0, IN_PROGRESS: 1, EVIDENCE_UPLOADED: 2, CONNECTED_AUTO: 3, NOT_APPLICABLE: -1 };
+        if (status) {
+          const currentRank = statusRank[control.status] ?? 0;
+          const newRank = statusRank[status] ?? 0;
+          // Allow explicit NOT_APPLICABLE toggle, and upgrades
+          if (status === 'NOT_APPLICABLE' || newRank >= currentRank) {
+            control.status = status;
+          }
         }
-      }
 
-      if (typeof notApplicable === 'boolean') {
-        control.notApplicable = notApplicable;
-        if (notApplicable) control.status = 'NOT_APPLICABLE';
-        else if (control.status === 'NOT_APPLICABLE') control.status = 'NOT_STARTED';
-      }
+        if (typeof notApplicable === 'boolean') {
+          control.notApplicable = notApplicable;
+          if (notApplicable) control.status = 'NOT_APPLICABLE';
+          else if (control.status === 'NOT_APPLICABLE') control.status = 'NOT_STARTED';
+        }
 
-      if (note !== undefined) control.note = note;
-      control.lastUpdated = new Date().toISOString();
+        if (note !== undefined) control.note = note;
+        control.lastUpdated = new Date().toISOString();
 
-      await redis.set(key, JSON.stringify(control));
+        await redis.set(key, JSON.stringify(control));
+      });
 
       // Recompute score after status change
       const { recomputeScore } = await import('./scan.js');

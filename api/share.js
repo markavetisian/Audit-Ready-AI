@@ -317,14 +317,18 @@ export default async function handler(req, res) {
         await redis.del(`share:${token}:views`).catch(() => {});
       }
       // Remove it from the user's share list regardless (idempotent revoke).
+      // Targeted lrem instead of read-all/del/rewrite-rest — avoids a window
+      // where a concurrent createShareLink() could be dropped by the rewrite.
       const userSharesKey = `user:${userId}:shares`;
       try {
         const list = await redis.lrange(userSharesKey, 0, 49);
-        await redis.del(userSharesKey);
         for (const item of (list || [])) {
           try {
             const s = typeof item === 'object' ? item : JSON.parse(item);
-            if (s.token !== token) await redis.rpush(userSharesKey, JSON.stringify(s));
+            if (s.token === token) {
+              const raw = typeof item === 'object' ? JSON.stringify(item) : item;
+              await redis.lrem(userSharesKey, 0, raw);
+            }
           } catch {}
         }
       } catch {}

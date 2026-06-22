@@ -1,7 +1,7 @@
 // api/score.js — Full score computation with control titles for topGaps
 
 import { Redis } from '@upstash/redis';
-import { verifySession } from './_telemetry.js';
+import { verifySession, withLock } from './_telemetry.js';
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL,
@@ -212,7 +212,9 @@ export default async function handler(req, res) {
     try {
       const result = await computeFullScore(userId);
       const entry = { score: result.score, ts: Date.now(), verified: result.verified, applicable: result.applicable };
-      await redis.set(`user:${userId}:score`, JSON.stringify(entry));
+      await withLock(`score:${userId}`, async () => {
+        await redis.set(`user:${userId}:score`, JSON.stringify(entry));
+      });
       // Surface the caller's own plan/status so the frontend can gate features
       // without hitting the admin-only endpoint.
       let mode = 'sandbox', status = 'active';
@@ -234,9 +236,11 @@ export default async function handler(req, res) {
     try {
       const result = await computeFullScore(userId);
       const entry = { score: result.score, ts: Date.now(), verified: result.verified, applicable: result.applicable };
-      await redis.set(`user:${userId}:score`, JSON.stringify(entry));
-      await redis.lpush(`user:${userId}:scoreHistory`, JSON.stringify(entry));
-      await redis.ltrim(`user:${userId}:scoreHistory`, 0, 89);
+      await withLock(`score:${userId}`, async () => {
+        await redis.set(`user:${userId}:score`, JSON.stringify(entry));
+        await redis.lpush(`user:${userId}:scoreHistory`, JSON.stringify(entry));
+        await redis.ltrim(`user:${userId}:scoreHistory`, 0, 89);
+      });
       return res.status(200).json({ ok: true, ...result });
     } catch (err) {
       return res.status(500).json({ error: 'Internal error. Please try again.' });

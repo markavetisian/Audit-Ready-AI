@@ -101,48 +101,58 @@ export async function takeAuthCode(code) {
 
 // ── Exported helpers (used by scan.js, controls.js, report.js) ─
 
-export async function trackUser(userId, type, email, authType) {
+export async function trackUser(userId, type, email, authType, meta) {
   if (!userId) return;
   try {
     const key = `admin:user:${userId}`;
     const now = Date.now();
-    const day = new Date().toISOString().slice(0, 10);
-    let user = {};
-    try {
-      const raw = await redis.get(key);
-      if (raw) user = typeof raw === 'object' ? raw : JSON.parse(raw);
-    } catch {}
 
-    if (email && !user.email) user.email = email;
-    if (authType && !user.authType) user.authType = authType;
-    if (!user.userId) user.userId = userId;
-    if (!user.signupDate) user.signupDate = now;
-    if (!user.status) user.status = 'active';
-    user.lastActivity = now;
+    await withLock(`admin:${userId}`, async () => {
+      let user = {};
+      try {
+        const raw = await redis.get(key);
+        if (raw) user = typeof raw === 'object' ? raw : JSON.parse(raw);
+      } catch {}
 
-    if (type === 'login') {
-      user.loginCount = (user.loginCount || 0) + 1;
-      user.lastLogin = now;
-      const isNew = !user.signupDate || (now - user.signupDate) < 5000;
-      if (isNew) await redis.incr('admin:stats:total_users').catch(() => {});
-      await redis.lpush('admin:logs:auth', JSON.stringify({ userId, email, authType, ts: now, event: 'login' }));
-      await redis.ltrim('admin:logs:auth', 0, 499);
-    }
-    if (type === 'scan') {
-      user.scanCount = (user.scanCount || 0) + 1;
-      await redis.incr('admin:stats:total_scans').catch(() => {});
-    }
-    if (type === 'report') {
-      user.reportCount = (user.reportCount || 0) + 1;
-      await redis.incr('admin:stats:total_reports').catch(() => {});
-    }
-    if (type === 'scan_fail') {
-      user.failedScans = (user.failedScans || 0) + 1;
-      await redis.incr('admin:stats:failed_scans').catch(() => {});
-    }
+      const isFirstSeen = !user.signupDate;
+      if (email && !user.email) user.email = email;
+      if (authType && !user.authType) user.authType = authType;
+      if (!user.userId) user.userId = userId;
+      if (!user.signupDate) user.signupDate = now;
+      if (!user.status) user.status = 'active';
+      // Record clickwrap acceptance at first signup only — the checkbox in the
+      // sign-in UI is the acceptance event, this is its server-side record.
+      if (isFirstSeen && meta?.tosVersion) {
+        user.tosAcceptedAt = now;
+        user.tosVersion = meta.tosVersion;
+        if (meta.ip) user.tosIp = meta.ip;
+      }
+      user.lastActivity = now;
 
-    await redis.set(key, JSON.stringify(user));
-    await redis.expire(key, 60 * 60 * 24 * 365).catch(() => {});
+      if (type === 'login') {
+        user.loginCount = (user.loginCount || 0) + 1;
+        user.lastLogin = now;
+        const isNew = !user.signupDate || (now - user.signupDate) < 5000;
+        if (isNew) await redis.incr('admin:stats:total_users').catch(() => {});
+        await redis.lpush('admin:logs:auth', JSON.stringify({ userId, email, authType, ts: now, event: 'login' }));
+        await redis.ltrim('admin:logs:auth', 0, 499);
+      }
+      if (type === 'scan') {
+        user.scanCount = (user.scanCount || 0) + 1;
+        await redis.incr('admin:stats:total_scans').catch(() => {});
+      }
+      if (type === 'report') {
+        user.reportCount = (user.reportCount || 0) + 1;
+        await redis.incr('admin:stats:total_reports').catch(() => {});
+      }
+      if (type === 'scan_fail') {
+        user.failedScans = (user.failedScans || 0) + 1;
+        await redis.incr('admin:stats:failed_scans').catch(() => {});
+      }
+
+      await redis.set(key, JSON.stringify(user));
+      await redis.expire(key, 60 * 60 * 24 * 365).catch(() => {});
+    });
   } catch (err) {
     console.error('trackUser error:', err.message);
   }
@@ -242,6 +252,31 @@ async function resolveUserId(authHeader) {
     const u = await r.json();
     return 'github:' + u.login;
   } catch { return null; }
+}
+
+// ── Lightweight per-resource locking ──────────────────────────
+// The Upstash REST API has no MULTI/WATCH, so plain read-modify-write on a
+// JSON blob key (e.g. two browser tabs editing the same control, or a scan
+// racing a manual evidence upload) can silently drop one side's update.
+// withLock() serializes callers sharing a lock name via a short-lived NX key.
+// If it can't acquire the lock after a brief retry window (Redis hiccup, or
+// an extremely unlucky pile-up), it proceeds unlocked rather than hard-fail
+// the user's action — this is a correctness improvement, not a hard guarantee.
+export async function withLock(name, fn, { retries = 10, delayMs = 150, ttlMs = 8000 } = {}) {
+  const lockKey = `lock:${name}`;
+  let acquired = false;
+  for (let i = 0; i < retries; i++) {
+    try {
+      const ok = await redis.set(lockKey, '1', { nx: true, px: ttlMs });
+      if (ok) { acquired = true; break; }
+    } catch { break; }
+    await new Promise(r => setTimeout(r, delayMs));
+  }
+  try {
+    return await fn();
+  } finally {
+    if (acquired) { await redis.del(lockKey).catch(() => {}); }
+  }
 }
 
 export async function logError(msg, ctx = {}) {

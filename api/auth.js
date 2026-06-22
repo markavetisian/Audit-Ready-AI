@@ -12,6 +12,17 @@
 
 import { trackUser, mintSession, stashAuthCode, takeAuthCode, verifySession, revokeSessions } from './_telemetry.js';
 
+// Version of terms.html/privacy.html the user is agreeing to by checking the
+// clickwrap checkbox before starting OAuth. Bump this when the docs change
+// in a way that needs re-acceptance.
+const TOS_VERSION = '2026-06-16';
+
+function getClientIp(req) {
+  const fwd = req.headers['x-forwarded-for'];
+  if (fwd) return fwd.split(',')[0].trim();
+  return req.socket?.remoteAddress || null;
+}
+
 export default async function handler(req, res) {
   const { provider, code, state } = req.query;
   const appUrl = process.env.APP_URL || `https://${req.headers.host}`;
@@ -76,7 +87,7 @@ export default async function handler(req, res) {
           });
           if (ghUserRes.ok) {
             const ghUser = await ghUserRes.json();
-            await trackUser('github:' + ghUser.login, 'login', ghUser.email || null, 'github');
+            await trackUser('github:' + ghUser.login, 'login', ghUser.email || null, 'github', { tosVersion: TOS_VERSION, ip: getClientIp(req) });
           }
         } catch {}
         // Hand the token back via a one-time code, never in the URL.
@@ -113,7 +124,7 @@ export default async function handler(req, res) {
       });
       const tokenData = await tokenRes.json();
       if (!tokenData.access_token) {
-        console.error('Google token error:', tokenData);
+        console.error('Google token error:', tokenData.error, tokenData.error_description);
         return res.status(400).send('Google auth failed. Please try again.');
       }
       const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
@@ -130,7 +141,7 @@ export default async function handler(req, res) {
         return res.redirect(`/?auth=${linkCode}`);
       }
       if (user.email) {
-        try { await trackUser('google:' + user.email, 'login', user.email, 'google'); } catch {}
+        try { await trackUser('google:' + user.email, 'login', user.email, 'google', { tosVersion: TOS_VERSION, ip: getClientIp(req) }); } catch {}
       }
       const googleCode = await stashAuthCode({
         provider: 'google',
@@ -143,8 +154,8 @@ export default async function handler(req, res) {
       });
       return res.redirect(`/?auth=${googleCode}`);
     } catch (err) {
-      console.error('Google callback error:', err);
-      return res.status(500).send('Auth server error: ' + err.message);
+      console.error('Google callback error:', err.message);
+      return res.status(500).send('Auth server error. Please try again.');
     }
   }
 
@@ -211,7 +222,7 @@ export default async function handler(req, res) {
       });
       const tokenData = await tokenRes.json();
       if (!tokenData.ok || !tokenData.access_token) {
-        console.error('Slack token error:', tokenData);
+        console.error('Slack token error:', tokenData.error);
         return res.status(400).send('Slack auth failed. Please try again.');
       }
       const userRes = await fetch('https://slack.com/api/openid.connect.userInfo', {
@@ -219,7 +230,7 @@ export default async function handler(req, res) {
       });
       const user = await userRes.json();
       if (user.email) {
-        try { await trackUser('slack:' + user.email, 'login', user.email, 'slack'); } catch {}
+        try { await trackUser('slack:' + user.email, 'login', user.email, 'slack', { tosVersion: TOS_VERSION, ip: getClientIp(req) }); } catch {}
       }
       const slackCode = await stashAuthCode({
         provider: 'slack',
@@ -232,8 +243,8 @@ export default async function handler(req, res) {
       });
       return res.redirect(`/?auth=${slackCode}`);
     } catch (err) {
-      console.error('Slack callback error:', err);
-      return res.status(500).send('Auth server error: ' + err.message);
+      console.error('Slack callback error:', err.message);
+      return res.status(500).send('Auth server error. Please try again.');
     }
   }
 

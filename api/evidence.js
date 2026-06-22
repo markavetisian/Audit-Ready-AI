@@ -13,8 +13,9 @@
 // ─────────────────────────────────────────────────────────────
 
 import { Redis } from '@upstash/redis';
-import { verifySession } from './_telemetry.js';
+import { verifySession, withLock, logError } from './_telemetry.js';
 import { recomputeScore } from './scan.js';
+import { isValidControlId } from './controls.js';
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL,
@@ -168,6 +169,7 @@ export default async function handler(req, res) {
     }
 
     if (!controlId) return res.status(400).json({ error: 'Missing controlId' });
+    if (!isValidControlId(controlId)) return res.status(400).json({ error: 'Unknown controlId' });
 
     try {
       const key = `user:${userId}:evidence:${controlId}`;
@@ -184,6 +186,7 @@ export default async function handler(req, res) {
     const { controlId, type, value, source, note, expiryDate, documentType } = req.body || {};
 
     if (!controlId) return res.status(400).json({ error: 'Missing controlId' });
+    if (!isValidControlId(controlId)) return res.status(400).json({ error: 'Unknown controlId' });
     if (!type || !VALID_TYPES.includes(type)) {
       return res.status(400).json({ error: `Invalid type. Must be one of: ${VALID_TYPES.join(', ')}` });
     }
@@ -204,72 +207,73 @@ export default async function handler(req, res) {
       effectiveNote = 'URL link';
     }
 
+    // ── Validate expiryDate if provided ───────────────────────
+    let effectiveExpiry = null;
+    if (expiryDate) {
+      const d = new Date(expiryDate);
+      if (isNaN(d.getTime())) return res.status(400).json({ error: 'Invalid expiryDate — use ISO 8601 format (YYYY-MM-DD)' });
+      effectiveExpiry = d.toISOString();
+    }
+
     try {
-      // ── Check evidence count limit ─────────────────────────────
       const key = `user:${userId}:evidence:${controlId}`;
-      const raw = await redis.get(key);
-      const items = raw ? (typeof raw === 'object' ? raw : JSON.parse(raw)) : [];
-
-      if (items.length >= MAX_EVIDENCE_PER_CONTROL) {
-        return res.status(400).json({
-          error: `Maximum of ${MAX_EVIDENCE_PER_CONTROL} evidence items per control. Remove an existing item before adding a new one.`
-        });
-      }
-
-      // ── Validate expiryDate if provided ───────────────────────
-      let effectiveExpiry = null;
-      if (expiryDate) {
-        const d = new Date(expiryDate);
-        if (isNaN(d.getTime())) return res.status(400).json({ error: 'Invalid expiryDate — use ISO 8601 format (YYYY-MM-DD)' });
-        effectiveExpiry = d.toISOString();
-      }
-
-      const effectiveDocType = (documentType && VALID_DOC_TYPES.includes(documentType)) ? documentType : 'OTHER';
-
-      // ── Build evidence item per Section D3 schema ──────────────
-      const now = new Date().toISOString();
-      const quality = computeQuality(type, effectiveNote);
-      const item = {
-        id: generateId(),
-        controlId,
-        type,
-        value: value.trim(),
-        source: effectiveSource,
-        uploadedAt: now,
-        updatedAt: now,
-        note: effectiveNote,
-        quality,
-        documentType: effectiveDocType,
-        expiryDate: effectiveExpiry,
-      };
-
-      items.push(item);
-      await redis.set(key, JSON.stringify(items));
-
-      // Update control status: if was NOT_STARTED or IN_PROGRESS, move to EVIDENCE_UPLOADED
       const controlKey = `control:${userId}:${controlId}`;
-      const cRaw = await redis.get(controlKey);
-      if (cRaw) {
-        const control = typeof cRaw === 'object' ? cRaw : JSON.parse(cRaw);
-        const statusRank = { NOT_STARTED: 0, IN_PROGRESS: 1, EVIDENCE_UPLOADED: 2, CONNECTED_AUTO: 3, NOT_APPLICABLE: -1 };
-        if ((statusRank[control.status] ?? 0) < statusRank['EVIDENCE_UPLOADED']) {
-          control.status = 'EVIDENCE_UPLOADED';
+      let result;
+
+      await withLock(`control:${userId}:${controlId}`, async () => {
+        const raw = await redis.get(key);
+        const items = raw ? (typeof raw === 'object' ? raw : JSON.parse(raw)) : [];
+
+        if (items.length >= MAX_EVIDENCE_PER_CONTROL) {
+          result = { status: 400, body: { error: `Maximum of ${MAX_EVIDENCE_PER_CONTROL} evidence items per control. Remove an existing item before adding a new one.` } };
+          return;
+        }
+
+        const effectiveDocType = (documentType && VALID_DOC_TYPES.includes(documentType)) ? documentType : 'OTHER';
+
+        // ── Build evidence item per Section D3 schema ──────────────
+        const now = new Date().toISOString();
+        const quality = computeQuality(type, effectiveNote);
+        const item = {
+          id: generateId(),
+          controlId,
+          type,
+          value: value.trim(),
+          source: effectiveSource,
+          uploadedAt: now,
+          updatedAt: now,
+          note: effectiveNote,
+          quality,
+          documentType: effectiveDocType,
+          expiryDate: effectiveExpiry,
+        };
+
+        items.push(item);
+        await redis.set(key, JSON.stringify(items));
+
+        // Update control status: if was NOT_STARTED or IN_PROGRESS, move to EVIDENCE_UPLOADED
+        const cRaw = await redis.get(controlKey);
+        if (cRaw) {
+          const control = typeof cRaw === 'object' ? cRaw : JSON.parse(cRaw);
+          const statusRank = { NOT_STARTED: 0, IN_PROGRESS: 1, EVIDENCE_UPLOADED: 2, CONNECTED_AUTO: 3, NOT_APPLICABLE: -1 };
+          if ((statusRank[control.status] ?? 0) < statusRank['EVIDENCE_UPLOADED']) {
+            control.status = 'EVIDENCE_UPLOADED';
+          }
           control.lastUpdated = now;
           control.evidenceItems = items.map(i => i.id);
-          await redis.set(controlKey, JSON.stringify(control));
-        } else {
-          // Just update evidence list reference
-          control.evidenceItems = items.map(i => i.id);
-          control.lastUpdated = now;
           await redis.set(controlKey, JSON.stringify(control));
         }
-      }
 
-      // Recompute score
+        result = { status: 201, body: { ok: true, item } };
+      });
+
+      if (result.status !== 201) return res.status(result.status).json(result.body);
+
+      // Recompute score (outside the lock — it has its own lock)
       const newScore = await recomputeScore(userId);
-
-      return res.status(201).json({ ok: true, item, newScore });
+      return res.status(201).json({ ...result.body, newScore });
     } catch (err) {
+      await logError('evidence_add_error', { msg: err.message, userId, controlId });
       return res.status(500).json({ error: 'Internal error. Please try again.' });
     }
   }
@@ -278,52 +282,55 @@ export default async function handler(req, res) {
   if (req.method === 'DELETE') {
     const { id, controlId } = req.query;
     if (!id || !controlId) return res.status(400).json({ error: 'Missing id and controlId' });
+    if (!isValidControlId(controlId)) return res.status(400).json({ error: 'Unknown controlId' });
 
     try {
       const key = `user:${userId}:evidence:${controlId}`;
-      const raw = await redis.get(key);
-      if (!raw) return res.status(404).json({ error: 'No evidence found for this control' });
+      const controlKey = `control:${userId}:${controlId}`;
+      let result;
 
-      let items = typeof raw === 'object' ? raw : JSON.parse(raw);
-      const target = items.find(i => i.id === id);
-      if (!target) return res.status(404).json({ error: 'Evidence item not found' });
+      await withLock(`control:${userId}:${controlId}`, async () => {
+        const raw = await redis.get(key);
+        if (!raw) { result = { status: 404, body: { error: 'No evidence found for this control' } }; return; }
 
-      // AUTO_DETECTED evidence cannot be deleted
-      if (target.source === 'GITHUB' || target.source === 'GOOGLE_DRIVE' || target.source === 'AWS' || target.type === 'AUTO_DETECTED') {
-        return res.status(403).json({ error: 'Auto-detected evidence cannot be manually deleted. Disconnect the integration to remove it.' });
-      }
+        let items = typeof raw === 'object' ? raw : JSON.parse(raw);
+        const target = items.find(i => i.id === id);
+        if (!target) { result = { status: 404, body: { error: 'Evidence item not found' } }; return; }
 
-      items = items.filter(i => i.id !== id);
-      await redis.set(key, JSON.stringify(items));
-
-      // If no evidence left, revert control to IN_PROGRESS
-      if (items.length === 0) {
-        const controlKey = `control:${userId}:${controlId}`;
-        const cRaw = await redis.get(controlKey);
-        if (cRaw) {
-          const control = typeof cRaw === 'object' ? cRaw : JSON.parse(cRaw);
-          if (control.status === 'EVIDENCE_UPLOADED') {
-            control.status = 'IN_PROGRESS';
-            control.lastUpdated = new Date().toISOString();
-            control.evidenceItems = [];
-            await redis.set(controlKey, JSON.stringify(control));
-          }
+        // AUTO_DETECTED evidence cannot be deleted
+        if (target.source === 'GITHUB' || target.source === 'GOOGLE_DRIVE' || target.source === 'AWS' || target.type === 'AUTO_DETECTED') {
+          result = { status: 403, body: { error: 'Auto-detected evidence cannot be manually deleted. Disconnect the integration to remove it.' } };
+          return;
         }
-      } else {
-        // Update control evidence list
-        const controlKey = `control:${userId}:${controlId}`;
+
+        items = items.filter(i => i.id !== id);
+        await redis.set(key, JSON.stringify(items));
+
         const cRaw = await redis.get(controlKey);
         if (cRaw) {
           const control = typeof cRaw === 'object' ? cRaw : JSON.parse(cRaw);
-          control.evidenceItems = items.map(i => i.id);
+          if (items.length === 0) {
+            // If no evidence left, revert control to IN_PROGRESS
+            if (control.status === 'EVIDENCE_UPLOADED') {
+              control.status = 'IN_PROGRESS';
+            }
+            control.evidenceItems = [];
+          } else {
+            control.evidenceItems = items.map(i => i.id);
+          }
           control.lastUpdated = new Date().toISOString();
           await redis.set(controlKey, JSON.stringify(control));
         }
-      }
+
+        result = { status: 200, body: { ok: true, deleted: id, remaining: items.length } };
+      });
+
+      if (result.status !== 200) return res.status(result.status).json(result.body);
 
       const newScore = await recomputeScore(userId);
-      return res.status(200).json({ ok: true, deleted: id, remaining: items.length, newScore });
+      return res.status(200).json({ ...result.body, newScore });
     } catch (err) {
+      await logError('evidence_delete_error', { msg: err.message, userId, controlId });
       return res.status(500).json({ error: 'Internal error. Please try again.' });
     }
   }

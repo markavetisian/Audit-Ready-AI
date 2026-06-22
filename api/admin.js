@@ -10,7 +10,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { Redis } from '@upstash/redis';
-import { verifySession } from './_telemetry.js';
+import { verifySession, withLock, logError } from './_telemetry.js';
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL,
@@ -55,8 +55,7 @@ async function resolveIdentity(authHeader) {
   } catch { return null; }
 }
 
-async function isAdmin(req) {
-  const identity = await resolveIdentity(req.headers.authorization);
+function identityIsAdmin(identity) {
   if (!identity) return false;
   const ghAdmins = adminList('ADMIN_GH');
   const emailAdmins = adminList('ADMIN_EMAIL');
@@ -89,7 +88,9 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const admin = await isAdmin(req);
+  const identity = await resolveIdentity(req.headers.authorization);
+  const admin = identityIsAdmin(identity);
+  const adminBy = identity?.username || identity?.email || 'unknown';
 
   // Auth check endpoint — public (returns 200/401)
   if (req.method === 'GET' && req.query.action === 'check') {
@@ -158,74 +159,92 @@ export default async function handler(req, res) {
       if (!userId || !type) return res.status(400).json({ error: 'Missing userId or type' });
 
       const userKey = `admin:user:${userId}`;
-      let user = await redis.get(userKey);
-      if (!user && type !== 'delete') return res.status(404).json({ error: 'User not found' });
-      if (user && typeof user === 'string') user = JSON.parse(user);
-      if (!user) user = {};
-
       const ts = Date.now();
-      await adminLog({ action: type, userId, by: process.env.ADMIN_GH, ts });
+      await adminLog({ action: type, userId, by: adminBy, ts });
 
-      if (type === 'suspend') {
-        user.status = 'suspended'; user.suspendedAt = ts;
-        await redis.set(`blocked:${userId}`, JSON.stringify({ status: 'suspended', since: ts }));
-
-      } else if (type === 'unsuspend') {
-        user.status = 'active'; delete user.suspendedAt;
-        await redis.del(`blocked:${userId}`);
-
-      } else if (type === 'ban') {
-        user.status = 'banned'; user.bannedAt = ts;
-        await redis.set(`blocked:${userId}`, JSON.stringify({ status: 'banned', since: ts }));
-        await redis.set(`banned:${userId}`, '1');
-
-      } else if (type === 'unban') {
-        user.status = 'active'; delete user.bannedAt;
-        await redis.del(`blocked:${userId}`); await redis.del(`banned:${userId}`);
-
-      } else if (type === 'set_mode') {
-        if (!['sandbox', 'starter', 'growth', 'enterprise'].includes(mode)) {
-          return res.status(400).json({ error: 'Invalid mode' });
-        }
-        user.mode = mode;
-
-      } else if (type === 'cancel_subscription') {
-        // Cancel via Stripe
-        let subId = user.stripeSubscriptionId;
-        if (!subId && user.stripeCustomerId) {
-          const subs = await stripeGet(`subscriptions?customer=${user.stripeCustomerId}&status=active&limit=1`);
-          if (subs.data?.length > 0) subId = subs.data[0].id;
-        }
-        if (subId) {
-          const result = await stripePatch(`subscriptions/${subId}`, { cancel_at_period_end: 'true' });
-          if (result.error && !result.error.message?.includes('No such')) {
-            return res.status(500).json({ error: result.error.message });
-          }
-          user.cancelPending = true;
-          user.cancelAt = result.current_period_end || null;
-        }
-        user.mode = 'sandbox';
-
-      } else if (type === 'delete') {
-        // Delete all user data
+      // ── delete: erase ALL of this user's data, not just the account record.
+      // A partial erasure here is both a data-integrity and a "right to
+      // erasure" (GDPR/CCPA) compliance gap for a product that promises to
+      // delete customer data.
+      if (type === 'delete') {
+        const [controlKeys, evidenceKeys, reportKeys] = await Promise.all([
+          redis.keys(`control:${userId}:*`).catch(() => []),
+          redis.keys(`user:${userId}:evidence:*`).catch(() => []),
+          redis.keys(`user:${userId}:report:*`).catch(() => []),
+        ]);
         const keysToDelete = [
           userKey,
           `blocked:${userId}`,
           `banned:${userId}`,
           `user:${userId}:score`,
+          `user:${userId}:scoreHistory`,
           `user:${userId}:vendors`,
           `user:${userId}:profile`,
           `user:${userId}:shares`,
+          `user:${userId}:lastScan`,
+          `user:${userId}:reports`,
+          `user:${userId}:seeded`,
+          ...controlKeys, ...evidenceKeys, ...reportKeys,
         ];
         await Promise.all(keysToDelete.map(k => redis.del(k).catch(() => {})));
         return res.status(200).json({ ok: true, deleted: true });
-
-      } else {
-        return res.status(400).json({ error: 'Unknown action type' });
       }
 
-      await redis.set(userKey, JSON.stringify(user));
-      return res.status(200).json({ ok: true, user });
+      let result;
+      await withLock(`admin:${userId}`, async () => {
+        let user = await redis.get(userKey);
+        if (!user) { result = { status: 404, body: { error: 'User not found' } }; return; }
+        if (typeof user === 'string') user = JSON.parse(user);
+
+        if (type === 'suspend') {
+          user.status = 'suspended'; user.suspendedAt = ts;
+          await redis.set(`blocked:${userId}`, JSON.stringify({ status: 'suspended', since: ts }));
+
+        } else if (type === 'unsuspend') {
+          user.status = 'active'; delete user.suspendedAt;
+          await redis.del(`blocked:${userId}`);
+
+        } else if (type === 'ban') {
+          user.status = 'banned'; user.bannedAt = ts;
+          await redis.set(`blocked:${userId}`, JSON.stringify({ status: 'banned', since: ts }));
+          await redis.set(`banned:${userId}`, '1');
+
+        } else if (type === 'unban') {
+          user.status = 'active'; delete user.bannedAt;
+          await redis.del(`blocked:${userId}`); await redis.del(`banned:${userId}`);
+
+        } else if (type === 'set_mode') {
+          if (!['sandbox', 'starter', 'growth', 'enterprise'].includes(mode)) {
+            result = { status: 400, body: { error: 'Invalid mode' } }; return;
+          }
+          user.mode = mode;
+
+        } else if (type === 'cancel_subscription') {
+          // Cancel via Stripe
+          let subId = user.stripeSubscriptionId;
+          if (!subId && user.stripeCustomerId) {
+            const subs = await stripeGet(`subscriptions?customer=${user.stripeCustomerId}&status=active&limit=1`);
+            if (subs.data?.length > 0) subId = subs.data[0].id;
+          }
+          if (subId) {
+            const r = await stripePatch(`subscriptions/${subId}`, { cancel_at_period_end: 'true' });
+            if (r.error && !r.error.message?.includes('No such')) {
+              result = { status: 500, body: { error: r.error.message } }; return;
+            }
+            user.cancelPending = true;
+            user.cancelAt = r.current_period_end || null;
+          }
+          user.mode = 'sandbox';
+
+        } else {
+          result = { status: 400, body: { error: 'Unknown action type' } }; return;
+        }
+
+        await redis.set(userKey, JSON.stringify(user));
+        result = { status: 200, body: { ok: true, user } };
+      });
+
+      return res.status(result.status).json(result.body);
     }
 
     return res.status(405).json({ error: 'Method not allowed' });

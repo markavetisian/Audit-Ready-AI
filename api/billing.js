@@ -10,7 +10,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { Redis } from '@upstash/redis';
-import { verifySession } from './_telemetry.js';
+import { verifySession, withLock } from './_telemetry.js';
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL,
@@ -114,14 +114,18 @@ export default async function handler(req, res) {
         return res.status(200).json({ ok: false, status: sub.status, mode: null });
       }
       const userKey = `admin:user:${userId}`;
-      let userData = {};
-      try { userData = (await redis.get(userKey)) || {}; } catch {}
-      await redis.set(userKey, JSON.stringify({
-        ...userData,
-        mode,
-        stripeSubscriptionId: sub.id,
-        upgradedAt: Date.now(),
-      }));
+      // Locked: a concurrent trackUser()/webhook write on the same record must
+      // never race this and silently revert a just-paid user back to sandbox.
+      await withLock(`admin:${userId}`, async () => {
+        let userData = {};
+        try { userData = (await redis.get(userKey)) || {}; } catch {}
+        await redis.set(userKey, JSON.stringify({
+          ...userData,
+          mode,
+          stripeSubscriptionId: sub.id,
+          upgradedAt: Date.now(),
+        }));
+      });
       return res.status(200).json({ ok: true, mode });
     } catch (err) {
       console.error('Confirm error:', err.message);
@@ -145,19 +149,22 @@ export default async function handler(req, res) {
     }
     try {
       const userKey = `admin:user:${userId}`;
-      let userData = {};
-      try { userData = (await redis.get(userKey)) || {}; } catch {}
-      let customerId = userData.stripeCustomerId;
+      let customerId = null;
+      await withLock(`admin:${userId}`, async () => {
+        let userData = {};
+        try { userData = (await redis.get(userKey)) || {}; } catch {}
+        customerId = userData.stripeCustomerId;
 
-      if (!customerId) {
-        const customer = await stripePost('customers', { email, metadata: { userId } });
-        if (customer.error) throw new Error(customer.error.message);
-        customerId = customer.id;
-        await redis.set(userKey, JSON.stringify({ ...userData, stripeCustomerId: customerId }));
-        // Reverse index so the webhook can resolve userId from a customer id
-        // without ever falling back to a raw (user-controlled) email.
-        await redis.set(`stripe:customer:${customerId}`, userId).catch(() => {});
-      }
+        if (!customerId) {
+          const customer = await stripePost('customers', { email, metadata: { userId } });
+          if (customer.error) throw new Error(customer.error.message);
+          customerId = customer.id;
+          await redis.set(userKey, JSON.stringify({ ...userData, stripeCustomerId: customerId }));
+          // Reverse index so the webhook can resolve userId from a customer id
+          // without ever falling back to a raw (user-controlled) email.
+          await redis.set(`stripe:customer:${customerId}`, userId).catch(() => {});
+        }
+      });
 
       const subscription = await stripePost('subscriptions', {
         customer: customerId,

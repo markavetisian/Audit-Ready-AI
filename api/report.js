@@ -195,7 +195,15 @@ export default async function handler(req, res) {
       try {
         const prompt = `You are a SOC 2 compliance attorney and policy writer. Write the following policy document for a SaaS startup preparing for SOC 2 Type 1 audit.\n\nDocument: ${policyInfo.name}\nInstructions: ${policyInfo.guidance}\n\nFormat professionally:\n- Start with: [COMPANY NAME] - ${policyInfo.name}\n- Version: 1.0 | Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} | Owner: [OWNER ROLE]\n- Use clear section headers\n- End with: "Approved by: __________ [Title] Date: __________"\n\nOutput only the policy document text, no preamble.`;
         const text = await groqPost([{ role: 'user', content: prompt }], 1800, 0.2);
-        const result = { controlId, policyName: policyInfo.name, text, generatedAt: new Date().toISOString() };
+        const result = {
+          controlId,
+          policyName: policyInfo.name,
+          text,
+          generatedAt: new Date().toISOString(),
+          aiGenerated: true,
+          generatedBy: 'Groq llama-3.3-70b-versatile',
+          disclaimer: 'This document was drafted by AuditReady AI as a starting template. It is not legal advice and has not been reviewed by an attorney. Have qualified counsel review it before adoption.',
+        };
         await redis.set(cacheKey, JSON.stringify(result), { ex: 7 * 24 * 3600 });
         return res.status(200).json(result);
       } catch (err) { console.error('Policy gen error:', err.message); return res.status(500).json({ error: 'Could not generate policy. Please try again.' }); }
