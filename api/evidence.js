@@ -86,7 +86,9 @@ function computeQuality(type, note) {
 // ── Main handler ─────────────────────────────────────────────
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const _origin = req.headers.origin || '';
+  const _originOk = /^https:\/\/(auditready\.space|[a-z0-9-]+\.vercel\.app)$/i.test(_origin);
+  res.setHeader('Access-Control-Allow-Origin', _originOk ? _origin : 'https://auditready.space');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
