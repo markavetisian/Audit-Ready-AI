@@ -1800,70 +1800,71 @@ function logout() {
   updateHeader(); nav('login');
 }
 
-function handleCallback() {
-  const p = new URLSearchParams(location.search);
+function applyAuthPayload(payload) {
+  switch (payload && payload.provider) {
+    case 'github':
+      // Resolve the GitHub profile with the token we just redeemed.
+      fetch('https://api.github.com/user', {
+        headers: { Authorization: 'Bearer ' + payload.githubToken, Accept: 'application/vnd.github+json', 'User-Agent': 'AuditReady-AI' }
+      }).then(r => r.json()).then(u => {
+        ST.user = { name: u.name || u.login, email: u.email || u.login + '@github', avatar: u.avatar_url, type: 'github', githubToken: payload.githubToken, username: u.login };
+        saveUser(); updateHeader(); nav('dashboard'); loadDashboard();
+      }).catch(() => nav('login'));
+      return;
 
-  // GitHub callback
-  const tok = p.get('token');
-  if (tok) {
-    fetch('https://api.github.com/user', {
-      headers: { Authorization: 'Bearer ' + tok, Accept: 'application/vnd.github+json', 'User-Agent': 'AuditReady-AI' }
-    }).then(r => r.json()).then(u => {
-      ST.user = { name: u.name || u.login, email: u.email || u.login + '@github', avatar: u.avatar_url, type: 'github', githubToken: tok, username: u.login };
-      saveUser(); history.replaceState({}, '', '/');
-      updateHeader(); nav('dashboard'); loadDashboard();
-    }).catch(() => nav('login'));
-    return;
-  }
+    case 'google':
+      ST.user = { name: payload.name, email: payload.email, avatar: payload.avatar, type: 'google', githubToken: null, googleToken: payload.googleToken, sessionToken: payload.sessionToken };
+      saveUser(); updateHeader(); nav('dashboard'); loadDashboard();
+      return;
 
-  // Google Drive link callback — attach Drive to existing account (e.g. GitHub)
-  const gl = p.get('google_link');
-  if (gl) {
-    history.replaceState({}, '', '/');
-    try {
-      const u = JSON.parse(decodeURIComponent(gl));
+    case 'slack':
+      ST.user = { name: payload.name, email: payload.email, avatar: payload.avatar, type: 'slack', githubToken: null, slackTeam: payload.slackTeam, sessionToken: payload.sessionToken };
+      saveUser(); updateHeader(); nav('dashboard'); loadDashboard();
+      return;
+
+    case 'google_link':
+      // Attach Drive to the already signed-in account, don't replace the session.
       if (!ST.user) { nav('login'); return; }
-      ST.user.googleToken = u.googleToken;
-      ST.user.googleEmail = u.email;
+      ST.user.googleToken = payload.googleToken;
+      ST.user.googleEmail = payload.email;
       saveUser();
-      // Persist the Drive integration server-side under the current account
       fetch('/api/integrations', {
         method: 'POST', headers: authHeaders(),
-        body: JSON.stringify({ provider: 'googleDrive', googleToken: u.googleToken }),
+        body: JSON.stringify({ provider: 'googleDrive', googleToken: payload.googleToken }),
       }).catch(() => {});
       updateHeader();
       toast('Google Drive connected — scanning for evidence…', 'success');
       nav('integrations');
       triggerScan();
-    } catch { nav('integrations'); }
+      return;
+
+    default:
+      nav('login');
+  }
+}
+
+function handleCallback() {
+  const p = new URLSearchParams(location.search);
+
+  // OAuth one-time code — credentials are no longer passed in the URL. We strip
+  // the code from the address bar immediately, then redeem it exactly once for
+  // the login payload. A copied/bookmarked callback URL is useless: the code is
+  // single-use and expires server-side within minutes.
+  const authCode = p.get('auth');
+  if (authCode) {
+    history.replaceState({}, '', '/');
+    fetch('/api/auth?exchange=1', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: authCode }),
+    })
+      .then(r => (r.ok ? r.json() : Promise.reject()))
+      .then(applyAuthPayload)
+      .catch(() => nav('login'));
     return;
   }
 
-  // Google callback
-  const gu = p.get('google_user');
-  if (gu) {
-    try {
-      const u = JSON.parse(decodeURIComponent(gu));
-      ST.user = { name: u.name, email: u.email, avatar: u.avatar, type: 'google', githubToken: null, googleToken: u.googleToken, sessionToken: u.sessionToken };
-      saveUser(); history.replaceState({}, '', '/');
-      updateHeader(); nav('dashboard'); loadDashboard();
-    } catch { nav('login'); }
-    return;
-  }
-
-  // Slack callback
-  const su = p.get('slack_user');
-  if (su) {
-    try {
-      const u = JSON.parse(decodeURIComponent(su));
-      ST.user = { name: u.name, email: u.email, avatar: u.avatar, type: 'slack', githubToken: null, slackTeam: u.slackTeam, sessionToken: u.sessionToken };
-      saveUser(); history.replaceState({}, '', '/');
-      updateHeader(); nav('dashboard'); loadDashboard();
-    } catch { nav('login'); }
-    return;
-  }
-
-  // Share token — public view
+  // Share token — public view (not a credential, safe to keep in the URL)
   const share = p.get('share');
   if (share) { loadPublicShare(share); return; }
 }

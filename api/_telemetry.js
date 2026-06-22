@@ -15,7 +15,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { Redis } from '@upstash/redis';
-import { createHmac, timingSafeEqual } from 'crypto';
+import { createHmac, timingSafeEqual, randomBytes } from 'crypto';
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL,
@@ -51,6 +51,29 @@ export function verifySession(token) {
     const data = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
     if (!data.uid || !data.exp || Date.now() > data.exp) return null;
     return data.uid;
+  } catch { return null; }
+}
+
+// ── One-time auth codes (keep OAuth credentials out of the URL) ──
+// After an OAuth provider verifies a user, we stash the resulting payload
+// (tokens, session token, profile) in Redis under a single-use random code
+// and redirect with only ?auth=<code>. The frontend redeems it once via POST;
+// the code is deleted on first read and expires in 2 minutes — so a copied
+// callback URL is useless and no real token ever lands in history/logs/Referer.
+export async function stashAuthCode(payload) {
+  const code = randomBytes(24).toString('base64url');
+  await redis.set(`authcode:${code}`, JSON.stringify(payload), { ex: 120 });
+  return code;
+}
+
+export async function takeAuthCode(code) {
+  if (!code) return null;
+  const key = `authcode:${String(code)}`;
+  try {
+    const raw = await redis.get(key);
+    if (!raw) return null;
+    await redis.del(key); // single use — redeemable exactly once
+    return typeof raw === 'object' ? raw : JSON.parse(raw);
   } catch { return null; }
 }
 

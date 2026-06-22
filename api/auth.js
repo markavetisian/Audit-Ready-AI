@@ -10,11 +10,24 @@
 //   GET /api/slack-callback          → Slack OAuth callback (via vercel.json rewrite)
 // ─────────────────────────────────────────────────────────────
 
-import { trackUser, mintSession } from './_telemetry.js';
+import { trackUser, mintSession, stashAuthCode, takeAuthCode } from './_telemetry.js';
 
 export default async function handler(req, res) {
   const { provider, code, state } = req.query;
   const appUrl = process.env.APP_URL || `https://${req.headers.host}`;
+
+  // ─────────────────────────────────────────────────────────────
+  // EXCHANGE — redeem a one-time auth code for the login payload.
+  // POST /api/auth?exchange=1  { code }  → { ...payload } (single use)
+  // This is how the frontend retrieves tokens after OAuth, so credentials
+  // never travel in the redirect URL.
+  // ─────────────────────────────────────────────────────────────
+  if (req.method === 'POST' && (req.query.exchange || req.url?.includes('exchange'))) {
+    const supplied = req.body?.code || req.query.code;
+    const payload = await takeAuthCode(supplied);
+    if (!payload) return res.status(400).json({ error: 'Invalid or expired code' });
+    return res.status(200).json(payload);
+  }
 
   // ── Detect which provider this callback belongs to ──────────
   const isSlackCallback = req.url?.includes('slack-callback') || state === 'slack';
@@ -48,12 +61,13 @@ export default async function handler(req, res) {
             await trackUser('github:' + ghUser.login, 'login', ghUser.email || null, 'github');
           }
         } catch {}
-        // AuditReady: no deploy flow — just redirect with token
-        let redirectTo = `/?token=${tokenData.access_token}`;
-        if (state && state.length > 0 && state !== 'github') {
-          redirectTo += `&data=${encodeURIComponent(state)}`;
-        }
-        return res.redirect(redirectTo);
+        // Hand the token back via a one-time code, never in the URL.
+        const authCode = await stashAuthCode({
+          provider: 'github',
+          githubToken: tokenData.access_token,
+          data: (state && state.length > 0 && state !== 'github') ? state : null,
+        });
+        return res.redirect(`/?auth=${authCode}`);
       } else {
         return res.status(400).send('GitHub auth failed. Please try again.');
       }
@@ -90,24 +104,26 @@ export default async function handler(req, res) {
       const user = await userRes.json();
       // ── Link mode: attach Drive to an existing (e.g. GitHub) account ──
       if (state === 'google_link') {
-        const linkPayload = encodeURIComponent(JSON.stringify({
+        const linkCode = await stashAuthCode({
+          provider: 'google_link',
           email: user.email,
           googleToken: tokenData.access_token,
-        }));
-        return res.redirect(`/?google_link=${linkPayload}`);
+        });
+        return res.redirect(`/?auth=${linkCode}`);
       }
       if (user.email) {
         try { await trackUser('google:' + user.email, 'login', user.email, 'google'); } catch {}
       }
-      const userPayload = encodeURIComponent(JSON.stringify({
+      const googleCode = await stashAuthCode({
+        provider: 'google',
         name: user.name,
         email: user.email,
         avatar: user.picture,
         type: 'google',
         googleToken: tokenData.access_token,
         sessionToken: user.email ? mintSession('google:' + user.email) : null,
-      }));
-      return res.redirect(`/?google_user=${userPayload}`);
+      });
+      return res.redirect(`/?auth=${googleCode}`);
     } catch (err) {
       console.error('Google callback error:', err);
       return res.status(500).send('Auth server error: ' + err.message);
@@ -187,15 +203,16 @@ export default async function handler(req, res) {
       if (user.email) {
         try { await trackUser('slack:' + user.email, 'login', user.email, 'slack'); } catch {}
       }
-      const userPayload = encodeURIComponent(JSON.stringify({
+      const slackCode = await stashAuthCode({
+        provider: 'slack',
         name: user.name || user['https://slack.com/user_id'] || 'Slack User',
         email: user.email || '',
         avatar: user.picture || null,
         type: 'slack',
         slackTeam: user['https://slack.com/team_name'] || '',
         sessionToken: user.email ? mintSession('slack:' + user.email) : null,
-      }));
-      return res.redirect(`/?slack_user=${userPayload}`);
+      });
+      return res.redirect(`/?auth=${slackCode}`);
     } catch (err) {
       console.error('Slack callback error:', err);
       return res.status(500).send('Auth server error: ' + err.message);
