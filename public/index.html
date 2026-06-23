@@ -1729,18 +1729,7 @@ header{
 <script>
 'use strict';
 
-// Clickwrap gate: every OAuth sign-in/sign-up entry point on the landing page
-// routes through here. The hero checkbox is the single source of truth for
-// acceptance — if it isn't checked, scroll the user to it instead of starting
-// OAuth, so a user can't reach a provider's consent screen without agreeing.
 function startOAuth(provider) {
-  const box = document.getElementById('tosCheckbox');
-  if (box && !box.checked) {
-    box.closest('.lp-hero')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    box.focus();
-    if (typeof toast === 'function') toast('Please agree to the Terms of Service and Privacy Policy to continue.');
-    return;
-  }
   const linkSuffix = provider === 'google' && arguments[1] === 'link' ? '&link=1' : '';
   location.href = `/api/auth?provider=${provider}${linkSuffix}`;
 }
