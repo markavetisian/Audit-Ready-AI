@@ -212,14 +212,16 @@ export default async function handler(req, res) {
 
   // ─────────────────────────────────────────────────────────────
   // GOOGLE — Initiate OAuth (provider=google or /api/google-oauth rewrite)
-  // AuditReady: added drive.readonly for evidence folder scanning
+  // AuditReady: added drive.file for evidence folder scanning — non-sensitive
+  // scope, only grants access to files/folders the user explicitly picks via
+  // the Google Picker (see "Link Google Drive" flow in the frontend), so it
+  // doesn't require Google's restricted-scope verification like drive.readonly did.
   // ─────────────────────────────────────────────────────────────
   if (provider === 'google' || req.url?.includes('google-oauth') || req.url?.includes('google-auth')) {
     const clientId = process.env.GOOGLE_CLIENT_ID;
     if (!clientId) return res.status(500).send('GOOGLE_CLIENT_ID not configured.');
     const redirectUri = encodeURIComponent(`${appUrl}/api/google-callback`);
-    // AuditReady: drive.readonly added for evidence folder
-    const scope = encodeURIComponent('openid email profile https://www.googleapis.com/auth/drive.readonly');
+    const scope = encodeURIComponent('openid email profile https://www.googleapis.com/auth/drive.file');
     // link=1 → attach Drive to an existing account instead of logging in fresh
     const stateParam = req.query.link === '1' ? 'google_link' : 'google';
     const authUrl =

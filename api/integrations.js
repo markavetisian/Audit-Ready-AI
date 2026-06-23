@@ -143,7 +143,7 @@ export default async function handler(req, res) {
 
   // ── POST: Connect an integration ──────────────────────────────
   if (req.method === 'POST') {
-    const { provider, googleToken } = req.body || {};
+    const { provider, googleToken, driveFolderId, driveFolderName } = req.body || {};
 
     if (!provider) return res.status(400).json({ error: 'Missing provider' });
     if (provider === 'aws') return res.status(400).json({ error: 'AWS integration is Coming Soon' });
@@ -180,7 +180,11 @@ export default async function handler(req, res) {
           connectedAt: new Date().toISOString(),
           scannedAt: null,
           controlsAutoFilled: 0,
-          // Note: googleToken is NOT stored in Redis — user must pass it per-request
+          // Note: googleToken is NOT stored in Redis — user must pass it per-request.
+          // folderId/Name are just labels for the folder the user picked via the
+          // Google Picker (drive.file scope) — not a credential, safe to persist.
+          driveFolderId: driveFolderId || stored.googleDrive?.driveFolderId || null,
+          driveFolderName: driveFolderName || stored.googleDrive?.driveFolderName || null,
         };
         await redis.set(intKey, JSON.stringify(stored));
         return res.status(200).json({ ok: true, provider: 'googleDrive', connected: true, email: gUser.email });

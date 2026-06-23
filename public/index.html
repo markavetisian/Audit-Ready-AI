@@ -1746,6 +1746,14 @@ let ST = {
 
 // ── Auth ─────────────────────────────────────────────────────
 
+// Google Picker API key (NOT a secret — it's a browser key restricted by HTTP
+// referrer in Google Cloud Console > Credentials, safe to ship client-side).
+// Required so the user can pick which Drive folder AuditReady is allowed to
+// read (drive.file scope only grants access to picker-selected items).
+// Set this once you create the key — without it "Link Google Drive" will
+// show an error instead of opening the folder picker.
+const GOOGLE_PICKER_API_KEY = '';
+
 function authTok() {
   if (!ST.user) return null;
   if (ST.user.githubToken) return ST.user.githubToken;
@@ -1882,19 +1890,70 @@ function applyAuthPayload(payload) {
       ST.user.googleToken = payload.googleToken;
       ST.user.googleEmail = payload.email;
       saveUser();
-      fetch('/api/integrations', {
-        method: 'POST', headers: authHeaders(),
-        body: JSON.stringify({ provider: 'googleDrive', googleToken: payload.googleToken }),
-      }).catch(() => {});
       updateHeader();
-      toast('Google Drive connected — scanning for evidence…', 'success');
       nav('integrations');
-      triggerScan();
+      // drive.file is a picker-scoped grant — the app can't see any folder
+      // until the user explicitly picks one, so prompt for that next instead
+      // of scanning immediately.
+      pickDriveFolder();
       return;
 
     default:
       nav('login');
   }
+}
+
+// ── Google Drive folder picker ──────────────────────────────────
+// drive.file scope grants no visibility into a user's Drive until they pick
+// something through Google's own Picker UI — this opens that picker scoped
+// to folders, then persists the chosen folder and kicks off a scan of it.
+let _gapiPickerLoaded = false;
+function _loadGapiPicker() {
+  return new Promise((resolve, reject) => {
+    if (_gapiPickerLoaded && window.google?.picker) return resolve();
+    const finish = () => {
+      window.gapi.load('picker', () => { _gapiPickerLoaded = true; resolve(); });
+    };
+    if (window.gapi) return finish();
+    const s = document.createElement('script');
+    s.src = 'https://apis.google.com/js/api.js';
+    s.onload = finish;
+    s.onerror = () => reject(new Error('Could not load Google Picker'));
+    document.head.appendChild(s);
+  });
+}
+
+function pickDriveFolder() {
+  if (!ST.user?.googleToken) { toast('Connect Google first', 'error'); return; }
+  if (!GOOGLE_PICKER_API_KEY) {
+    toast('Google Drive folder picker is not configured yet — contact support', 'error');
+    return;
+  }
+  _loadGapiPicker().then(() => {
+    const view = new google.picker.DocsView(google.picker.ViewId.FOLDERS)
+      .setSelectFolderEnabled(true)
+      .setIncludeFolders(true);
+    const picker = new google.picker.PickerBuilder()
+      .addView(view)
+      .setOAuthToken(ST.user.googleToken)
+      .setDeveloperKey(GOOGLE_PICKER_API_KEY)
+      .setCallback((data) => {
+        if (data.action !== google.picker.Action.PICKED) return;
+        const folder = data.docs && data.docs[0];
+        if (!folder) return;
+        ST.user.driveFolderId = folder.id;
+        ST.user.driveFolderName = folder.name;
+        saveUser();
+        fetch('/api/integrations', {
+          method: 'POST', headers: authHeaders(),
+          body: JSON.stringify({ provider: 'googleDrive', googleToken: ST.user.googleToken, driveFolderId: folder.id, driveFolderName: folder.name }),
+        }).catch(() => {});
+        toast(`Linked "${folder.name}" — scanning for evidence…`, 'success');
+        triggerScan();
+      })
+      .build();
+    picker.setVisible(true);
+  }).catch(() => toast('Could not open Google Drive picker', 'error'));
 }
 
 function handleCallback() {
@@ -2311,7 +2370,7 @@ async function triggerScan() {
   const before = _captureControlStatuses();
   try {
     const body = {};
-    if (ST.user?.googleToken) body.googleToken = ST.user.googleToken;
+    if (ST.user?.googleToken) { body.googleToken = ST.user.googleToken; body.driveFolderId = ST.user.driveFolderId || null; }
 
     const r = await fetch('/api/scan', {
       method: 'POST',
@@ -2339,7 +2398,7 @@ async function quietScan() {
     const meta = document.getElementById('scanMeta');
     if (meta) meta.textContent = 'Auto-scanning...';
     const body = {};
-    if (ST.user?.googleToken) body.googleToken = ST.user.googleToken;
+    if (ST.user?.googleToken) { body.googleToken = ST.user.googleToken; body.driveFolderId = ST.user.driveFolderId || null; }
     const before = _captureControlStatuses();
     const r = await fetch('/api/scan', {
       method: 'POST',

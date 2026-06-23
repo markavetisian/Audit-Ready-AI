@@ -247,26 +247,22 @@ const FILE_KEYWORD_MAP = {
   'communication': ['CC2.2'],
 };
 
-async function scanGoogleDrive(googleToken) {
+async function scanGoogleDrive(googleToken, folderId) {
   const results = {};
   const detectionDetails = {};
+  // The OAuth scope is drive.file (non-sensitive), which only grants access to
+  // files/folders the user explicitly picked via the Google Picker — there is
+  // no broad "search the whole Drive" capability anymore. Without a picked
+  // folder there's nothing we're allowed to read, so just no-op.
+  if (!folderId) return { results, detectionDetails };
   try {
-    // List files in AuditReady Evidence folder
-    const searchUrl = `https://www.googleapis.com/drive/v3/files?q=name+contains+'AuditReady'&fields=files(name,id)&pageSize=100`;
+    const searchUrl = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents&fields=files(name,id)&pageSize=200`;
     const r = await fetch(searchUrl, {
       headers: { Authorization: `Bearer ${googleToken}` },
     });
     if (!r.ok) return { results, detectionDetails };
     const data = await r.json();
-    const files = data.files || [];
-
-    // Also search all accessible files for keyword matches
-    const allFilesUrl = `https://www.googleapis.com/drive/v3/files?fields=files(name,id)&pageSize=200`;
-    const allR = await fetch(allFilesUrl, {
-      headers: { Authorization: `Bearer ${googleToken}` },
-    });
-    const allData = allR.ok ? await allR.json() : { files: [] };
-    const allFiles = [...files, ...(allData.files || [])];
+    const allFiles = data.files || [];
 
     for (const file of allFiles) {
       const nameLower = (file.name || '').toLowerCase();
@@ -384,7 +380,7 @@ export default async function handler(req, res) {
 
     try {
       const ghToken = getGitHubToken(req.headers.authorization);
-      const { googleToken } = req.body || {};
+      const { googleToken, driveFolderId } = req.body || {};
       const scanResults = {};
       const allDetectionDetails = {};
       const scanSummary = { github: {}, googleDrive: {} };
@@ -400,7 +396,7 @@ export default async function handler(req, res) {
 
       // Google Drive scan
       if (googleToken) {
-        const { results: driveResults, detectionDetails: driveDetails } = await scanGoogleDrive(googleToken);
+        const { results: driveResults, detectionDetails: driveDetails } = await scanGoogleDrive(googleToken, driveFolderId);
         Object.assign(scanResults, driveResults);
         Object.assign(allDetectionDetails, driveDetails);
         scanSummary.googleDrive = driveResults;
