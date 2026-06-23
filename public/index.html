@@ -1911,27 +1911,21 @@ function applyAuthPayload(payload) {
 function handleCallback() {
   const p = new URLSearchParams(location.search);
 
-  // OAuth one-time code — credentials are no longer passed in the URL. We strip
-  // the code from the address bar immediately, then redeem it exactly once for
-  // the login payload. A copied/bookmarked callback URL is useless: the code is
-  // single-use and expires server-side within minutes.
-  const authCode = p.get('auth');
-  if (authCode) {
-    history.replaceState({}, '', '/');
-    fetch('/api/auth?exchange=1', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code: authCode }),
-    })
-      .then(r => (r.ok ? r.json() : Promise.reject()))
-      .then(applyAuthPayload)
-      .catch(() => nav('login'));
-    return;
-  }
-
   // Share token — public view (not a credential, safe to keep in the URL)
   const share = p.get('share');
   if (share) { loadPublicShare(share); return; }
+
+  // OAuth one-time code never touches the URL at all anymore — the callback
+  // redirect lands on a plain "/" and the code arrives in an HttpOnly cookie
+  // instead. The address bar can be screenshotted, shared, or kept in
+  // history with nothing usable in it. We always attempt the exchange (it's
+  // needed even when ST.user is already set, e.g. the "link Google Drive to
+  // an existing account" flow); with no pickup cookie present — the
+  // overwhelmingly common case, any plain page load — this just no-ops.
+  fetch('/api/auth?exchange=1', { method: 'POST' })
+    .then(r => (r.ok ? r.json() : Promise.reject()))
+    .then(applyAuthPayload)
+    .catch(() => {});
 }
 
 // ── Navigation ────────────────────────────────────────────────

@@ -23,19 +23,46 @@ function getClientIp(req) {
   return req.socket?.remoteAddress || null;
 }
 
+// ── One-time-code pickup cookie ─────────────────────────────────
+// The OAuth callback used to redirect to /?auth=CODE — the code briefly
+// appeared in the address bar and browser history before client JS could
+// scrub it, so a screenshot/screen-share taken in that instant (or history
+// sync) captured a live, single-use login token. Carrying the code in an
+// HttpOnly cookie instead means it never reaches the URL or JS at all; the
+// browser just sends it back automatically on the very next same-site
+// request, after which it's consumed exactly like before.
+const PICKUP_COOKIE = 'ar_pickup';
+
+function setPickupCookie(res, code) {
+  res.setHeader('Set-Cookie', `${PICKUP_COOKIE}=${code}; Path=/; Max-Age=120; HttpOnly; Secure; SameSite=Lax`);
+}
+
+function clearPickupCookie(res) {
+  res.setHeader('Set-Cookie', `${PICKUP_COOKIE}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`);
+}
+
+function getPickupCookie(req) {
+  const header = req.headers.cookie || '';
+  const match = header.split(';').map(s => s.trim()).find(s => s.startsWith(PICKUP_COOKIE + '='));
+  return match ? match.slice(PICKUP_COOKIE.length + 1) : null;
+}
+
 export default async function handler(req, res) {
   const { provider, code, state } = req.query;
   const appUrl = process.env.APP_URL || `https://${req.headers.host}`;
 
   // ─────────────────────────────────────────────────────────────
   // EXCHANGE — redeem a one-time auth code for the login payload.
-  // POST /api/auth?exchange=1  { code }  → { ...payload } (single use)
-  // This is how the frontend retrieves tokens after OAuth, so credentials
-  // never travel in the redirect URL.
+  // POST /api/auth?exchange=1  (no body needed)  → { ...payload } (single use)
+  // The code itself now arrives via the HttpOnly ar_pickup cookie set on the
+  // OAuth callback (see setPickupCookie below) rather than a request body —
+  // this endpoint just redeems whatever code the browser sent back. A body
+  // `code` is still accepted as a fallback for any in-flight clients.
   // ─────────────────────────────────────────────────────────────
   if (req.method === 'POST' && (req.query.exchange || req.url?.includes('exchange'))) {
-    const supplied = req.body?.code || req.query.code;
+    const supplied = getPickupCookie(req) || req.body?.code || req.query.code;
     const payload = await takeAuthCode(supplied);
+    clearPickupCookie(res);
     if (!payload) return res.status(400).json({ error: 'Invalid or expired code' });
     return res.status(200).json(payload);
   }
@@ -90,13 +117,15 @@ export default async function handler(req, res) {
             await trackUser('github:' + ghUser.login, 'login', ghUser.email || null, 'github', { tosVersion: TOS_VERSION, ip: getClientIp(req) });
           }
         } catch {}
-        // Hand the token back via a one-time code, never in the URL.
+        // Hand the token back via a one-time code, carried in an HttpOnly
+        // cookie — never in the URL or browser history.
         const authCode = await stashAuthCode({
           provider: 'github',
           githubToken: tokenData.access_token,
           data: (state && state.length > 0 && state !== 'github') ? state : null,
         });
-        return res.redirect(`/?auth=${authCode}`);
+        setPickupCookie(res, authCode);
+        return res.redirect('/');
       } else {
         return res.status(400).send('GitHub auth failed. Please try again.');
       }
@@ -138,7 +167,8 @@ export default async function handler(req, res) {
           email: user.email,
           googleToken: tokenData.access_token,
         });
-        return res.redirect(`/?auth=${linkCode}`);
+        setPickupCookie(res, linkCode);
+        return res.redirect('/');
       }
       if (user.email) {
         try { await trackUser('google:' + user.email, 'login', user.email, 'google', { tosVersion: TOS_VERSION, ip: getClientIp(req) }); } catch {}
@@ -152,7 +182,8 @@ export default async function handler(req, res) {
         googleToken: tokenData.access_token,
         sessionToken: user.email ? mintSession('google:' + user.email) : null,
       });
-      return res.redirect(`/?auth=${googleCode}`);
+      setPickupCookie(res, googleCode);
+      return res.redirect('/');
     } catch (err) {
       console.error('Google callback error:', err.message);
       return res.status(500).send('Auth server error. Please try again.');
@@ -241,7 +272,8 @@ export default async function handler(req, res) {
         slackTeam: user['https://slack.com/team_name'] || '',
         sessionToken: user.email ? mintSession('slack:' + user.email) : null,
       });
-      return res.redirect(`/?auth=${slackCode}`);
+      setPickupCookie(res, slackCode);
+      return res.redirect('/');
     } catch (err) {
       console.error('Slack callback error:', err.message);
       return res.status(500).send('Auth server error. Please try again.');
