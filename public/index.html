@@ -415,6 +415,17 @@ header{
 .spinner{display:inline-block;width:13px;height:13px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
 .fade-in{animation:fadeIn .2s ease}
 
+/* ── Skeleton loading placeholders ───────── */
+@keyframes skeletonPulse{0%,100%{opacity:.55}50%{opacity:1}}
+.sk-row{background:var(--border2,#2a2f3a);border-radius:6px;animation:skeletonPulse 1.3s ease-in-out infinite}
+.sk-block{display:flex;flex-direction:column;gap:10px;padding:4px 0}
+.sk-line{height:12px;border-radius:6px}
+.sk-line.w-100{width:100%}
+.sk-line.w-80{width:80%}
+.sk-line.w-60{width:60%}
+.sk-line.w-40{width:40%}
+.sk-card{height:56px;border-radius:10px}
+
 /* ── Report card ─────────────────────────── */
 .report-card{
   background:#fff;border:1px solid var(--border);
@@ -1266,7 +1277,7 @@ header{
         <!-- Category breakdown -->
         <div class="card" style="margin-bottom:16px">
           <div class="section-heading">CATEGORY BREAKDOWN</div>
-          <div id="categoryBars"><div style="color:var(--muted);font-size:12px;padding:8px 0">Loading...</div></div>
+          <div id="categoryBars"><div class="sk-block"><div class="sk-row sk-line w-100"></div><div class="sk-row sk-line w-80"></div><div class="sk-row sk-line w-60"></div></div></div>
         </div>
         <!-- Next Steps -->
         <div id="nextStepsCard" class="card" style="display:none;margin-bottom:16px">
@@ -1276,7 +1287,7 @@ header{
         <!-- Top gaps -->
         <div class="card" style="margin-bottom:16px">
           <div class="section-heading">TOP GAPS TO FIX</div>
-          <div id="topGapsList"><div style="color:var(--muted);font-size:12px;padding:8px 0">Loading...</div></div>
+          <div id="topGapsList"><div class="sk-block"><div class="sk-row sk-line w-100"></div><div class="sk-row sk-line w-80"></div><div class="sk-row sk-line w-60"></div></div></div>
         </div>
         <!-- Latest report -->
         <div id="latestReportSection" style="display:none">
@@ -1317,7 +1328,9 @@ header{
       <div class="filter-pill" data-filter="EVIDENCE_UPLOADED" onclick="filterControls('EVIDENCE_UPLOADED',this)">Evidence Added</div>
       <div class="filter-pill" data-filter="CONNECTED_AUTO" onclick="filterControls('CONNECTED_AUTO',this)">Auto-Detected</div>
     </div>
-    <div id="controlsList"><div style="color:var(--muted);font-size:12px;text-align:center;padding:32px 0"><span class="spinner"></span> Loading controls...</div></div>
+    <div id="controlsList"><div class="sk-block" style="padding:8px 0">
+      <div class="sk-row sk-card"></div><div class="sk-row sk-card"></div><div class="sk-row sk-card"></div><div class="sk-row sk-card"></div>
+    </div></div>
   </div>
 </div>
 
@@ -1328,7 +1341,9 @@ header{
       <h1 style="font-size:20px;font-weight:600;letter-spacing:-.03em">Connected Tools</h1>
       <p style="font-size:13px;color:var(--muted);margin-top:2px">Connect your tools to auto-detect compliance controls</p>
     </div>
-    <div id="integrationsList"><div style="color:var(--muted);font-size:12px;text-align:center;padding:32px 0"><span class="spinner"></span> Loading...</div></div>
+    <div id="integrationsList"><div class="sk-block" style="padding:8px 0">
+      <div class="sk-row sk-card"></div><div class="sk-row sk-card"></div><div class="sk-row sk-card"></div>
+    </div></div>
   </div>
 </div>
 
@@ -1504,7 +1519,9 @@ header{
       </div>
     </div>
     <div id="lockerStats" style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap"></div>
-    <div id="lockerContent"><div style="color:var(--muted);font-size:12px;text-align:center;padding:48px 0"><span class="spinner"></span> Loading evidence...</div></div>
+    <div id="lockerContent"><div class="sk-block" style="padding:8px 0">
+      <div class="sk-row sk-card"></div><div class="sk-row sk-card"></div><div class="sk-row sk-card"></div><div class="sk-row sk-card"></div>
+    </div></div>
   </div>
 </div>
 
@@ -1582,7 +1599,9 @@ header{
         <div class="section-heading" style="margin-bottom:0">UPCOMING RENEWALS & EXPIRIES</div>
         <button class="btn btn-secondary btn-sm" onclick="loadReminders()">↺ Refresh</button>
       </div>
-      <div id="remindersList"><div style="color:var(--muted);font-size:12px;text-align:center;padding:24px 0"><span class="spinner"></span> Loading...</div></div>
+      <div id="remindersList"><div class="sk-block" style="padding:4px 0">
+        <div class="sk-row sk-line w-100"></div><div class="sk-row sk-line w-80"></div>
+      </div></div>
     </div>
 
     <!-- Vendor tracker -->
@@ -1591,7 +1610,9 @@ header{
         <div class="section-heading" style="margin-bottom:0">VENDOR RISK TRACKER</div>
         <button class="btn btn-primary btn-sm" onclick="openAddVendor()">+ Add Vendor</button>
       </div>
-      <div id="vendorsList"><div style="color:var(--muted);font-size:12px;text-align:center;padding:24px 0"><span class="spinner"></span> Loading vendors...</div></div>
+      <div id="vendorsList"><div class="sk-block" style="padding:4px 0">
+        <div class="sk-row sk-card"></div><div class="sk-row sk-card"></div>
+      </div></div>
     </div>
   </div>
 </div>
@@ -1704,7 +1725,9 @@ header{
             </tr>
           </thead>
           <tbody id="adminUserRows">
-            <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)"><span class="spinner"></span></td></tr>
+            <tr><td colspan="7" style="padding:16px 12px"><div class="sk-block">
+              <div class="sk-row sk-line w-100"></div><div class="sk-row sk-line w-80"></div><div class="sk-row sk-line w-60"></div>
+            </div></td></tr>
           </tbody>
         </table>
       </div>
@@ -1757,6 +1780,33 @@ function getPickerApiKey() {
     .then(r => r.json())
     .then(d => { _pickerApiKey = d.pickerApiKey || ''; return _pickerApiKey; })
     .catch(() => '');
+}
+
+// Grey pulsing placeholder blocks shown while a section's content loads,
+// instead of a spinner — gives a sense of the layout that's about to appear.
+function skeletonRows(n = 3) {
+  let html = '<div class="sk-block">';
+  for (let i = 0; i < n; i++) {
+    const w = i % 3 === 0 ? 'w-100' : (i % 3 === 1 ? 'w-80' : 'w-60');
+    html += `<div class="sk-row sk-line ${w}"></div>`;
+  }
+  html += '</div>';
+  return html;
+}
+function skeletonCards(n = 3) {
+  let html = '<div class="sk-block">';
+  for (let i = 0; i < n; i++) html += '<div class="sk-row sk-card"></div>';
+  html += '</div>';
+  return html;
+}
+function skeletonTableRows(cols = 7, n = 4) {
+  let html = '';
+  for (let i = 0; i < n; i++) {
+    html += '<tr>';
+    for (let c = 0; c < cols; c++) html += `<td style="padding:10px 12px"><div class="sk-row sk-line w-80"></div></td>`;
+    html += '</tr>';
+  }
+  return html;
 }
 
 function authTok() {
@@ -2456,7 +2506,7 @@ async function generateReport() {
 async function loadControls() {
   if (!ST.user) return;
   const el = document.getElementById('controlsList');
-  el.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:32px 0"><span class="spinner"></span></div>';
+  el.innerHTML = skeletonCards(4);
   try {
     const r = await fetch('/api/controls?grouped=true', { headers: authHeaders() });
     if (!r.ok) throw new Error('Failed to load controls');
@@ -3231,7 +3281,7 @@ let _lockerAllItems = [];
 async function loadLocker() {
   if (!ST.user) return;
   const el = document.getElementById('lockerContent');
-  el.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:48px 0"><span class="spinner"></span></div>';
+  el.innerHTML = skeletonCards(4);
 
   try {
     // Fetch ALL evidence across controls (manual items have no expiry date, so
@@ -3720,7 +3770,7 @@ async function loadAdmin() {
   if (!ST.user) return;
   const statsEl = document.getElementById('adminStats');
   const rowsEl = document.getElementById('adminUserRows');
-  if (rowsEl) rowsEl.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)"><span class="spinner"></span></td></tr>';
+  if (rowsEl) rowsEl.innerHTML = skeletonTableRows(7, 4);
 
   try {
     const r = await fetch('/api/admin', { headers: adminHeaders() });
