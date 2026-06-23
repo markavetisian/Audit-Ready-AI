@@ -1882,7 +1882,7 @@ async function deleteMyAccount() {
       const isAuthApi = u.includes('/api/') && !u.includes('/api/admin') && !u.includes('/api/share');
       if (res.status === 401 && isAuthApi && ST.user && !_reauthing) {
         _reauthing = true;
-        ST.user = null; sessionStorage.removeItem('ar_user');
+        ST.user = null; localStorage.removeItem('ar_user');
         try { updateHeader(); } catch {}
         try { toast('Your session expired — please sign in again', 'error'); } catch {}
         try { nav('login'); } catch {}
@@ -1893,13 +1893,34 @@ async function deleteMyAccount() {
   };
 })();
 
-function saveUser() { if (ST.user) sessionStorage.setItem('ar_user', JSON.stringify(ST.user)); }
+// Persisted in localStorage (survives closing the tab/browser) instead of
+// sessionStorage (wiped on close) — but bounded by an explicit expiry so a
+// shared/public machine doesn't keep a valid login forever. 30 days matches
+// the server-side session token TTL (see mintSession in _telemetry.js), and
+// logout/401 still clear it immediately and revoke the token server-side.
+const AR_SESSION_DAYS = 30;
+function saveUser() {
+  if (!ST.user) return;
+  const record = { ...ST.user, _exp: Date.now() + AR_SESSION_DAYS * 86400000 };
+  localStorage.setItem('ar_user', JSON.stringify(record));
+}
 function loadUser() {
-  try { const s = sessionStorage.getItem('ar_user'); if (s) ST.user = JSON.parse(s); } catch {}
+  try {
+    const s = localStorage.getItem('ar_user');
+    if (s) {
+      const record = JSON.parse(s);
+      if (record._exp && Date.now() > record._exp) {
+        localStorage.removeItem('ar_user');
+      } else {
+        delete record._exp;
+        ST.user = record;
+      }
+    }
+  } catch {}
   // Drop stale google/slack sessions that predate signed session tokens so the
   // user gets a clean re-login instead of a 401'd, broken dashboard.
   if (ST.user && !ST.user.githubToken && !ST.user.sessionToken) {
-    ST.user = null; sessionStorage.removeItem('ar_user');
+    ST.user = null; localStorage.removeItem('ar_user');
   }
 }
 function logout() {
@@ -1913,7 +1934,7 @@ function logout() {
     }
   } catch {}
   ST.user = null; ST.score = null; ST.controls = [];
-  sessionStorage.removeItem('ar_user');
+  localStorage.removeItem('ar_user');
   updateHeader(); nav('login');
 }
 
