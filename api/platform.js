@@ -91,6 +91,14 @@ export default async function handler(req, res) {
   // ── GET ──────────────────────────────────────────────────────────────────
   if (req.method === 'GET') {
 
+    // Hands the Google Picker API key to an already-authenticated frontend
+    // instead of shipping it baked into the static HTML. It's a browser key
+    // restricted by HTTP referrer, not a secret — this is about easy
+    // rotation, not protecting a credential that needed hiding.
+    if (type === 'config') {
+      return res.status(200).json({ pickerApiKey: process.env.GOOGLE_PICKER_API_KEY || '' });
+    }
+
     if (type === 'vendors') {
       try {
         const raw = await redis.get(`user:${userId}:vendors`);

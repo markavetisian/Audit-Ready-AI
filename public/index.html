@@ -1746,13 +1746,18 @@ let ST = {
 
 // ── Auth ─────────────────────────────────────────────────────
 
-// Google Picker API key (NOT a secret — it's a browser key restricted by HTTP
-// referrer in Google Cloud Console > Credentials, safe to ship client-side).
-// Required so the user can pick which Drive folder AuditReady is allowed to
-// read (drive.file scope only grants access to picker-selected items).
-// Set this once you create the key — without it "Link Google Drive" will
-// show an error instead of opening the folder picker.
-const GOOGLE_PICKER_API_KEY = 'AIzaSyBnGm0QnWvTMRukjeIwDIhFY0HD8YTvaCU';
+// Google Picker API key — fetched from the backend (GOOGLE_PICKER_API_KEY env
+// var) instead of hardcoded here, so it lives in Vercel's env config and can
+// be rotated without a code change. It's a browser key restricted by HTTP
+// referrer, not a secret that needs hiding — this is purely for easy rotation.
+let _pickerApiKey = null;
+function getPickerApiKey() {
+  if (_pickerApiKey) return Promise.resolve(_pickerApiKey);
+  return fetch('/api/platform?type=config', { headers: authHeaders() })
+    .then(r => r.json())
+    .then(d => { _pickerApiKey = d.pickerApiKey || ''; return _pickerApiKey; })
+    .catch(() => '');
+}
 
 function authTok() {
   if (!ST.user) return null;
@@ -1925,18 +1930,18 @@ function _loadGapiPicker() {
 
 function pickDriveFolder() {
   if (!ST.user?.googleToken) { toast('Connect Google first', 'error'); return; }
-  if (!GOOGLE_PICKER_API_KEY) {
-    toast('Google Drive folder picker is not configured yet — contact support', 'error');
-    return;
-  }
-  _loadGapiPicker().then(() => {
+  Promise.all([_loadGapiPicker(), getPickerApiKey()]).then(([, pickerApiKey]) => {
+    if (!pickerApiKey) {
+      toast('Google Drive folder picker is not configured yet — contact support', 'error');
+      return;
+    }
     const view = new google.picker.DocsView(google.picker.ViewId.FOLDERS)
       .setSelectFolderEnabled(true)
       .setIncludeFolders(true);
     const picker = new google.picker.PickerBuilder()
       .addView(view)
       .setOAuthToken(ST.user.googleToken)
-      .setDeveloperKey(GOOGLE_PICKER_API_KEY)
+      .setDeveloperKey(pickerApiKey)
       .setCallback((data) => {
         if (data.action !== google.picker.Action.PICKED) return;
         const folder = data.docs && data.docs[0];
