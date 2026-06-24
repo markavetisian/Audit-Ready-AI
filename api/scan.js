@@ -16,7 +16,8 @@
 // ─────────────────────────────────────────────────────────────
 
 import { Redis } from '@upstash/redis';
-import { trackUser, isBlocked, checkRateLimit, logError, verifySession, getUserMode } from './_telemetry.js';
+import { trackUser, isBlocked, checkRateLimit, logError, verifySession, getUserMode, withLock } from './_telemetry.js';
+import { seedControlsIfNeeded } from './controls.js';
 
 // Give the scan extra headroom — multi-repo GitHub + Drive crawls can exceed
 // the default 10s serverless cap. 60s is the maximum on the Hobby plan.
@@ -246,26 +247,22 @@ const FILE_KEYWORD_MAP = {
   'communication': ['CC2.2'],
 };
 
-async function scanGoogleDrive(googleToken) {
+async function scanGoogleDrive(googleToken, folderId) {
   const results = {};
   const detectionDetails = {};
+  // The OAuth scope is drive.file (non-sensitive), which only grants access to
+  // files/folders the user explicitly picked via the Google Picker — there is
+  // no broad "search the whole Drive" capability anymore. Without a picked
+  // folder there's nothing we're allowed to read, so just no-op.
+  if (!folderId) return { results, detectionDetails };
   try {
-    // List files in AuditReady Evidence folder
-    const searchUrl = `https://www.googleapis.com/drive/v3/files?q=name+contains+'AuditReady'&fields=files(name,id)&pageSize=100`;
+    const searchUrl = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents&fields=files(name,id)&pageSize=200`;
     const r = await fetch(searchUrl, {
       headers: { Authorization: `Bearer ${googleToken}` },
     });
     if (!r.ok) return { results, detectionDetails };
     const data = await r.json();
-    const files = data.files || [];
-
-    // Also search all accessible files for keyword matches
-    const allFilesUrl = `https://www.googleapis.com/drive/v3/files?fields=files(name,id)&pageSize=200`;
-    const allR = await fetch(allFilesUrl, {
-      headers: { Authorization: `Bearer ${googleToken}` },
-    });
-    const allData = allR.ok ? await allR.json() : { files: [] };
-    const allFiles = [...files, ...(allData.files || [])];
+    const allFiles = data.files || [];
 
     for (const file of allFiles) {
       const nameLower = (file.name || '').toLowerCase();
@@ -292,24 +289,28 @@ async function applyGitHubScanResults(userId, scanResults, detectionDetails) {
   for (const [controlId, status] of Object.entries(scanResults)) {
     const key = `control:${userId}:${controlId}`;
     try {
-      let control = {};
-      const raw = await redis.get(key);
-      if (raw) control = typeof raw === 'object' ? raw : JSON.parse(raw);
-      // Only upgrade status, never downgrade
-      const statusRank = { NOT_STARTED: 0, IN_PROGRESS: 1, EVIDENCE_UPLOADED: 2, CONNECTED_AUTO: 3, NOT_APPLICABLE: -1 };
-      const currentRank = statusRank[control.status] ?? 0;
-      const newRank = statusRank[status] ?? 0;
-      if (newRank > currentRank) {
-        control.status = status;
-        control.lastUpdated = now;
-        control.autoSource = 'github';
-        // Add descriptive note about what was detected
-        if (detectionDetails && detectionDetails[controlId]) {
-          control.autoNote = 'GitHub: ' + detectionDetails[controlId];
+      await withLock(`control:${userId}:${controlId}`, async () => {
+        let control = {};
+        const raw = await redis.get(key);
+        if (raw) control = typeof raw === 'object' ? raw : JSON.parse(raw);
+        // Only upgrade status, never downgrade
+        const statusRank = { NOT_STARTED: 0, IN_PROGRESS: 1, EVIDENCE_UPLOADED: 2, CONNECTED_AUTO: 3, NOT_APPLICABLE: -1 };
+        const currentRank = statusRank[control.status] ?? 0;
+        const newRank = statusRank[status] ?? 0;
+        if (newRank > currentRank) {
+          control.status = status;
+          control.lastUpdated = now;
+          control.autoSource = 'github';
+          // Add descriptive note about what was detected
+          if (detectionDetails && detectionDetails[controlId]) {
+            control.autoNote = 'GitHub: ' + detectionDetails[controlId];
+          }
+          await redis.set(key, JSON.stringify(control));
         }
-        await redis.set(key, JSON.stringify(control));
-      }
-    } catch {}
+      });
+    } catch (err) {
+      await logError('scan_apply_github_error', { msg: err.message, userId, controlId });
+    }
   }
 }
 
@@ -318,21 +319,25 @@ async function applyDriveScanResults(userId, scanResults, detectionDetails) {
   for (const [controlId, status] of Object.entries(scanResults)) {
     const key = `control:${userId}:${controlId}`;
     try {
-      let control = {};
-      const raw = await redis.get(key);
-      if (raw) control = typeof raw === 'object' ? raw : JSON.parse(raw);
-      const statusRank = { NOT_STARTED: 0, IN_PROGRESS: 1, EVIDENCE_UPLOADED: 2, CONNECTED_AUTO: 3, NOT_APPLICABLE: -1 };
-      const currentRank = statusRank[control.status] ?? 0;
-      const newRank = statusRank[status] ?? 0;
-      if (newRank > currentRank) {
-        control.status = status;
-        control.lastUpdated = now;
-        control.autoSource = 'google_drive';
-        // Add note that Google Drive matches require human confirmation
-        control.autoNote = 'Google Drive: Document keyword match — please verify this document meets the control requirement';
-        await redis.set(key, JSON.stringify(control));
-      }
-    } catch {}
+      await withLock(`control:${userId}:${controlId}`, async () => {
+        let control = {};
+        const raw = await redis.get(key);
+        if (raw) control = typeof raw === 'object' ? raw : JSON.parse(raw);
+        const statusRank = { NOT_STARTED: 0, IN_PROGRESS: 1, EVIDENCE_UPLOADED: 2, CONNECTED_AUTO: 3, NOT_APPLICABLE: -1 };
+        const currentRank = statusRank[control.status] ?? 0;
+        const newRank = statusRank[status] ?? 0;
+        if (newRank > currentRank) {
+          control.status = status;
+          control.lastUpdated = now;
+          control.autoSource = 'google_drive';
+          // Add note that Google Drive matches require human confirmation
+          control.autoNote = 'Google Drive: Document keyword match — please verify this document meets the control requirement';
+          await redis.set(key, JSON.stringify(control));
+        }
+      });
+    } catch (err) {
+      await logError('scan_apply_drive_error', { msg: err.message, userId, controlId });
+    }
   }
 }
 
@@ -375,7 +380,7 @@ export default async function handler(req, res) {
 
     try {
       const ghToken = getGitHubToken(req.headers.authorization);
-      const { googleToken } = req.body || {};
+      const { googleToken, driveFolderId } = req.body || {};
       const scanResults = {};
       const allDetectionDetails = {};
       const scanSummary = { github: {}, googleDrive: {} };
@@ -391,7 +396,7 @@ export default async function handler(req, res) {
 
       // Google Drive scan
       if (googleToken) {
-        const { results: driveResults, detectionDetails: driveDetails } = await scanGoogleDrive(googleToken);
+        const { results: driveResults, detectionDetails: driveDetails } = await scanGoogleDrive(googleToken, driveFolderId);
         Object.assign(scanResults, driveResults);
         Object.assign(allDetectionDetails, driveDetails);
         scanSummary.googleDrive = driveResults;
@@ -440,6 +445,8 @@ export default async function handler(req, res) {
 
 export async function recomputeScore(userId) {
   try {
+    await seedControlsIfNeeded(userId);
+
     // Get all control IDs (expanded set)
     const ALL_CONTROLS = [
       'CC1.1','CC1.2','CC1.3','CC1.4',
@@ -456,8 +463,10 @@ export async function recomputeScore(userId) {
     let verified = 0;
     let applicable = 0;
 
-    for (const id of ALL_CONTROLS) {
-      const raw = await redis.get(`control:${userId}:${id}`);
+    const raws = await Promise.all(
+      ALL_CONTROLS.map(id => redis.get(`control:${userId}:${id}`).catch(() => null))
+    );
+    for (const raw of raws) {
       if (!raw) { applicable++; continue; }
       const control = typeof raw === 'object' ? raw : JSON.parse(raw);
       if (control.status === 'NOT_APPLICABLE') continue;
@@ -474,9 +483,11 @@ export async function recomputeScore(userId) {
     const histKey = `user:${userId}:scoreHistory`;
     const entry = { score, ts: Date.now(), verified, applicable };
 
-    await redis.set(scoreKey, JSON.stringify(entry));
-    await redis.lpush(histKey, JSON.stringify(entry));
-    await redis.ltrim(histKey, 0, 89); // Keep 90 entries
+    await withLock(`score:${userId}`, async () => {
+      await redis.set(scoreKey, JSON.stringify(entry));
+      await redis.lpush(histKey, JSON.stringify(entry));
+      await redis.ltrim(histKey, 0, 89); // Keep 90 entries
+    });
 
     return score;
   } catch (err) {
