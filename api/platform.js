@@ -1,5 +1,7 @@
 // api/platform.js
-// Multi-purpose platform endpoint (uses the last available Vercel function slot)
+// Multi-purpose platform endpoint (uses the last available Vercel function slot
+// — Vercel Hobby caps a deployment at 12 Serverless Functions, so new routes
+// get added here as a `type=` action instead of as a new api/*.js file)
 //
 //   GET  /api/platform?type=vendors            → list vendors
 //   POST /api/platform  {type:'vendor',...}    → add vendor
@@ -7,9 +9,12 @@
 //   GET  /api/platform?type=profile            → get company profile
 //   POST /api/platform  {type:'profile',...}   → save company profile
 //   GET  /api/platform?type=reminders          → upcoming renewals + expiring evidence
+//   GET  /api/platform?type=export             → full self-service data export (GDPR/CCPA)
+//   DELETE /api/platform?type=account          → self-service account + data deletion
 
 import { Redis } from '@upstash/redis';
-import { verifySession } from './_telemetry.js';
+import { verifySession, logError } from './_telemetry.js';
+import { CONTROL_DEFINITIONS } from './controls.js';
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL,
@@ -86,6 +91,14 @@ export default async function handler(req, res) {
   // ── GET ──────────────────────────────────────────────────────────────────
   if (req.method === 'GET') {
 
+    // Hands the Google Picker API key to an already-authenticated frontend
+    // instead of shipping it baked into the static HTML. It's a browser key
+    // restricted by HTTP referrer, not a secret — this is about easy
+    // rotation, not protecting a credential that needed hiding.
+    if (type === 'config') {
+      return res.status(200).json({ pickerApiKey: process.env.GOOGLE_PICKER_API_KEY || '' });
+    }
+
     if (type === 'vendors') {
       try {
         const raw = await redis.get(`user:${userId}:vendors`);
@@ -107,9 +120,19 @@ export default async function handler(req, res) {
         const now = Date.now();
         const reminders = [];
 
+        const renewalEntries = Object.entries(RENEWAL_SCHEDULE);
+
+        // Fetch all control + evidence + vendor data in parallel
+        const [renewalRaws, evidenceRaws, vendorRaw] = await Promise.all([
+          Promise.all(renewalEntries.map(([id]) => redis.get(`control:${userId}:${id}`).catch(() => null))),
+          Promise.all(ALL_CONTROLS.map(id => redis.get(`user:${userId}:evidence:${id}`).catch(() => null))),
+          redis.get(`user:${userId}:vendors`).catch(() => null),
+        ]);
+
         // Control-based renewal reminders
-        for (const [controlId, schedule] of Object.entries(RENEWAL_SCHEDULE)) {
-          const raw = await redis.get(`control:${userId}:${controlId}`);
+        for (let i = 0; i < renewalEntries.length; i++) {
+          const [controlId, schedule] = renewalEntries[i];
+          const raw = renewalRaws[i];
           if (!raw) continue;
           const control = typeof raw === 'object' ? raw : JSON.parse(raw);
           if (control.status === 'NOT_APPLICABLE' || control.status === 'NOT_STARTED') continue;
@@ -129,9 +152,10 @@ export default async function handler(req, res) {
         }
 
         // Expiring evidence items
-        for (const controlId of ALL_CONTROLS) {
-          const raw = await redis.get(`user:${userId}:evidence:${controlId}`);
+        for (let i = 0; i < ALL_CONTROLS.length; i++) {
+          const raw = evidenceRaws[i];
           if (!raw) continue;
+          const controlId = ALL_CONTROLS[i];
           const items = typeof raw === 'object' ? raw : JSON.parse(raw);
           for (const item of items) {
             if (!item.expiryDate) continue;
@@ -152,7 +176,6 @@ export default async function handler(req, res) {
         }
 
         // Vendor SOC 2 report expiry
-        const vendorRaw = await redis.get(`user:${userId}:vendors`);
         const vendors = vendorRaw ? (typeof vendorRaw === 'object' ? vendorRaw : JSON.parse(vendorRaw)) : [];
         for (const vendor of vendors) {
           if (!vendor.soc2ReportExpiry) continue;
@@ -178,6 +201,50 @@ export default async function handler(req, res) {
           urgent: reminders.filter(r => r.urgent).length,
         });
       } catch (err) { return res.status(500).json({ error: 'Internal error. Please try again.' }); }
+    }
+
+    if (type === 'export') {
+      try {
+        const controlIds = CONTROL_DEFINITIONS.map(d => d.id);
+
+        const [controlRaws, evidenceRaws, profile, vendors, score, scoreHistoryRaw, reportIds] = await Promise.all([
+          Promise.all(controlIds.map(cid => redis.get(`control:${userId}:${cid}`).catch(() => null))),
+          Promise.all(controlIds.map(cid => redis.get(`user:${userId}:evidence:${cid}`).catch(() => null))),
+          redis.get(`user:${userId}:profile`).catch(() => null),
+          redis.get(`user:${userId}:vendors`).catch(() => null),
+          redis.get(`user:${userId}:score`).catch(() => null),
+          redis.lrange(`user:${userId}:scoreHistory`, 0, 89).catch(() => []),
+          redis.lrange(`user:${userId}:reports`, 0, 49).catch(() => []),
+        ]);
+
+        const controls = {};
+        const evidence = {};
+        for (let i = 0; i < controlIds.length; i++) {
+          const c = parseJson(controlRaws[i]);
+          if (c) controls[controlIds[i]] = c;
+          const e = parseJson(evidenceRaws[i]);
+          if (e) evidence[controlIds[i]] = e;
+        }
+
+        const scoreHistory = (scoreHistoryRaw || []).map(parseJson).filter(Boolean);
+        const reportRaws = await Promise.all((reportIds || []).map(id => redis.get(`user:${userId}:report:${id}`).catch(() => null)));
+        const reports = reportRaws.map(parseJson).filter(Boolean);
+
+        return res.status(200).json({
+          exportedAt: new Date().toISOString(),
+          userId,
+          profile: parseJson(profile) || {},
+          controls,
+          evidence,
+          vendors: parseJson(vendors) || [],
+          score: parseJson(score),
+          scoreHistory,
+          reports,
+        });
+      } catch (err) {
+        console.error('Export error:', err.message);
+        return res.status(500).json({ error: 'Could not generate export. Please try again.' });
+      }
     }
 
     return res.status(400).json({ error: 'Missing or invalid type parameter' });
@@ -246,8 +313,46 @@ export default async function handler(req, res) {
         return res.status(200).json({ ok: true });
       } catch (err) { return res.status(500).json({ error: 'Internal error. Please try again.' }); }
     }
+
+    // Self-service account + data deletion (GDPR Art. 17 / CCPA right to delete).
+    // Erases the same full key set as the admin "delete" action, but is
+    // callable by the user themselves against their own account only.
+    if (type === 'account') {
+      try {
+        const [controlKeys, evidenceKeys, reportKeys] = await Promise.all([
+          redis.keys(`control:${userId}:*`).catch(() => []),
+          redis.keys(`user:${userId}:evidence:*`).catch(() => []),
+          redis.keys(`user:${userId}:report:*`).catch(() => []),
+        ]);
+        const keysToDelete = [
+          `admin:user:${userId}`,
+          `blocked:${userId}`,
+          `banned:${userId}`,
+          `user:${userId}:score`,
+          `user:${userId}:scoreHistory`,
+          `user:${userId}:vendors`,
+          `user:${userId}:profile`,
+          `user:${userId}:shares`,
+          `user:${userId}:lastScan`,
+          `user:${userId}:reports`,
+          `user:${userId}:seeded`,
+          ...controlKeys, ...evidenceKeys, ...reportKeys,
+        ];
+        await Promise.all(keysToDelete.map(k => redis.del(k).catch(() => {})));
+        return res.status(200).json({ ok: true, deleted: true });
+      } catch (err) {
+        await logError('account_delete_error', { msg: err.message, userId });
+        return res.status(500).json({ error: 'Could not delete account. Please try again or contact support.' });
+      }
+    }
+
     return res.status(400).json({ error: 'Missing type or id' });
   }
 
   return res.status(405).json({ error: 'Method not allowed' });
+}
+
+function parseJson(raw) {
+  if (!raw) return null;
+  return typeof raw === 'object' ? raw : JSON.parse(raw);
 }
