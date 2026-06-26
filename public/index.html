@@ -1331,7 +1331,7 @@ header{
 <div id="shareModal" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeShareModal()">
   <div class="modal-box">
     <h3>Share with Auditor</h3>
-    <p>Generate a read-only link to share your compliance score and report with an external auditor. Link expires in 30 days.</p>
+    <p>Generate a read-only link to share your live SOC 2 readiness with buyers or auditors. The page updates automatically as your controls change and stays active while your plan is active — so the link you send is always current.</p>
     <div id="shareUrlBox" style="display:none">
       <div class="share-url" id="shareUrlText" onclick="copyShareUrl()">Generating...</div>
       <p style="font-size:11px;color:var(--green);margin-bottom:12px">✓ Link copied to clipboard</p>
@@ -2788,7 +2788,19 @@ async function loadPublicShare(token) {
   try {
     const r = await fetch('/api/share?token=' + encodeURIComponent(token));
     if (!r.ok) {
-      document.getElementById('scoreNum').textContent = 'Invalid';
+      const ed = await r.json().catch(() => ({}));
+      const gone = r.status === 410;
+      const msg = gone
+        ? (ed.deactivated
+            ? 'This readiness page is no longer active. The company\'s AuditReady subscription has ended.'
+            : 'This readiness link has expired.')
+        : 'This readiness link is invalid or could not be found.';
+      const host = document.querySelector('.page-inner') || document.body;
+      host.innerHTML = '<div style="max-width:480px;margin:60px auto;text-align:center;color:#94a3b8">' +
+        '<div style="font-size:34px;margin-bottom:12px">🔒</div>' +
+        '<div style="font-size:16px;font-weight:600;color:#e2e8f0;margin-bottom:8px">Page unavailable</div>' +
+        '<div style="font-size:13px;line-height:1.7">' + msg + '</div>' +
+        '<div style="font-size:11px;margin-top:18px;color:#64748b">Powered by AuditReady AI</div></div>';
       return;
     }
     const d = await r.json();

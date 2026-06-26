@@ -229,6 +229,14 @@ export default async function handler(req, res) {
         return res.status(410).json({ error: 'Share link has expired' });
       }
 
+      // Subscription gate: the live readiness page stays active only while the
+      // owner is on a paid plan. If they cancel (and the billing period ends,
+      // flipping their mode back to sandbox), the public link deactivates — so a
+      // shared link can never silently outlive the subscription it represents.
+      if (!isPaidMode(await getUserMode(userId))) {
+        return res.status(410).json({ error: 'This readiness page is no longer active.', deactivated: true });
+      }
+
       // Increment view count
       const viewKey = `share:${token}:views`;
       await redis.incr(viewKey).catch(() => {});
