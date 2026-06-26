@@ -869,7 +869,7 @@ header{
   <!-- hero -->
   <div class="lp-hero">
     <h1>Close enterprise deals.<br/><em>Stop losing them</em> to compliance.</h1>
-    <p>Connect your tools, get your SOC 2 readiness score instantly, and walk into every enterprise conversation audit-ready.</p>
+    <p>Connect your GitHub, auto-map your SOC 2 gaps, and generate your policy suite in under 10 minutes — then keep a live readiness page your buyers can check, updated automatically as your code changes.</p>
     <div class="lp-btns">
       <button class="lp-btn-gh" onclick="location.href='/api/auth?provider=github'">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12"/></svg>
@@ -999,8 +999,8 @@ header{
           <div class="lp-step-icon">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/><line x1="9" y1="11" x2="15" y2="11"/></svg>
           </div>
-          <div class="lp-step-title">Export audit-ready docs</div>
-          <div class="lp-step-desc">Get clean, organized, framework-aligned documentation — ready to review and hand to your auditor. Or share a live Trust Page link instantly.</div>
+          <div class="lp-step-title">Share a live readiness page &amp; export</div>
+          <div class="lp-step-desc">Share a live, secure readiness link with enterprise buyers to show your SOC 2 progress in real time — or export clean, framework-aligned docs for your auditor. The page stays current and active while you're subscribed.</div>
         </div>
       </div>
     </div>
@@ -1101,7 +1101,7 @@ header{
           </div>
           <div class="lp-vs-row">
             <div class="lp-vs-icon-yes">✓</div>
-            <div class="lp-vs-text-yes">From $250/mo — cancel anytime, no sales call required</div>
+            <div class="lp-vs-text-yes">Start instantly from $250/mo — no $20k legacy contract, no sales call, cancel anytime</div>
           </div>
           <div class="lp-vs-row">
             <div class="lp-vs-icon-yes">✓</div>
@@ -1121,7 +1121,7 @@ header{
           </div>
           <div class="lp-vs-row">
             <div class="lp-vs-icon-yes">✓</div>
-            <div class="lp-vs-text-yes">Monthly billing, cancel anytime — we earn your renewal every month</div>
+            <div class="lp-vs-text-yes">Automated weekly re-scans flag the moment a control drifts — so you stay audit-ready between audits, not just on day one</div>
           </div>
           <div class="lp-vs-row">
             <div class="lp-vs-icon-yes">✓</div>
@@ -2825,10 +2825,39 @@ async function generatePolicy(controlId) {
   try {
     const r = await fetch('/api/report?type=policy&controlId=' + encodeURIComponent(controlId), { headers: authHeaders() });
     const d = await r.json().catch(() => ({}));
-    if (r.status === 402) { openPricingModal('growth'); throw new Error(d.error || 'Requires a paid plan'); }
+    if (r.status === 402) {
+      // Free/sandbox users: show a blurred sample so they can see the value,
+      // then gate the real, repo-tailored policy behind a paid plan.
+      out.style.display = 'block';
+      out.style.position = 'relative';
+      out.style.padding = '0';
+      out.style.overflow = 'hidden';
+      const sample =
+        'INFORMATION SECURITY POLICY\n\n1. PURPOSE\nThis policy establishes the security requirements for ' +
+        'protecting company systems, customer data, and source code in alignment with SOC 2 Trust Services Criteria.\n\n' +
+        '2. SCOPE\nApplies to all employees, contractors, and systems that store or process customer data.\n\n' +
+        '3. ACCESS CONTROL\nAccess is granted on a least-privilege basis. Multi-factor authentication is required for all ' +
+        'production systems and code repositories. Access is reviewed quarterly.\n\n4. CHANGE MANAGEMENT\nAll code changes ' +
+        'are reviewed via pull request and require approval before merge to the protected default branch...';
+      out.innerHTML =
+        '<div style="filter:blur(4px);user-select:none;padding:14px;pointer-events:none;white-space:pre-wrap;font-family:monospace;font-size:11px;line-height:1.7;color:#475569">' +
+        sample + '</div>' +
+        '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(248,250,252,.55);text-align:center;padding:16px">' +
+        '<div style="font-size:22px">🔒</div>' +
+        '<div style="font-size:13px;font-weight:600;color:#0f172a">Your tailored, repo-specific policy is ready</div>' +
+        '<div style="font-size:11px;color:#64748b;max-width:280px">Unlock to generate the full policy mapped to your actual GitHub setup — then export or copy it for your auditor.</div>' +
+        '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openPricingModal(\'growth\')">⚡ Unlock policy generation →</button>' +
+        '</div>';
+      btn.textContent = '📝 Generate Policy Template';
+      btn.disabled = false;
+      return;
+    }
+    if (!r.ok) throw new Error(d.error || 'Failed to generate policy');
     if (!r.ok) throw new Error(d.error || 'Failed to generate policy');
     ST.policies[controlId] = d.text || '';
     out.style.display = 'block';
+    out.style.position = 'static';
+    out.style.padding = '14px';
     out.textContent = d.text || '';
     btn.textContent = '📋 Copy Policy';
     btn.disabled = false;
