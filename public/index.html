@@ -415,6 +415,12 @@ header{
 .spinner{display:inline-block;width:13px;height:13px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
 .fade-in{animation:fadeIn .2s ease}
 
+/* ── Skeleton loading ────────────────────── */
+@keyframes skel-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skel{display:block;flex-shrink:0;border-radius:6px;background:linear-gradient(90deg,#edf1f6 25%,#dde4ee 37%,#edf1f6 63%);background-size:200% 100%;animation:skel-shimmer 1.4s ease infinite}
+.skel-circle{border-radius:50%}
+@media(prefers-reduced-motion:reduce){.skel{animation:none}}
+
 /* ── Report card ─────────────────────────── */
 .report-card{
   background:#fff;border:1px solid var(--border);
@@ -591,12 +597,34 @@ header{
 .pm-later:hover{border-color:#94a3b8}
 .pm-free-note{text-align:center;font-size:11px;color:#94a3b8;margin-top:8px}
 @media(max-width:680px){
-  .pm-box{padding:20px 14px 18px;border-radius:16px}
-  .pm-cards{grid-template-columns:1fr;gap:10px}
-  .pm-card-side{transform:none;opacity:1}
-  .pm-card-center{transform:none;box-shadow:0 4px 20px rgba(37,99,235,.12)}
-  .pm-title{font-size:20px}
-  .pm-price-num{font-size:36px}
+  .pm-overlay{padding:8px}
+  .pm-box{padding:18px 9px 14px;border-radius:16px}
+  .pm-title{font-size:19px}
+  /* Keep all three plans side-by-side on mobile WITH the desktop spring/pop
+     animation, instead of stacking them in a long scroll. Content is scaled
+     down so the trio fits across a phone screen. */
+  .pm-cards{grid-template-columns:repeat(3,1fr);gap:6px;align-items:center;margin-bottom:16px}
+  .pm-card{padding:16px 7px 12px;border-radius:12px}
+  .pm-card-side{transform:scale(.92) translateY(8px);opacity:.92}
+  .pm-card-center{transform:translateY(-8px) scale(1.02);box-shadow:0 8px 26px rgba(37,99,235,.16)}
+  .pm-popular{font-size:6.5px;padding:3px 6px 3px 7px;border-radius:0 12px 0 8px;gap:2px;white-space:nowrap}
+  .pm-cn{font-size:9px !important;letter-spacing:.03em !important;margin-bottom:6px !important;text-align:center}
+  .pm-price-row{gap:1px}
+  .pm-cur{font-size:10px !important;margin-top:4px !important}
+  .pm-price-num{font-size:23px}
+  .pm-per{font-size:8.5px !important;margin-bottom:4px !important}
+  .pm-cd{font-size:9px !important;margin-bottom:10px !important;line-height:1.4 !important;min-height:50px}
+  .pm-card ul{margin:0 0 12px !important;gap:5px !important}
+  .pm-check{font-size:8.5px;gap:4px;line-height:1.35}
+  .pm-cta{font-size:10px;padding:8px 0}
+  [id^="pm-annual-note-"]{min-height:0 !important;margin-bottom:8px !important}
+}
+@media(max-width:400px){
+  .pm-card{padding:14px 5px 10px}
+  .pm-cn{font-size:8px !important}
+  .pm-price-num{font-size:19px}
+  .pm-check{font-size:8px;gap:3px}
+  .pm-cd{font-size:8.5px !important}
 }
 .upgrade-btn{width:100%;padding:9px 16px;border-radius:var(--r);background:linear-gradient(135deg,var(--accent),#1d4ed8);color:#fff;font-size:12px;font-weight:600;border:none;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .15s}
 .upgrade-btn:hover{opacity:.9}
@@ -1261,7 +1289,7 @@ header{
         <!-- Category breakdown -->
         <div class="card" style="margin-bottom:16px">
           <div class="section-heading">CATEGORY BREAKDOWN</div>
-          <div id="categoryBars"><div style="color:var(--muted);font-size:12px;padding:8px 0">Loading...</div></div>
+          <div id="categoryBars"><div class="cat-bar"><div class="cat-label"><span class="skel" style="width:62%;height:10px"></span></div><div class="cat-track"><span class="skel" style="width:100%;height:4px;border-radius:2px"></span></div><div class="cat-score"><span class="skel" style="width:24px;height:10px"></span></div></div><div class="cat-bar"><div class="cat-label"><span class="skel" style="width:78%;height:10px"></span></div><div class="cat-track"><span class="skel" style="width:100%;height:4px;border-radius:2px"></span></div><div class="cat-score"><span class="skel" style="width:24px;height:10px"></span></div></div><div class="cat-bar"><div class="cat-label"><span class="skel" style="width:54%;height:10px"></span></div><div class="cat-track"><span class="skel" style="width:100%;height:4px;border-radius:2px"></span></div><div class="cat-score"><span class="skel" style="width:24px;height:10px"></span></div></div></div>
         </div>
         <!-- Next Steps -->
         <div id="nextStepsCard" class="card" style="display:none;margin-bottom:16px">
@@ -1271,7 +1299,7 @@ header{
         <!-- Top gaps -->
         <div class="card" style="margin-bottom:16px">
           <div class="section-heading">TOP GAPS TO FIX</div>
-          <div id="topGapsList"><div style="color:var(--muted);font-size:12px;padding:8px 0">Loading...</div></div>
+          <div id="topGapsList"><div class="gap-item" style="cursor:default"><div class="gap-id"><span class="skel" style="width:30px;height:9px"></span></div><div class="gap-title"><span class="skel" style="width:70%;height:11px"></span></div><span class="skel" style="width:86px;height:24px;border-radius:6px"></span></div><div class="gap-item" style="cursor:default"><div class="gap-id"><span class="skel" style="width:30px;height:9px"></span></div><div class="gap-title"><span class="skel" style="width:55%;height:11px"></span></div><span class="skel" style="width:86px;height:24px;border-radius:6px"></span></div><div class="gap-item" style="cursor:default"><div class="gap-id"><span class="skel" style="width:30px;height:9px"></span></div><div class="gap-title"><span class="skel" style="width:64%;height:11px"></span></div><span class="skel" style="width:86px;height:24px;border-radius:6px"></span></div></div>
         </div>
         <!-- Latest report -->
         <div id="latestReportSection" style="display:none">
@@ -1312,7 +1340,7 @@ header{
       <div class="filter-pill" data-filter="EVIDENCE_UPLOADED" onclick="filterControls('EVIDENCE_UPLOADED',this)">Evidence Added</div>
       <div class="filter-pill" data-filter="CONNECTED_AUTO" onclick="filterControls('CONNECTED_AUTO',this)">Auto-Detected</div>
     </div>
-    <div id="controlsList"><div style="color:var(--muted);font-size:12px;text-align:center;padding:32px 0"><span class="spinner"></span> Loading controls...</div></div>
+    <div id="controlsList"><div class="control-group"><div class="control-group-header" style="cursor:default"><span class="skel" style="width:170px;height:12px"></span><span class="skel" style="width:30px;height:11px;margin-left:auto"></span></div><div class="control-row" style="cursor:default"><div><span class="skel" style="width:58%;height:12px"></span></div><span class="skel" style="width:22px;height:10px"></span><span class="skel" style="width:92px;height:18px;border-radius:20px"></span></div><div class="control-row" style="cursor:default"><div><span class="skel" style="width:46%;height:12px"></span></div><span class="skel" style="width:22px;height:10px"></span><span class="skel" style="width:92px;height:18px;border-radius:20px"></span></div><div class="control-row" style="cursor:default"><div><span class="skel" style="width:64%;height:12px"></span></div><span class="skel" style="width:22px;height:10px"></span><span class="skel" style="width:92px;height:18px;border-radius:20px"></span></div></div></div>
   </div>
 </div>
 
@@ -1323,7 +1351,7 @@ header{
       <h1 style="font-size:20px;font-weight:600;letter-spacing:-.03em">Connected Tools</h1>
       <p style="font-size:13px;color:var(--muted);margin-top:2px">Connect your tools to auto-detect compliance controls</p>
     </div>
-    <div id="integrationsList"><div style="color:var(--muted);font-size:12px;text-align:center;padding:32px 0"><span class="spinner"></span> Loading...</div></div>
+    <div id="integrationsList"><div class="int-tile"><span class="skel" style="width:40px;height:40px;border-radius:8px"></span><div class="int-info"><span class="skel" style="width:120px;height:12px;margin-bottom:7px"></span><span class="skel" style="width:75%;height:9px"></span></div><span class="skel" style="width:88px;height:30px;border-radius:6px"></span></div><div class="int-tile"><span class="skel" style="width:40px;height:40px;border-radius:8px"></span><div class="int-info"><span class="skel" style="width:120px;height:12px;margin-bottom:7px"></span><span class="skel" style="width:75%;height:9px"></span></div><span class="skel" style="width:88px;height:30px;border-radius:6px"></span></div></div>
   </div>
 </div>
 
@@ -1359,14 +1387,14 @@ header{
     <div class="pm-cards">
       <!-- Starter -->
       <div class="pm-card pm-card-side" id="pm-starter" onclick="selectPlan('starter','price_1ThZIZFQiRRnlhwuYRI3MfNX',250)">
-        <div style="font-size:13px;font-weight:700;color:#64748b;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">Starter</div>
+        <div class="pm-cn" style="font-size:13px;font-weight:700;color:#64748b;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">Starter</div>
         <div style="display:flex;align-items:flex-end;gap:2px;margin-bottom:4px">
-          <span style="font-size:20px;font-weight:700;color:#0f172a;align-self:flex-start;margin-top:10px">$</span>
+          <span class="pm-cur" style="font-size:20px;font-weight:700;color:#0f172a;align-self:flex-start;margin-top:10px">$</span>
           <span class="pm-price-num" id="pm-price-starter">250</span>
-          <span style="font-size:14px;color:#64748b;margin-bottom:8px">/mo</span>
+          <span class="pm-per" style="font-size:14px;color:#64748b;margin-bottom:8px">/mo</span>
         </div>
         <div id="pm-annual-note-starter" style="font-size:11px;color:#16a34a;font-weight:600;min-height:16px;margin-bottom:14px"></div>
-        <div style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5">Pre-seed startups closing their first enterprise deal.</div>
+        <div class="pm-cd" style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5">Pre-seed startups closing their first enterprise deal.</div>
         <ul style="list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:8px">
           <li class="pm-check">GitHub integration (AWS coming soon)</li>
           <li class="pm-check">Full 49-control TSC mapping</li>
@@ -1380,14 +1408,14 @@ header{
       <!-- Growth — center / popular -->
       <div class="pm-card pm-card-center" id="pm-growth" onclick="selectPlan('growth','price_1ThZLSFQiRRnlhwueStdff4L',500)">
         <div class="pm-popular">⭐ Most Popular</div>
-        <div style="font-size:13px;font-weight:700;color:#2563eb;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">Growth</div>
+        <div class="pm-cn" style="font-size:13px;font-weight:700;color:#2563eb;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">Growth</div>
         <div style="display:flex;align-items:flex-end;gap:2px;margin-bottom:4px">
-          <span style="font-size:20px;font-weight:700;color:#0f172a;align-self:flex-start;margin-top:10px">$</span>
+          <span class="pm-cur" style="font-size:20px;font-weight:700;color:#0f172a;align-self:flex-start;margin-top:10px">$</span>
           <span class="pm-price-num" id="pm-price-growth">500</span>
-          <span style="font-size:14px;color:#64748b;margin-bottom:8px">/mo</span>
+          <span class="pm-per" style="font-size:14px;color:#64748b;margin-bottom:8px">/mo</span>
         </div>
         <div id="pm-annual-note-growth" style="font-size:11px;color:#16a34a;font-weight:600;min-height:16px;margin-bottom:14px"></div>
-        <div style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5">Seed-stage teams closing multiple enterprise deals at once.</div>
+        <div class="pm-cd" style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5">Seed-stage teams closing multiple enterprise deals at once.</div>
         <ul style="list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:8px">
           <li class="pm-check">GitHub integration (AWS, GCP coming soon)</li>
           <li class="pm-check">Scan on demand, anytime</li>
@@ -1401,14 +1429,14 @@ header{
 
       <!-- Audit-Ready -->
       <div class="pm-card pm-card-side" id="pm-enterprise" onclick="selectPlan('enterprise','price_1ThZNGFQiRRnlhwuH23alwzB',1000)">
-        <div style="font-size:13px;font-weight:700;color:#64748b;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">Audit-Ready</div>
+        <div class="pm-cn" style="font-size:13px;font-weight:700;color:#64748b;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">Audit-Ready</div>
         <div style="display:flex;align-items:flex-end;gap:2px;margin-bottom:4px">
-          <span style="font-size:20px;font-weight:700;color:#0f172a;align-self:flex-start;margin-top:10px">$</span>
+          <span class="pm-cur" style="font-size:20px;font-weight:700;color:#0f172a;align-self:flex-start;margin-top:10px">$</span>
           <span class="pm-price-num" id="pm-price-enterprise">1,000</span>
-          <span style="font-size:14px;color:#64748b;margin-bottom:8px">/mo</span>
+          <span class="pm-per" style="font-size:14px;color:#64748b;margin-bottom:8px">/mo</span>
         </div>
         <div id="pm-annual-note-enterprise" style="font-size:11px;color:#16a34a;font-weight:600;min-height:16px;margin-bottom:14px"></div>
-        <div style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5">Series A companies undergoing an active audit right now.</div>
+        <div class="pm-cd" style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5">Series A companies undergoing an active audit right now.</div>
         <ul style="list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:8px">
           <li class="pm-check">Everything in Growth</li>
           <li class="pm-check">Priority support — direct line to the founder (email)</li>
@@ -1499,7 +1527,7 @@ header{
       </div>
     </div>
     <div id="lockerStats" style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap"></div>
-    <div id="lockerContent"><div style="color:var(--muted);font-size:12px;text-align:center;padding:48px 0"><span class="spinner"></span> Loading evidence...</div></div>
+    <div id="lockerContent"><div style="margin-bottom:16px"><span class="skel" style="width:58px;height:10px;display:block;margin-bottom:8px"></span><div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 11px;display:flex;align-items:center;gap:10px;margin-bottom:6px"><span class="skel" style="width:18px;height:18px;border-radius:4px"></span><div style="flex:1"><span class="skel" style="width:65%;height:11px"></span></div><span class="skel" style="width:40px;height:11px"></span></div><div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 11px;display:flex;align-items:center;gap:10px"><span class="skel" style="width:18px;height:18px;border-radius:4px"></span><div style="flex:1"><span class="skel" style="width:52%;height:11px"></span></div><span class="skel" style="width:40px;height:11px"></span></div></div></div>
   </div>
 </div>
 
@@ -1577,7 +1605,7 @@ header{
         <div class="section-heading" style="margin-bottom:0">UPCOMING RENEWALS & EXPIRIES</div>
         <button class="btn btn-secondary btn-sm" onclick="loadReminders()">↺ Refresh</button>
       </div>
-      <div id="remindersList"><div style="color:var(--muted);font-size:12px;text-align:center;padding:24px 0"><span class="spinner"></span> Loading...</div></div>
+      <div id="remindersList"><div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 11px;display:flex;align-items:center;gap:10px;margin-bottom:6px"><span class="skel" style="width:18px;height:18px;border-radius:4px"></span><div style="flex:1"><span class="skel" style="width:65%;height:11px"></span></div><span class="skel" style="width:40px;height:11px"></span></div><div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 11px;display:flex;align-items:center;gap:10px"><span class="skel" style="width:18px;height:18px;border-radius:4px"></span><div style="flex:1"><span class="skel" style="width:52%;height:11px"></span></div><span class="skel" style="width:40px;height:11px"></span></div></div>
     </div>
 
     <!-- Vendor tracker -->
@@ -1586,7 +1614,7 @@ header{
         <div class="section-heading" style="margin-bottom:0">VENDOR RISK TRACKER</div>
         <button class="btn btn-primary btn-sm" onclick="openAddVendor()">+ Add Vendor</button>
       </div>
-      <div id="vendorsList"><div style="color:var(--muted);font-size:12px;text-align:center;padding:24px 0"><span class="spinner"></span> Loading vendors...</div></div>
+      <div id="vendorsList"><div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 11px;display:flex;align-items:center;gap:10px;margin-bottom:6px"><span class="skel" style="width:18px;height:18px;border-radius:4px"></span><div style="flex:1"><span class="skel" style="width:60%;height:11px"></span></div><span class="skel" style="width:40px;height:11px"></span></div><div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 11px;display:flex;align-items:center;gap:10px"><span class="skel" style="width:18px;height:18px;border-radius:4px"></span><div style="flex:1"><span class="skel" style="width:48%;height:11px"></span></div><span class="skel" style="width:40px;height:11px"></span></div></div>
     </div>
   </div>
 </div>
@@ -1699,7 +1727,7 @@ header{
             </tr>
           </thead>
           <tbody id="adminUserRows">
-            <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)"><span class="spinner"></span></td></tr>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 12px"><span class="skel" style="width:70%;height:11px"></span></td><td style="padding:10px 12px"><span class="skel" style="width:50%;height:11px"></span></td><td style="padding:10px 12px"><span class="skel" style="width:50%;height:11px"></span></td><td style="padding:10px 12px"><span class="skel" style="width:50%;height:11px"></span></td><td style="padding:10px 12px"><span class="skel" style="width:50%;height:11px"></span></td><td style="padding:10px 12px"><span class="skel" style="width:50%;height:11px"></span></td><td style="padding:10px 12px"><span class="skel" style="width:50%;height:11px"></span></td></tr>
           </tbody>
         </table>
       </div>
@@ -1979,7 +2007,113 @@ function renderScoreTrend(history) {
     arrow + ' ' + (diff > 0 ? '+' : '') + diff + '% over last ' + entries.length + ' scans</span>';
 }
 
+// ── Skeleton loaders ──────────────────────────────────────────
+// Grey placeholder "figures" shown while data is being fetched, instead of
+// a spinning circle. Each builder reuses the real layout classes so the
+// skeleton lines up exactly with the content that replaces it.
+function skel(w, h, extra) {
+  return '<span class="skel" style="width:' + w + ';height:' + h + ';' + (extra || '') + '"></span>';
+}
+
+function skelCategoryBars(n) {
+  const widths = ['62%', '78%', '54%', '70%', '48%', '66%', '58%', '74%', '50%'];
+  let html = '';
+  for (let i = 0; i < (n || 9); i++) {
+    html += '<div class="cat-bar">' +
+      '<div class="cat-label">' + skel(widths[i % widths.length], '10px') + '</div>' +
+      '<div class="cat-track">' + skel('100%', '4px', 'border-radius:2px') + '</div>' +
+      '<div class="cat-score">' + skel('24px', '10px') + '</div>' +
+      '</div>';
+  }
+  return html;
+}
+
+function skelTopGaps(n) {
+  let html = '';
+  for (let i = 0; i < (n || 4); i++) {
+    html += '<div class="gap-item" style="cursor:default">' +
+      '<div class="gap-id">' + skel('30px', '9px') + '</div>' +
+      '<div class="gap-title">' + skel(['70%', '55%', '64%', '48%'][i % 4], '11px') + '</div>' +
+      skel('86px', '24px', 'border-radius:6px') +
+      '</div>';
+  }
+  return html;
+}
+
+function skelControls(groups, rowsPer) {
+  let html = '';
+  for (let g = 0; g < (groups || 3); g++) {
+    html += '<div class="control-group">' +
+      '<div class="control-group-header" style="cursor:default">' +
+        skel('170px', '12px') + skel('30px', '11px', 'margin-left:auto') +
+      '</div>';
+    for (let i = 0; i < (rowsPer || 3); i++) {
+      html += '<div class="control-row" style="cursor:default">' +
+        '<div>' + skel(['58%', '46%', '64%'][i % 3], '12px') + '</div>' +
+        skel('22px', '10px') +
+        skel('92px', '18px', 'border-radius:20px') +
+        '</div>';
+    }
+    html += '</div>';
+  }
+  return html;
+}
+
+function skelIntegrations(n) {
+  let html = '';
+  for (let i = 0; i < (n || 3); i++) {
+    html += '<div class="int-tile">' +
+      skel('40px', '40px', 'border-radius:8px') +
+      '<div class="int-info">' +
+        skel('120px', '12px', 'margin-bottom:7px') +
+        skel('75%', '9px') +
+      '</div>' +
+      skel('88px', '30px', 'border-radius:6px') +
+      '</div>';
+  }
+  return html;
+}
+
+function skelStackRows(n, padTop) {
+  let html = '';
+  for (let i = 0; i < (n || 4); i++) {
+    html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:' + (padTop || '9px') + ' 11px;display:flex;align-items:center;gap:10px;margin-bottom:6px">' +
+      skel('18px', '18px', 'border-radius:4px') +
+      '<div style="flex:1;min-width:0">' + skel(['65%', '52%', '70%', '46%'][i % 4], '11px') + '</div>' +
+      skel('40px', '11px') +
+      '</div>';
+  }
+  return html;
+}
+
+function skelLocker(groups) {
+  let html = '';
+  for (let g = 0; g < (groups || 2); g++) {
+    html += '<div style="margin-bottom:16px">' +
+      skel('58px', '10px', 'margin-bottom:8px') +
+      skelStackRows(g === 0 ? 3 : 2) +
+      '</div>';
+  }
+  return html;
+}
+
+function skelTableRows(cols, n) {
+  let html = '';
+  for (let i = 0; i < (n || 5); i++) {
+    let cells = '';
+    for (let c = 0; c < cols; c++) {
+      cells += '<td style="padding:10px 12px">' + skel(c === 0 ? '70%' : '50%', '11px') + '</td>';
+    }
+    html += '<tr style="border-bottom:1px solid var(--border)">' + cells + '</tr>';
+  }
+  return html;
+}
+
 async function loadScore() {
+  const catEl = document.getElementById('categoryBars');
+  if (catEl) catEl.innerHTML = skelCategoryBars(9);
+  const gapsEl = document.getElementById('topGapsList');
+  if (gapsEl) gapsEl.innerHTML = skelTopGaps(4);
   try {
     const r = await fetch('/api/score', { headers: authHeaders() });
     if (!r.ok) { showScoreError(); return null; }
@@ -2351,7 +2485,7 @@ async function generateReport() {
 async function loadControls() {
   if (!ST.user) return;
   const el = document.getElementById('controlsList');
-  el.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:32px 0"><span class="spinner"></span></div>';
+  el.innerHTML = skelControls(3, 3);
   try {
     const r = await fetch('/api/controls?grouped=true', { headers: authHeaders() });
     if (!r.ok) throw new Error('Failed to load controls');
@@ -2615,6 +2749,7 @@ function updateScoreQuick(score) {
 async function loadIntegrations() {
   if (!ST.user) return;
   const el = document.getElementById('integrationsList');
+  el.innerHTML = skelIntegrations(3);
   try {
     const r = await fetch('/api/integrations', { headers: authHeaders() });
     if (!r.ok) throw new Error('Failed to load integrations');
@@ -3122,7 +3257,7 @@ let _lockerAllItems = [];
 async function loadLocker() {
   if (!ST.user) return;
   const el = document.getElementById('lockerContent');
-  el.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:48px 0"><span class="spinner"></span></div>';
+  el.innerHTML = skelLocker(2);
 
   try {
     // Fetch ALL evidence across controls (manual items have no expiry date, so
@@ -3412,6 +3547,7 @@ function closeMobileNav() {
 async function loadReminders() {
   const el = document.getElementById('remindersList');
   if (!el) return;
+  el.innerHTML = skelStackRows(3);
   try {
     const r = await fetch('/api/platform?type=reminders', { headers: authHeaders() });
     if (!r.ok) throw new Error('Failed');
@@ -3463,6 +3599,7 @@ function renderReminders(reminders, urgentCount) {
 async function loadVendors() {
   const el = document.getElementById('vendorsList');
   if (!el) return;
+  el.innerHTML = skelStackRows(3);
   try {
     const r = await fetch('/api/platform?type=vendors', { headers: authHeaders() });
     if (!r.ok) throw new Error('Failed');
@@ -3611,7 +3748,7 @@ async function loadAdmin() {
   if (!ST.user) return;
   const statsEl = document.getElementById('adminStats');
   const rowsEl = document.getElementById('adminUserRows');
-  if (rowsEl) rowsEl.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)"><span class="spinner"></span></td></tr>';
+  if (rowsEl) rowsEl.innerHTML = skelTableRows(7, 6);
 
   try {
     const r = await fetch('/api/admin', { headers: adminHeaders() });
