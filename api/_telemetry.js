@@ -1,3 +1,4 @@
+
 // ─────────────────────────────────────────────────────────────
 // api/telemetry.js
 // ACTION: MERGED from analytics.js + log.js + track.js
