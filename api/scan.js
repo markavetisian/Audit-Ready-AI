@@ -380,8 +380,9 @@ export default async function handler(req, res) {
       const scan = typeof raw === 'object' ? raw : JSON.parse(raw);
       return res.status(200).json(scan);
     } catch (err) {
-      console.error('Scan status error:', err.message);
-      return res.status(500).json({ error: 'Could not load scan status.' });
+      console.error('Scan status error:', err && (err.stack || err.message || err));
+      await logError('scan_get_error', { msg: err?.message, stack: err?.stack }).catch(() => {});
+      return res.status(500).json({ error: 'Could not load scan status.', detail: err?.message || String(err) });
     }
   }
 

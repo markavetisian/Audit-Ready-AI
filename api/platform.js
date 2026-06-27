@@ -200,7 +200,11 @@ export default async function handler(req, res) {
           total: reminders.length,
           urgent: reminders.filter(r => r.urgent).length,
         });
-      } catch (err) { return res.status(500).json({ error: 'Internal error. Please try again.' }); }
+      } catch (err) {
+        console.error('platform reminders error:', err && (err.stack || err.message || err));
+        await logError('platform_reminders_error', { msg: err?.message, stack: err?.stack }).catch(() => {});
+        return res.status(500).json({ error: 'Internal error. Please try again.', detail: err?.message || String(err) });
+      }
     }
 
     if (type === 'export') {

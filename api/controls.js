@@ -515,7 +515,9 @@ export default async function handler(req, res) {
       }
       return res.status(200).json({ controls, total: controls.length });
     } catch (err) {
-      return res.status(500).json({ error: 'Internal error. Please try again.' });
+      console.error('controls GET error:', err && (err.stack || err.message || err));
+      await logError('controls_get_error', { msg: err?.message, stack: err?.stack }).catch(() => {});
+      return res.status(500).json({ error: 'Internal error. Please try again.', detail: err?.message || String(err) });
     }
   }
 
