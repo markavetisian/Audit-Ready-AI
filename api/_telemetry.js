@@ -1,4 +1,3 @@
-
 // ─────────────────────────────────────────────────────────────
 // api/telemetry.js
 // ACTION: MERGED from analytics.js + log.js + track.js
@@ -243,6 +242,31 @@ async function resolveUserId(authHeader) {
     const u = await r.json();
     return 'github:' + u.login;
   } catch { return null; }
+}
+
+// ── Lightweight per-resource locking ──────────────────────────
+// The Upstash REST API has no MULTI/WATCH, so plain read-modify-write on a
+// JSON blob key (e.g. two browser tabs editing the same control, or a scan
+// racing a manual evidence upload) can silently drop one side's update.
+// withLock() serializes callers sharing a lock name via a short-lived NX key.
+// If it can't acquire the lock after a brief retry window, it proceeds unlocked
+// rather than hard-fail the user's action — a correctness improvement, not a
+// hard guarantee. Imported by controls.js / evidence.js / scan.js.
+export async function withLock(name, fn, { retries = 10, delayMs = 150, ttlMs = 8000 } = {}) {
+  const lockKey = `lock:${name}`;
+  let acquired = false;
+  for (let i = 0; i < retries; i++) {
+    try {
+      const ok = await redis.set(lockKey, '1', { nx: true, px: ttlMs });
+      if (ok) { acquired = true; break; }
+    } catch { break; }
+    await new Promise(r => setTimeout(r, delayMs));
+  }
+  try {
+    return await fn();
+  } finally {
+    if (acquired) { await redis.del(lockKey).catch(() => {}); }
+  }
 }
 
 export async function logError(msg, ctx = {}) {
