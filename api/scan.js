@@ -18,6 +18,7 @@
 import { Redis } from '@upstash/redis';
 import { trackUser, isBlocked, checkRateLimit, logError, verifySession, getUserMode, withLock } from './_telemetry.js';
 import { seedControlsIfNeeded } from './controls.js';
+import { createHmac } from 'crypto';
 
 // Give the scan extra headroom — multi-repo GitHub + Drive crawls can exceed
 // the default 10s serverless cap. 60s is the maximum on the Hobby plan.
@@ -351,6 +352,19 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
+  // ── Weekly digest cron (no user auth; secured by CRON_SECRET) ──
+  // Vercel injects `Authorization: Bearer <CRON_SECRET>` and an `x-vercel-cron`
+  // header on scheduled invocations. Folded into this function to respect the
+  // 12-serverless-function limit on the plan.
+  if (req.method === 'GET' && (req.query.cron || req.headers['x-vercel-cron'])) {
+    return runWeeklyDigest(req, res);
+  }
+
+  // ── Email digest unsubscribe (public, HMAC-verified link) ─────
+  if (req.method === 'GET' && req.query.unsub) {
+    return handleDigestUnsub(req, res);
+  }
+
   const userId = await getUserId(req.headers.authorization);
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
@@ -494,4 +508,125 @@ export async function recomputeScore(userId) {
     console.error('recomputeScore error:', err.message);
     return 0;
   }
+}
+
+// ── Weekly readiness digest ──────────────────────────────────
+// Honest engagement loop: emails each user a weekly summary built from their
+// STORED state (last score + open gaps). It does NOT re-scan repos — the app
+// deliberately never persists OAuth tokens — so this requires no token storage
+// and adds no security risk. It nudges the user back in to re-scan.
+
+function scoreLabel(score) {
+  if (score >= 90) return 'Audit Ready';
+  if (score >= 70) return 'Getting Close';
+  if (score >= 40) return 'In Progress';
+  return 'Just Getting Started';
+}
+
+// HMAC-signed unsubscribe token so links can't be forged or enumerated.
+function digestSig(userId) {
+  const secret = process.env.SESSION_SECRET || process.env.STRIPE_SECRET_KEY || 'auditready-digest';
+  return createHmac('sha256', secret).update('digest:' + userId).digest('base64')
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '').slice(0, 24);
+}
+
+async function sendDigestEmail(to, subject, html) {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return { ok: false, skipped: 'no_api_key' };
+  try {
+    const from = process.env.DIGEST_FROM || 'AuditReady AI <noreply@auditready.space>';
+    const r = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from, to, subject, html }),
+    });
+    return { ok: r.ok };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+function buildDigestHtml({ score, gaps, appUrl, unsubUrl }) {
+  // CAN-SPAM: requires a working unsubscribe and a physical postal address.
+  const addr = process.env.DIGEST_ADDRESS || 'AuditReady AI';
+  const label = scoreLabel(score);
+  const gapLine = gaps > 0
+    ? `<strong>${gaps}</strong> control${gaps === 1 ? '' : 's'} still need evidence.`
+    : `Every applicable control has evidence — nice work.`;
+  return `<!doctype html><html><body style="margin:0;background:#f1f5f9;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+  <div style="max-width:520px;margin:0 auto;padding:24px">
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:28px">
+      <div style="font-size:13px;font-weight:700;color:#2563eb;letter-spacing:.04em">AUDITREADY AI · WEEKLY CHECK</div>
+      <div style="font-size:18px;font-weight:700;color:#0f172a;margin:14px 0 4px">Your SOC 2 readiness this week</div>
+      <div style="font-size:44px;font-weight:800;color:#0f172a;line-height:1.1">${score}%</div>
+      <div style="font-size:13px;color:#64748b;margin-bottom:16px">${label}</div>
+      <div style="font-size:14px;color:#334155;line-height:1.6;margin-bottom:20px">${gapLine}<br/>Log in to re-scan your repo and close the next gap before your next enterprise review.</div>
+      <a href="${appUrl}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;font-size:14px;font-weight:600;padding:11px 20px;border-radius:8px">Re-scan &amp; review →</a>
+      <div style="font-size:11px;color:#94a3b8;line-height:1.6;margin-top:24px;border-top:1px solid #e2e8f0;padding-top:14px">
+        This is a self-reported readiness summary from AuditReady AI — not a certified SOC 2 audit.<br/>
+        ${addr}<br/>
+        <a href="${unsubUrl}" style="color:#94a3b8">Unsubscribe from weekly digests</a>
+      </div>
+    </div>
+  </div></body></html>`;
+}
+
+async function runWeeklyDigest(req, res) {
+  const secret = process.env.CRON_SECRET;
+  const auth = req.headers.authorization || '';
+  // When CRON_SECRET is set, only Vercel's signed cron invocations may run this.
+  if (secret && auth !== `Bearer ${secret}`) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  try {
+    const appUrl = process.env.APP_URL || 'https://auditready.space';
+    const keys = await redis.keys('admin:user:*');
+    const MAX_USERS = 300; // bound work to stay within the 60s function cap
+    let processed = 0, sent = 0, skipped = 0;
+
+    for (const k of (keys || []).slice(0, MAX_USERS)) {
+      processed++;
+      let u = null;
+      try { const raw = await redis.get(k); u = raw ? (typeof raw === 'object' ? raw : JSON.parse(raw)) : null; } catch {}
+      if (!u || !u.email) { skipped++; continue; }
+      if (u.status === 'banned' || u.status === 'suspended') { skipped++; continue; }
+
+      const uid = u.userId || k.replace('admin:user:', '');
+      const optOut = await redis.get(`user:${uid}:digestOptOut`).catch(() => null);
+      if (optOut) { skipped++; continue; }
+
+      let score = 0, verified = 0, applicable = 0;
+      try {
+        const sRaw = await redis.get(`user:${uid}:score`);
+        if (sRaw) {
+          const s = typeof sRaw === 'object' ? sRaw : JSON.parse(sRaw);
+          score = s.score || 0; verified = s.verified || 0; applicable = s.applicable || 0;
+        }
+      } catch {}
+      const gaps = Math.max(applicable - verified, 0);
+
+      const unsubUrl = `${appUrl}/api/scan?unsub=${encodeURIComponent(uid)}&sig=${digestSig(uid)}`;
+      const html = buildDigestHtml({ score, gaps, appUrl, unsubUrl });
+      const r = await sendDigestEmail(u.email, `Your weekly SOC 2 readiness check — ${score}%`, html);
+      if (r.ok) sent++; else skipped++;
+    }
+
+    return res.status(200).json({ ok: true, processed, sent, skipped, total: (keys || []).length });
+  } catch (err) {
+    await logError('digest_error', { msg: err.message });
+    return res.status(500).json({ error: 'Digest run failed' });
+  }
+}
+
+async function handleDigestUnsub(req, res) {
+  const uid = String(req.query.unsub || '');
+  const sig = String(req.query.sig || '');
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  if (!uid || !sig || sig !== digestSig(uid)) {
+    return res.status(400).send('<p style="font-family:sans-serif">Invalid unsubscribe link.</p>');
+  }
+  try {
+    await redis.set(`user:${uid}:digestOptOut`, '1');
+  } catch {}
+  return res.status(200).send('<div style="font-family:sans-serif;max-width:440px;margin:60px auto;text-align:center"><h2>Unsubscribed</h2><p style="color:#475569">You won\'t receive any more weekly readiness digests. You can re-enable them anytime from your dashboard.</p></div>');
 }
