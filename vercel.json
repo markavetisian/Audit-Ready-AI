@@ -9,8 +9,5 @@
     { "source": "/api/stripe-cancel",    "destination": "/api/billing" },
     { "source": "/api/stripe-checkout",  "destination": "/api/billing" },
     { "source": "/((?!api/|terms\\.html|privacy\\.html).*)", "destination": "/public/index.html" }
-  ],
-  "crons": [
-    { "path": "/api/scan?cron=1", "schedule": "0 14 * * 1" }
   ]
 }
