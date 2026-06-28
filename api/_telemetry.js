@@ -170,6 +170,12 @@ export async function isBlocked(userId) {
 const PAID_MODES = ['starter', 'growth', 'enterprise'];
 export function isPaidMode(mode) { return PAID_MODES.includes(mode); }
 
+// "monitoring" is the low-cost retention floor ($99/mo): it keeps the sticky,
+// stay-ready features (Trust Page, evidence/vendor tracking, renewal alerts) but
+// NOT the premium AI features (report/policy generation) or paid scan limits —
+// so it doesn't cannibalize Starter. isPaidMode stays false for it on purpose.
+export function canPublishTrustPage(mode) { return isPaidMode(mode) || mode === 'monitoring'; }
+
 // Resolve a user's current plan from their stored record (defaults to sandbox).
 export async function getUserMode(userId) {
   if (!userId) return 'sandbox';

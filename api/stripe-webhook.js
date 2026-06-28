@@ -19,6 +19,8 @@ const PRICE_TO_MODE = {
   'price_1Tn4SdFQiRRnlhwuMooey0i2': 'starter',
   'price_1Tn4TsFQiRRnlhwuodI5siQL': 'growth',
   'price_1Tn4UZFQiRRnlhwuA5yXrU8O': 'enterprise',
+  // Monitoring (retention floor)
+  'price_1Tn4msFQiRRnlhwuHO0T0eeS': 'monitoring',
 };
 
 const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY;

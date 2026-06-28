@@ -785,6 +785,7 @@ header{
 .admin-log-row:last-child{border-bottom:none}
 .plan-badge{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;font-family:var(--mono);letter-spacing:.04em}
 .plan-sandbox{background:#f1f5f9;color:#64748b}
+.plan-monitoring{background:#fffbeb;color:#b45309}
 .plan-starter{background:#eff6ff;color:#2563eb}
 .plan-growth{background:#f0fdf4;color:#059669}
 .plan-enterprise{background:#fdf4ff;color:#9333ea}
@@ -1682,14 +1683,25 @@ header{
 
 <!-- ── Cancel Subscription Modal ─────────────────────────────── -->
 <div id="cancelSubModal" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeCancelModal()">
-  <div class="modal-box" style="max-width:400px">
-    <h3 style="margin-bottom:8px">Cancel Subscription</h3>
-    <p>Your subscription will cancel at the end of the current billing period. You keep full access until then.</p>
-    <div style="background:#fef2f2;border:1px solid rgba(220,38,38,.2);border-radius:6px;padding:10px 12px;font-size:12px;color:var(--red);margin-bottom:16px">
-      After cancellation your account returns to the free sandbox tier with limited features.
+  <div class="modal-box" style="max-width:440px">
+    <h3 style="margin-bottom:8px">Before you cancel…</h3>
+    <div style="background:#fef2f2;border:1px solid rgba(220,38,38,.2);border-radius:6px;padding:10px 12px;font-size:12px;color:var(--red);margin-bottom:14px">
+      Cancelling takes your <strong>Trust Page offline</strong>, stops your <strong>renewal &amp; expiry alerts</strong>, and drops you to the free sandbox — prospects who check your Trust Page will see nothing.
     </div>
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-danger" style="flex:1" onclick="confirmCancelSubscription()" id="cancelSubBtn">Cancel My Subscription</button>
+    <!-- Save offer: downgrade to the $99 Monitoring floor instead of leaving -->
+    <div id="downgradeOffer" style="display:none;border:1.5px solid #2563eb;background:linear-gradient(135deg,#eff6ff,#f8fafc);border-radius:10px;padding:14px;margin-bottom:16px">
+      <div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:4px">Stay protected for $99/mo</div>
+      <div style="font-size:12px;color:#475569;margin-bottom:10px;line-height:1.5">Drop to the Monitoring plan instead of cancelling — keep what's working:</div>
+      <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px">
+        <div style="font-size:12px;color:#0f172a"><span style="color:#16a34a;font-weight:700">✓</span> Your Trust Page stays live</div>
+        <div style="font-size:12px;color:#0f172a"><span style="color:#16a34a;font-weight:700">✓</span> Evidence Locker + expiry reminders</div>
+        <div style="font-size:12px;color:#0f172a"><span style="color:#16a34a;font-weight:700">✓</span> Renewal &amp; due-date alerts keep running</div>
+      </div>
+      <button class="btn btn-primary" style="width:100%" id="downgradeBtn" onclick="confirmDowngradeToMonitoring()">Switch to Monitoring — $99/mo</button>
+    </div>
+    <p style="font-size:13px;color:var(--muted)">Still want to cancel? Your subscription ends at the close of the current billing period — you keep full access until then, then return to the free sandbox.</p>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-danger" style="flex:1" onclick="confirmCancelSubscription()" id="cancelSubBtn">Cancel completely</button>
       <button class="btn btn-secondary" onclick="closeCancelModal()">Keep Plan</button>
     </div>
   </div>
@@ -3807,6 +3819,7 @@ function renderAdminStats(stats) {
 
 const PLAN_BADGES = {
   sandbox: '<span class="plan-badge plan-sandbox">SANDBOX</span>',
+  monitoring: '<span class="plan-badge plan-monitoring">MONITORING</span>',
   starter: '<span class="plan-badge plan-starter">STARTER</span>',
   growth: '<span class="plan-badge plan-growth">GROWTH</span>',
   enterprise: '<span class="plan-badge plan-enterprise">ENTERPRISE</span>',
@@ -4049,11 +4062,34 @@ function renderUpgradeCTA() {
 function openCancelModal() {
   document.getElementById('userDD')?.classList.remove('open');
   if (ST.mode === 'sandbox') { toast('No active subscription to cancel', 'error'); return; }
+  // Offer the Monitoring downgrade only to full paid tiers — someone already on
+  // Monitoring has nothing lower to drop to, so just show the cancel path.
+  const offer = document.getElementById('downgradeOffer');
+  if (offer) offer.style.display = ['starter','growth','enterprise'].includes(ST.mode) ? 'block' : 'none';
   document.getElementById('cancelSubModal').style.display = 'flex';
 }
 
 function closeCancelModal() {
   document.getElementById('cancelSubModal').style.display = 'none';
+}
+
+async function confirmDowngradeToMonitoring() {
+  const btn = document.getElementById('downgradeBtn');
+  btn.disabled = true; btn.textContent = 'Switching…';
+  try {
+    const r = await fetch('/api/billing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ action: 'downgrade' }),
+    });
+    const d = await r.json();
+    if (!r.ok || !d.ok) throw new Error(d.error || 'Could not switch plan');
+    ST.mode = d.mode || 'monitoring';
+    applyPaywall();
+    closeCancelModal();
+    toast('Switched to Monitoring — your Trust Page stays live for $99/mo', 'success');
+  } catch (err) { toast(err.message, 'error'); }
+  btn.disabled = false; btn.textContent = 'Switch to Monitoring — $99/mo';
 }
 
 async function confirmCancelSubscription() {

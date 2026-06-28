@@ -28,7 +28,12 @@ const PRICE_TO_MODE = {
   'price_1Tn4SdFQiRRnlhwuMooey0i2': 'starter',
   'price_1Tn4TsFQiRRnlhwuodI5siQL': 'growth',
   'price_1Tn4UZFQiRRnlhwuA5yXrU8O': 'enterprise',
+  // Monitoring (retention floor)
+  'price_1Tn4msFQiRRnlhwuHO0T0eeS': 'monitoring',
 };
+
+// The Monitoring price the cancel save-flow downgrades a subscription to.
+const MONITORING_PRICE = 'price_1Tn4msFQiRRnlhwuHO0T0eeS';
 
 // Restrict CORS to known app origins (not "*") on this money-handling endpoint.
 function setCors(req, res) {
@@ -131,6 +136,60 @@ export default async function handler(req, res) {
     } catch (err) {
       console.error('Confirm error:', err.message);
       return res.status(500).json({ error: 'Could not confirm subscription' });
+    }
+  }
+
+  // ── POST downgrade: move an active subscription to the Monitoring floor ──
+  // Powers the cancel save-flow: a churning customer drops to $99/mo instead of
+  // leaving entirely, keeping their Trust Page live and evidence fresh.
+  if (req.method === 'POST' && req.body?.action === 'downgrade') {
+    const userId = await getUserId(req.headers.authorization);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+      const userKey = `admin:user:${userId}`;
+      let userData = {};
+      try { userData = (await redis.get(userKey)) || {}; } catch {}
+      let subId = userData.stripeSubscriptionId;
+      const customerId = userData.stripeCustomerId;
+      if (!subId && customerId) {
+        const subs = await stripeGet(`subscriptions?customer=${customerId}&status=active&limit=1`);
+        if (subs.data?.length > 0) subId = subs.data[0].id;
+      }
+      if (!subId) return res.status(400).json({ error: 'No active subscription to downgrade.' });
+
+      const sub = await stripeGet(`subscriptions/${subId}`);
+      if (sub.error) return res.status(400).json({ error: 'Could not load your subscription.' });
+      const item = sub.items?.data?.[0];
+      if (!item) return res.status(400).json({ error: 'Subscription has no items.' });
+      if (item.price?.id === MONITORING_PRICE) {
+        return res.status(200).json({ ok: true, mode: 'monitoring', message: 'Already on Monitoring.' });
+      }
+
+      // Swap the plan to Monitoring. proration_behavior=none leaves the already-paid
+      // period intact; the next invoice bills $99. Clearing cancel_at_period_end lets
+      // the downgrade supersede a prior "cancel" choice.
+      const result = await stripePatch(`subscriptions/${subId}`, {
+        'items[0][id]': item.id,
+        'items[0][price]': MONITORING_PRICE,
+        proration_behavior: 'none',
+        cancel_at_period_end: 'false',
+        'metadata[userId]': userId,
+        'metadata[mode]': 'monitoring',
+      });
+      if (result.error) throw new Error(result.error.message);
+
+      await redis.set(userKey, JSON.stringify({
+        ...userData,
+        mode: 'monitoring',
+        stripeSubscriptionId: subId,
+        cancelPending: false,
+        cancelAt: null,
+        downgradedAt: Date.now(),
+      }));
+      return res.status(200).json({ ok: true, mode: 'monitoring' });
+    } catch (err) {
+      console.error('Downgrade error:', err.message);
+      return res.status(500).json({ error: 'Could not change your plan. Please try again.' });
     }
   }
 
