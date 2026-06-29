@@ -16,32 +16,34 @@ import {
 // ===================== Timing (authored in 30fps units, rendered at 60fps) =====================
 // Scene logic uses a virtual 30fps frame (useCurrentFrame()/K); only the Series
 // boundaries and audio cue offsets are scaled by K to real 60fps frames.
-const FPS = 60;
-const K = FPS / 30; // 2
-const S_INTRO = 72;
+const FPS = 120;
+const K = FPS / 30; // 4
+// Order: cold-open agenda (hook) -> 3 problems -> "Presenting" reveal -> solutions -> outro
 const AGENDA = 104;
 const P1 = 100;
-const S1 = 60;
 const P2 = 100;
+const P3 = 100;
+const REVEAL = 78;
+const S1 = 60;
 const S2 = 60;
 const PHONE = 158;
-const P3 = 100;
 const S3 = 60;
 const BRAND = 46;
 const OUT = 74;
 const BASE_TOTAL =
-  S_INTRO + AGENDA + P1 + S1 + P2 + S2 + PHONE + P3 + S3 + BRAND + OUT;
+  AGENDA + P1 + P2 + P3 + REVEAL + S1 + S2 + PHONE + S3 + BRAND + OUT;
 export const GOD_DURATION = BASE_TOTAL * K;
 export const GOD_FPS = FPS;
 
-const T_AGENDA = S_INTRO;
+const T_AGENDA = 0;
 const T_P1 = T_AGENDA + AGENDA;
-const T_S1 = T_P1 + P1;
-const T_P2 = T_S1 + S1;
-const T_S2 = T_P2 + P2;
+const T_P2 = T_P1 + P1;
+const T_P3 = T_P2 + P2;
+const T_REVEAL = T_P3 + P3;
+const T_S1 = T_REVEAL + REVEAL;
+const T_S2 = T_S1 + S1;
 const T_PHONE = T_S2 + S2;
-const T_P3 = T_PHONE + PHONE;
-const T_S3 = T_P3 + P3;
+const T_S3 = T_PHONE + PHONE;
 const T_BRAND = T_S3 + S3;
 const T_OUT = T_BRAND + BRAND;
 
@@ -499,39 +501,47 @@ const Grain: React.FC = () => {
 // ===================== Audio cues =====================
 const cue = (src: string, from: number, volume = 0.5) => ({ src, from, volume });
 const CUES = [
-  cue("audio/impact.wav", 0, 0.85),
-  cue("audio/sparkle.wav", 14, 0.6),
-  cue("audio/whoosh.wav", T_P1 - 4, 0.5),
-  cue("audio/pop.wav", T_P1 + 8, 0.45),
-  cue("audio/tick.wav", T_P1 + 24, 0.32),
-  cue("audio/tick.wav", T_P1 + 36, 0.32),
-  cue("audio/tick.wav", T_P1 + 48, 0.32),
-  cue("audio/whoosh.wav", T_S1 - 4, 0.5),
-  cue("audio/whoosh.wav", T_AGENDA - 4, 0.5),
+  // cold open (agenda hook)
+  cue("audio/whoosh.wav", 2, 0.4),
   cue("audio/pop.wav", T_AGENDA + 8, 0.42),
-  cue("audio/tick.wav", T_AGENDA + 26, 0.34),
-  cue("audio/tick.wav", T_AGENDA + 40, 0.34),
-  cue("audio/tick.wav", T_AGENDA + 54, 0.34),
-  cue("audio/pop.wav", T_S1 + 6, 0.45),
+  cue("audio/tick.wav", T_AGENDA + 22, 0.32),
+  cue("audio/tick.wav", T_AGENDA + 38, 0.32),
+  cue("audio/tick.wav", T_AGENDA + 54, 0.32),
+  // problems
+  cue("audio/whoosh.wav", T_P1 - 4, 0.5),
+  cue("audio/pop.wav", T_P1 + 8, 0.42),
+  cue("audio/tick.wav", T_P1 + 24, 0.3),
+  cue("audio/tick.wav", T_P1 + 36, 0.3),
+  cue("audio/tick.wav", T_P1 + 48, 0.3),
   cue("audio/whoosh.wav", T_P2 - 4, 0.5),
-  cue("audio/pop.wav", T_P2 + 8, 0.45),
-  cue("audio/tick.wav", T_P2 + 24, 0.32),
-  cue("audio/tick.wav", T_P2 + 36, 0.32),
-  cue("audio/tick.wav", T_P2 + 48, 0.32),
+  cue("audio/pop.wav", T_P2 + 8, 0.42),
+  cue("audio/tick.wav", T_P2 + 24, 0.3),
+  cue("audio/tick.wav", T_P2 + 36, 0.3),
+  cue("audio/tick.wav", T_P2 + 48, 0.3),
+  cue("audio/whoosh.wav", T_P3 - 4, 0.5),
+  cue("audio/pop.wav", T_P3 + 8, 0.42),
+  cue("audio/tick.wav", T_P3 + 24, 0.3),
+  cue("audio/tick.wav", T_P3 + 36, 0.3),
+  cue("audio/tick.wav", T_P3 + 48, 0.3),
+  // THE REVEAL — the turn, give it weight
+  cue("audio/riser.wav", T_REVEAL - 24, 0.5),
+  cue("audio/impact.wav", T_REVEAL + 2, 0.85),
+  cue("audio/sparkle.wav", T_REVEAL + 16, 0.6),
+  // solutions
+  cue("audio/whoosh.wav", T_S1 - 4, 0.5),
+  cue("audio/pop.wav", T_S1 + 6, 0.45),
   cue("audio/whoosh.wav", T_S2 - 4, 0.5),
   cue("audio/pop.wav", T_S2 + 6, 0.45),
-  cue("audio/riser.wav", T_PHONE - 28, 0.55),
-  cue("audio/whoosh.wav", T_PHONE - 2, 0.55),
+  // phone
+  cue("audio/riser.wav", T_PHONE - 26, 0.5),
+  cue("audio/whoosh.wav", T_PHONE - 2, 0.5),
   cue("audio/ding.wav", T_PHONE + 16, 0.55),
-  cue("audio/whoosh.wav", T_PHONE + 18, 0.32),
-  cue("audio/whoosh.wav", T_PHONE + 64, 0.32),
-  cue("audio/whoosh.wav", T_P3 - 4, 0.5),
-  cue("audio/pop.wav", T_P3 + 8, 0.45),
-  cue("audio/tick.wav", T_P3 + 24, 0.32),
-  cue("audio/tick.wav", T_P3 + 36, 0.32),
-  cue("audio/tick.wav", T_P3 + 48, 0.32),
+  cue("audio/whoosh.wav", T_PHONE + 18, 0.3),
+  cue("audio/whoosh.wav", T_PHONE + 64, 0.3),
+  // solution 3
   cue("audio/whoosh.wav", T_S3 - 4, 0.5),
   cue("audio/pop.wav", T_S3 + 6, 0.45),
+  // brand + outro
   cue("audio/whoosh.wav", T_BRAND - 4, 0.5),
   cue("audio/sparkle.wav", T_BRAND + 6, 0.4),
   cue("audio/whoosh.wav", T_OUT - 4, 0.5),
@@ -552,7 +562,7 @@ export const VerticalGod: React.FC = () => {
       ))}
 
       <Series>
-        <Series.Sequence durationInFrames={S_INTRO * K}><Scene3D dur={S_INTRO} axis="y"><SceneIntro /></Scene3D></Series.Sequence>
+        {/* COLD OPEN — hook + the 3 problems, no logo */}
         <Series.Sequence durationInFrames={AGENDA * K}><Scene3D dur={AGENDA} axis="x"><AgendaScene /></Scene3D></Series.Sequence>
         <Series.Sequence durationInFrames={P1 * K}>
           <Scene3D dur={P1} axis="x">
@@ -563,7 +573,6 @@ export const VerticalGod: React.FC = () => {
             ]} />
           </Scene3D>
         </Series.Sequence>
-        <Series.Sequence durationInFrames={S1 * K}><Scene3D dur={S1} axis="y"><SolutionScene icon={<ILock />} bold="One Evidence Locker." detail="Auto-collected from GitHub, Google & Slack — always current." /></Scene3D></Series.Sequence>
         <Series.Sequence durationInFrames={P2 * K}>
           <Scene3D dur={P2} axis="x">
             <ProblemScene index="Problem 02" color={VIOLET} tint="#f5f3ff" icon={<IHourglass />} bold="Audit prep eats months." bullets={[
@@ -573,8 +582,6 @@ export const VerticalGod: React.FC = () => {
             ]} />
           </Scene3D>
         </Series.Sequence>
-        <Series.Sequence durationInFrames={S2 * K}><Scene3D dur={S2} axis="y"><SolutionScene icon={<IGauge />} bold="A score in 10 minutes." detail="Connect your stack and see exactly where you stand." /></Scene3D></Series.Sequence>
-        <Series.Sequence durationInFrames={PHONE * K}><ScenePhone /></Series.Sequence>
         <Series.Sequence durationInFrames={P3 * K}>
           <Scene3D dur={P3} axis="x">
             <ProblemScene index="Problem 03" color={ROSE} tint="#fff1f2" icon={<IClock />} bold="Deals stall on security review." bullets={[
@@ -584,6 +591,14 @@ export const VerticalGod: React.FC = () => {
             ]} />
           </Scene3D>
         </Series.Sequence>
+
+        {/* THE REVEAL — Presenting AuditReady AI */}
+        <Series.Sequence durationInFrames={REVEAL * K}><Scene3D dur={REVEAL} axis="y"><SceneIntro /></Scene3D></Series.Sequence>
+
+        {/* SOLUTIONS + live product */}
+        <Series.Sequence durationInFrames={S1 * K}><Scene3D dur={S1} axis="y"><SolutionScene icon={<ILock />} bold="One Evidence Locker." detail="Auto-collected from GitHub, Google & Slack — always current." /></Scene3D></Series.Sequence>
+        <Series.Sequence durationInFrames={S2 * K}><Scene3D dur={S2} axis="y"><SolutionScene icon={<IGauge />} bold="A score in 10 minutes." detail="Connect your stack and see exactly where you stand." /></Scene3D></Series.Sequence>
+        <Series.Sequence durationInFrames={PHONE * K}><ScenePhone /></Series.Sequence>
         <Series.Sequence durationInFrames={S3 * K}><Scene3D dur={S3} axis="y"><SolutionScene icon={<IShieldCheck />} bold="Share a live Trust Page." detail="Send real-time proof and close enterprise deals faster." /></Scene3D></Series.Sequence>
         <Series.Sequence durationInFrames={BRAND * K}><Scene3D dur={BRAND} axis="y"><SceneBrand /></Scene3D></Series.Sequence>
         <Series.Sequence durationInFrames={OUT * K}><SceneOutro /></Series.Sequence>

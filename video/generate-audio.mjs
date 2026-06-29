@@ -114,7 +114,7 @@ function place(L, R, voice, offset, pan = 0, gain = 1) {
 // ============================================================
 {
   const bpm = 84, beat = 60 / bpm, bar = beat * 4;
-  const bars = 9, dur = bar * bars + 1.2;
+  const bars = 11, dur = bar * bars + 1.2;
   const n = Math.floor(dur * SR);
   const L = new Float32Array(n), R = new Float32Array(n);
   // dry buses we will reverb
@@ -131,7 +131,7 @@ function place(L, R, voice, offset, pan = 0, gain = 1) {
   const prog = [C.Bm, C.G, C.D, C.A, C.Bm, C.G, C.D, C.A, C.D];
 
   for (let bi = 0; bi < bars; bi++) {
-    const ch = prog[bi];
+    const ch = prog[bi % prog.length];
     const off = Math.floor(bi * bar * SR);
 
     // PAD: warm sustained triad, soft saw+tri, heavy lowpass, slow swell
