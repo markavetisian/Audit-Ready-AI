@@ -899,11 +899,11 @@ header{
   <div class="lp-hero">
     <h1>Close enterprise deals.<br/><em>Stop losing them</em> to compliance.</h1>
     <p>Connect your tools, get your SOC 2 readiness score instantly, and walk into every enterprise conversation audit-ready.</p>
-    <button class="lp-estimate-cta" onclick="openEstimate()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-      See where you stand on SOC 2 →
+    <button class="lp-estimate-cta" onclick="openTrustSample()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V6l7-4z"/></svg>
+      See what your customers will see →
     </button>
-    <div style="font-size:11.5px;color:#94a3b8;margin:2px 0 14px">Benchmark your readiness in a few questions — or connect your stack below for the verified score.</div>
+    <div style="font-size:11.5px;color:#94a3b8;margin:2px 0 14px">Preview a live Trust Page — the proof you send buyers — or connect your stack below to create yours.</div>
     <div class="lp-btns">
       <button class="lp-btn-gh" onclick="location.href='/api/auth?provider=github'">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12"/></svg>
@@ -1479,54 +1479,69 @@ header{
     <div class="pm-free-note">Free sandbox: manual tracking, score dashboard, up to 3 scans/hour. No credit card required.</div>
   </div>
 </div>
-<!-- ── Instant Readiness Estimate (no-login lead magnet) ──────── -->
+<!-- ── Sample Trust Page (no-login proof demo) ─────────────────── -->
 <style>
   .lp-estimate-cta{display:inline-flex;align-items:center;gap:9px;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;border-radius:12px;padding:15px 26px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 10px 28px rgba(37,99,235,.32);transition:transform .15s,box-shadow .15s}
   .lp-estimate-cta:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(37,99,235,.4)}
-  .est-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #f1f5f9}
-  .est-q{flex:1;font-size:13px;color:#0f172a;line-height:1.45}
-  .est-toggle{display:inline-flex;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;flex-shrink:0}
-  .est-toggle button{border:none;background:#fff;padding:7px 15px;font-size:12px;font-weight:700;cursor:pointer;color:#64748b}
-  .est-toggle .est-on{background:var(--accent);color:#fff}
-  .est-toggle .est-no.est-on{background:#94a3b8;color:#fff}
-  .est-gap{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;background:#fff;border:1px solid #fee2e2;border-radius:8px;margin-bottom:7px}
-  .est-gap-cc{font-family:var(--mono,monospace);font-size:11px;font-weight:700;color:#b91c1c;background:#fef2f2;border-radius:5px;padding:2px 6px;flex-shrink:0;margin-top:1px}
-  .est-gap-txt{font-size:12.5px;color:#334155;line-height:1.45}
+  .ts-ribbon{background:#0f172a;color:#cbd5e1;font-size:11px;font-weight:600;text-align:center;padding:8px 12px;letter-spacing:.03em}
+  .ts-head{display:flex;align-items:center;gap:13px}
+  .ts-logo{width:46px;height:46px;border-radius:11px;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .ts-company{font-size:18px;font-weight:800;color:#0f172a;letter-spacing:-.01em}
+  .ts-live{font-size:12px;color:#16a34a;font-weight:600;display:flex;align-items:center;gap:6px;margin-top:2px}
+  .ts-dot{width:8px;height:8px;border-radius:50%;background:#16a34a;animation:tsPulse 2s infinite}
+  @keyframes tsPulse{0%{box-shadow:0 0 0 0 rgba(22,163,74,.5)}70%{box-shadow:0 0 0 7px rgba(22,163,74,0)}100%{box-shadow:0 0 0 0 rgba(22,163,74,0)}}
+  .ts-score{margin-left:auto;text-align:right}
+  .ts-score-num{font-size:34px;font-weight:800;color:#16a34a;font-family:var(--mono,monospace);line-height:1}
+  .ts-score-num span{font-size:18px}
+  .ts-score-lbl{font-size:10.5px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+  .ts-verify{margin:14px 0;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:9px;padding:9px 12px;font-size:12px;color:#15803d;line-height:1.5}
+  .ts-sec{font-size:11px;font-weight:700;color:#0f172a;text-transform:uppercase;letter-spacing:.05em;margin:14px 0 10px}
+  .ts-cat{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .ts-cat-lbl{font-size:12px;color:#334155;width:168px;flex-shrink:0}
+  .ts-track{flex:1;height:7px;background:#eef2f7;border-radius:5px;overflow:hidden}
+  .ts-fill{height:100%;border-radius:5px}
+  .ts-pct{font-size:11px;font-weight:700;color:#475569;width:32px;text-align:right}
+  .ts-checks{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0 4px}
+  .ts-chk{font-size:11.5px;color:#15803d;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:20px;padding:4px 10px;font-weight:600}
+  .ts-badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:7px 12px;margin-top:12px}
+  .ts-disc{font-size:10.5px;color:#94a3b8;margin-top:10px;line-height:1.5}
+  .ts-cta{background:linear-gradient(135deg,#eff6ff,#f8fafc);border-top:1px solid #e2e8f0;padding:18px 24px}
+  .ts-cta-h{font-size:15px;font-weight:800;color:#0f172a;margin-bottom:5px;letter-spacing:-.01em}
+  .ts-cta-p{font-size:12.5px;color:#475569;line-height:1.55;margin-bottom:13px}
 </style>
-<div id="estimateModal" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeEstimate()">
-  <div class="modal-box" style="max-width:560px;position:relative">
-    <button onclick="closeEstimate()" style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:#94a3b8;line-height:1">✕</button>
-
-    <!-- Quiz -->
-    <div id="estQuiz">
-      <div style="font-size:21px;font-weight:800;color:#0f172a;margin-bottom:4px;letter-spacing:-.01em">How audit-ready are you, really?</div>
-      <div style="font-size:13px;color:#64748b;margin-bottom:16px">Answer 7 questions to benchmark your readiness against what auditors and enterprise security teams actually require.</div>
-      <div id="estQuestions"></div>
-      <button class="btn btn-primary btn-full" style="margin-top:16px" onclick="computeEstimate()">See my readiness score →</button>
-      <div style="font-size:10.5px;color:#94a3b8;text-align:center;margin-top:10px">A self-assessment estimate. Your real, continuously-monitored score comes from connecting your stack.</div>
-    </div>
-
-    <!-- Result -->
-    <div id="estResult" style="display:none">
-      <div id="estScoreBox"></div>
-
-      <div id="estLeadBox" style="margin-top:18px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px">
-        <div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:4px">Get your full readiness roadmap</div>
-        <div style="font-size:12px;color:#64748b;margin-bottom:11px">See exactly what an enterprise security review checks — and what it takes to pass each one.</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <input id="estEmail" type="email" placeholder="you@company.com" style="flex:1;min-width:180px;padding:11px 13px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px">
-          <button class="btn btn-primary" onclick="submitEstimateLead()" style="white-space:nowrap">Get my roadmap</button>
+<div id="trustSampleModal" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeTrustSample()">
+  <div class="modal-box" style="max-width:600px;position:relative;padding:0;overflow:hidden">
+    <button onclick="closeTrustSample()" style="position:absolute;top:9px;right:11px;background:rgba(255,255,255,.15);border:none;font-size:14px;cursor:pointer;color:#fff;line-height:1;width:24px;height:24px;border-radius:50%;z-index:3">✕</button>
+    <div class="ts-ribbon">SAMPLE — this is the live page your customers would see</div>
+    <div style="padding:22px 24px 8px">
+      <div class="ts-head">
+        <div class="ts-logo">NL</div>
+        <div>
+          <div class="ts-company">Northwind Labs</div>
+          <div class="ts-live"><span class="ts-dot"></span> Live · updated 2 hours ago</div>
         </div>
-        <div id="estLeadMsg" style="font-size:12px;margin-top:8px;min-height:16px"></div>
+        <div class="ts-score">
+          <div class="ts-score-num">94<span>%</span></div>
+          <div class="ts-score-lbl">SOC 2 Ready</div>
+        </div>
       </div>
-
-      <div id="estPlan" style="display:none;margin-top:16px"></div>
-
-      <div style="margin-top:18px;background:linear-gradient(135deg,#eff6ff,#f8fafc);border:1px solid rgba(37,99,235,.25);border-radius:12px;padding:16px">
-        <div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:5px">Self-reported won't pass a security review.</div>
-        <div style="font-size:12.5px;color:#475569;line-height:1.55;margin-bottom:12px">When a customer asks for SOC 2, they need <strong>verified evidence</strong> — not a checklist you filled out yourself. Connect your stack and AuditReady turns these answers into auditor-grade, continuously-monitored proof and a <strong>Trust Page you can send to the deal that's waiting</strong>.</div>
-        <button class="btn btn-primary btn-full" onclick="location.href='/api/auth?provider=github'">Connect your stack for your verified score →</button>
+      <div class="ts-verify">🔄 <strong>Continuously verified.</strong> This page updates on its own as Northwind stays compliant — never a stale PDF, never out of date.</div>
+      <div class="ts-sec">Controls verified</div>
+      <div class="ts-cat"><div class="ts-cat-lbl">Control Environment</div><div class="ts-track"><div class="ts-fill" style="width:96%;background:#16a34a"></div></div><div class="ts-pct">96%</div></div>
+      <div class="ts-cat"><div class="ts-cat-lbl">Logical &amp; Physical Access</div><div class="ts-track"><div class="ts-fill" style="width:92%;background:#16a34a"></div></div><div class="ts-pct">92%</div></div>
+      <div class="ts-cat"><div class="ts-cat-lbl">Change Management</div><div class="ts-track"><div class="ts-fill" style="width:98%;background:#16a34a"></div></div><div class="ts-pct">98%</div></div>
+      <div class="ts-cat"><div class="ts-cat-lbl">System Operations</div><div class="ts-track"><div class="ts-fill" style="width:90%;background:#22c55e"></div></div><div class="ts-pct">90%</div></div>
+      <div class="ts-cat"><div class="ts-cat-lbl">Risk Mitigation</div><div class="ts-track"><div class="ts-fill" style="width:88%;background:#22c55e"></div></div><div class="ts-pct">88%</div></div>
+      <div class="ts-checks">
+        <span class="ts-chk">✓ MFA enforced</span><span class="ts-chk">✓ Encryption at rest &amp; transit</span><span class="ts-chk">✓ Access reviews</span><span class="ts-chk">✓ Incident response plan</span><span class="ts-chk">✓ Continuous monitoring</span>
       </div>
+      <div class="ts-badge">🛡 Verified by&nbsp;<strong>AuditReady AI</strong></div>
+      <div class="ts-disc">Self-reported readiness — not a certified SOC 2 audit. Reflects documented controls.</div>
+    </div>
+    <div class="ts-cta">
+      <div class="ts-cta-h">Every prospect who opens this is one click from wanting their own.</div>
+      <div class="ts-cta-p">Your Trust Page is a living asset — always current, sent to every customer who asks "are you SOC 2?", and it carries your name to every company that opens it. Stop filling out security questionnaires by hand and start closing.</div>
+      <button class="btn btn-primary btn-full" onclick="location.href='/api/auth?provider=github'">Create your Trust Page — connect your stack →</button>
     </div>
   </div>
 </div>
@@ -1990,7 +2005,7 @@ function applyDeepLink() {
       '/pricing':      () => { if (typeof openPricingModal === 'function') openPricingModal(); },
       '/soc2':         () => { if (typeof openSoc2Modal === 'function') openSoc2Modal(); },
       '/how-it-works': () => { if (typeof openSoc2Modal === 'function') openSoc2Modal(); },
-      '/estimate':     () => { if (typeof openEstimate === 'function') openEstimate(); },
+      '/sample':       () => { if (typeof openTrustSample === 'function') openTrustSample(); },
       '/get-started':  () => {},  // lands on the hero CTA, no modal
     }[path];
     if (!open) return;
@@ -3228,130 +3243,15 @@ function pmToggleBilling(annual) {
   }
 }
 
-// ── Instant Readiness Estimate (no-login lead magnet) ─────────
-const EST_QUESTIONS = [
-  { id:'mfa',      q:'Do you enforce MFA on all critical systems (email, cloud, code)?',      cc:'CC6.1', gap:'MFA not enforced on all critical systems',          fix:'Turn on MFA org-wide across Google/Microsoft, your cloud console, and GitHub.' },
-  { id:'review',   q:'Is code review / branch protection required before deploying to production?', cc:'CC8.1', gap:'Code changes not reviewed before production',     fix:'Require pull-request review and branch protection on your main branch.' },
-  { id:'policy',   q:'Do you have a written Information Security Policy your team has acknowledged?', cc:'CC1.1', gap:'No documented, acknowledged InfoSec policy',     fix:'Adopt a written InfoSec policy and have every employee formally acknowledge it.' },
-  { id:'training', q:'Do new hires get background checks and security awareness training?',     cc:'CC1.4', gap:'No background checks / security training',           fix:'Run background checks at hire and annual security-awareness training.' },
-  { id:'ir',       q:'Do you have a documented incident response plan?',                        cc:'CC7.3', gap:'No documented incident response plan',              fix:'Document an IR plan: roles, severity levels, and step-by-step response.' },
-  { id:'access',   q:'Do you review and document who has access to what, on a schedule?',       cc:'CC6.2', gap:'Access reviews not performed or documented',        fix:'Run quarterly access reviews and log who approved each access grant.' },
-  { id:'crypto',   q:'Is data encrypted in transit and at rest, with backups tested?',         cc:'CC6.7', gap:'Data encryption / backup not verified',             fix:'Confirm TLS everywhere and encryption at rest, then test a backup restore.' },
-];
-let _estAnswers = {};
-
-function openEstimate() {
-  _estAnswers = {};
-  EST_QUESTIONS.forEach(q => { _estAnswers[q.id] = false; });
-  document.getElementById('estQuestions').innerHTML = EST_QUESTIONS.map(q =>
-    '<div class="est-row">' +
-      '<div class="est-q">' + esc(q.q) + '</div>' +
-      '<div class="est-toggle" data-q="' + q.id + '">' +
-        '<button type="button" onclick="setEst(\'' + q.id + '\',true,this)">Yes</button>' +
-        '<button type="button" class="est-no est-on" onclick="setEst(\'' + q.id + '\',false,this)">No</button>' +
-      '</div>' +
-    '</div>'
-  ).join('');
-  document.getElementById('estQuiz').style.display = '';
-  document.getElementById('estResult').style.display = 'none';
-  document.getElementById('estPlan').style.display = 'none';
-  const msg = document.getElementById('estLeadMsg'); if (msg) msg.textContent = '';
-  const em = document.getElementById('estEmail'); if (em) { em.value = ''; em.disabled = false; }
-  document.getElementById('estimateModal').style.display = 'flex';
-}
-
-function setEst(id, val, btn) {
-  _estAnswers[id] = val;
-  const group = btn.parentElement;
-  group.querySelectorAll('button').forEach(b => b.classList.remove('est-on'));
-  // Keep the grey styling hook on the No button so an active No reads neutral.
-  btn.classList.add('est-on');
-}
-
-function closeEstimate() { document.getElementById('estimateModal').style.display = 'none'; }
-
-function estScore() {
-  const yes = EST_QUESTIONS.filter(q => _estAnswers[q.id]).length;
-  return Math.round((yes / EST_QUESTIONS.length) * 100);
-}
-
-function computeEstimate() {
-  const score = estScore();
-  const gaps = EST_QUESTIONS.filter(q => !_estAnswers[q.id]);
-  const color = score >= 80 ? '#16a34a' : score >= 50 ? '#f59e0b' : '#ef4444';
-  const band  = score >= 80 ? 'Looks ready — on paper' : score >= 50 ? 'Partly there' : 'Real exposure';
-
-  // The conversion driver: a self-assessment is worthless to a customer's
-  // security team. Every band ends pointing at verified proof + the stuck deal,
-  // so even a 100% scorer has a reason to connect (they can't PROVE it yet).
-  let pitch;
-  if (score >= 80) {
-    pitch = "Strong answers. But here's what every founder hits at the security-review stage: <strong>saying you have a control isn't proving it.</strong> A customer's security team wants evidence for every one — collected, current, on demand. That's the gap between looking ready and closing the deal.";
-  } else if (score >= 50) {
-    pitch = "You're partway there — and the gaps below are <strong>exactly where enterprise deals stall</strong> at the security review. Even your 'yes' answers need evidence to back them up before a customer will accept them.";
-  } else {
-    pitch = "There's real exposure here, and <strong>a customer's security team will find it fast.</strong> None of this is something you could prove if an enterprise prospect asked you tomorrow.";
-  }
-
-  const gapHtml = gaps.length
-    ? '<div style="font-size:13px;font-weight:700;color:#0f172a;margin:15px 0 9px">Where a security review will probe you</div>' +
-      gaps.slice(0, 7).map(g =>
-        '<div class="est-gap"><span class="est-gap-cc">' + g.cc + '</span><span class="est-gap-txt">' + esc(g.gap) + '</span></div>'
-      ).join('')
-    : '<div style="font-size:13px;font-weight:700;color:#0f172a;margin:15px 0 9px">Can you prove all 7?</div>' +
-      '<div style="font-size:12.5px;color:#475569;line-height:1.55">You answered yes to everything — strong. But a customer needs <strong>evidence</strong> for each control, not your word. A verified score and Trust Page are what actually close the deal.</div>';
-
-  document.getElementById('estScoreBox').innerHTML =
-    '<div style="display:flex;align-items:center;gap:18px;margin-bottom:12px">' +
-      '<div style="font-size:48px;font-weight:800;color:' + color + ';font-family:var(--mono,monospace);line-height:1">' + score + '%</div>' +
-      '<div><div style="font-size:16px;font-weight:700;color:#0f172a">' + band + '</div>' +
-      '<div style="font-size:12.5px;color:#64748b">' + (EST_QUESTIONS.length - gaps.length) + ' of ' + EST_QUESTIONS.length + ' controls self-reported</div></div>' +
-    '</div>' +
-    '<div style="font-size:13px;color:#334155;line-height:1.6;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 14px">' + pitch + '</div>' +
-    gapHtml;
-
-  document.getElementById('estQuiz').style.display = 'none';
-  document.getElementById('estResult').style.display = '';
-}
-
-async function submitEstimateLead() {
-  const email = (document.getElementById('estEmail').value || '').trim();
-  const msg = document.getElementById('estLeadMsg');
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    msg.style.color = '#ef4444'; msg.textContent = 'Please enter a valid email.'; return;
-  }
-  msg.style.color = '#64748b'; msg.textContent = 'Saving…';
-  const score = estScore();
-  const gaps = EST_QUESTIONS.filter(q => !_estAnswers[q.id]).map(q => q.cc + ' ' + q.gap);
-  try {
-    const r = await fetch('/api/lead', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, score, answers: _estAnswers, gaps, source: 'estimate' }),
-    });
-    if (!r.ok) throw new Error();
-    // Reveal the roadmap inline (honest: no email is "sent" — we unlock it here).
-    // Framed as what a review checks + that the platform is what verifies it,
-    // so it builds authority without giving away the product (the proof itself).
-    const items = EST_QUESTIONS.filter(q => !_estAnswers[q.id]);
-    const list = items.length ? items : EST_QUESTIONS;
-    document.getElementById('estPlan').innerHTML =
-      '<div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:4px">Your readiness roadmap</div>' +
-      '<div style="font-size:12px;color:#64748b;margin-bottom:10px">What an enterprise security review checks — and how it becomes provable.</div>' +
-      list.map(q =>
-        '<div class="est-gap" style="border-color:#e2e8f0">' +
-          '<span class="est-gap-cc" style="color:#1d4ed8;background:#eff6ff">' + q.cc + '</span>' +
-          '<span class="est-gap-txt">' + esc(q.fix) +
-            ' <span style="color:#1d4ed8;font-weight:600">→ auto-verified when you connect your stack.</span></span>' +
-        '</div>'
-      ).join('');
-    document.getElementById('estPlan').style.display = '';
-    msg.style.color = '#16a34a'; msg.textContent = '✓ Unlocked below.';
-    document.getElementById('estEmail').disabled = true;
-  } catch {
-    msg.style.color = '#ef4444'; msg.textContent = 'Could not save — please try again.';
-  }
-}
+// ── Sample Trust Page (no-login proof demo) ───────────────────
+// Cold visitors land here from ads/email. Instead of asking them to do a
+// quiz, we SHOW them the actual end-product: a polished, living, public
+// Trust Page — the proof artifact they'd send a customer who asked "are you
+// SOC 2?". No email gate, no friction. The whole frame is platform, not
+// tool: it's continuously updated, shared with every prospect, and carries
+// the AuditReady badge to every company that opens it (the viral loop).
+function openTrustSample() { document.getElementById('trustSampleModal').style.display = 'flex'; }
+function closeTrustSample() { document.getElementById('trustSampleModal').style.display = 'none'; }
 
 function openPricingModal(preselect) {
   initStripe();
