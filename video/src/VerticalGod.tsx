@@ -226,31 +226,44 @@ const Logo: React.FC<{ size: number }> = ({ size }) => {
   );
 };
 
-// ===================== Scene: Opener — branded context (what this is) =====================
+// ===================== Scene: Opener — attention hook (SOC 2 audit seal slams in) =====================
+const AuditSeal: React.FC<{ scale: number; rot: number }> = ({ scale, rot }) => (
+  <div style={{ width: 300, height: 300, position: "relative", transform: `rotate(${rot}deg) scale(${scale})` }}>
+    <div style={{ position: "absolute", inset: 0, borderRadius: "50%", background: `linear-gradient(145deg, ${SKY} 0%, ${ROYAL} 55%, ${ROYAL_DK} 100%)`, boxShadow: "0 28px 70px rgba(37,99,235,0.45)" }} />
+    <div style={{ position: "absolute", inset: 14, borderRadius: "50%", border: "3px solid rgba(255,255,255,0.55)" }} />
+    {/* notched seal ring */}
+    {Array.from({ length: 40 }).map((_, i) => (
+      <div key={i} style={{ position: "absolute", left: "50%", top: "50%", width: 4, height: 12, background: "rgba(255,255,255,0.5)", borderRadius: 2, transform: `translate(-50%,-50%) rotate(${i * 9}deg) translateY(-135px)` }} />
+    ))}
+    <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#fff", fontFamily: FONT }}>
+      <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: 6 }}>AUDIT</div>
+      <div style={{ fontSize: 78, fontWeight: 900, letterSpacing: -2, lineHeight: 0.95 }}>SOC&nbsp;2</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 20, fontWeight: 800, letterSpacing: 3, marginTop: 2 }}>
+        <svg width={22} height={22} viewBox="0 0 64 64" fill="none" stroke="#fff" strokeWidth={7} strokeLinecap="round" strokeLinejoin="round"><path d="M16 33l11 11 22-26" /></svg>
+        READY
+      </div>
+    </div>
+  </div>
+);
 const SceneOpen: React.FC = () => {
   const frame = useCurrentFrame() / K;
   const fps = 30;
-  const pop = spring({ frame, fps, config: { damping: 12, mass: 0.8 } });
-  const word = spring({ frame: frame - 14, fps, config: { damping: 200 } });
-  const prop = spring({ frame: frame - 26, fps, config: { damping: 200 } });
-  const ctx = spring({ frame: frame - 40, fps, config: { damping: 200 } });
-  const sweep = interpolate(frame % 70, [0, 70], [-160, 160]);
+  // stamp slam
+  const stamp = spring({ frame, fps, config: { damping: 9, mass: 0.7, stiffness: 140 } });
+  const sealScale = interpolate(stamp, [0, 1], [1.7, 1]);
+  const sealRot = interpolate(stamp, [0, 1], [-16, -7]);
+  const hook = spring({ frame: frame - 14, fps, config: { damping: 200 } });
+  const sub = spring({ frame: frame - 30, fps, config: { damping: 200 } });
   return (
-    <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", gap: 34, perspective: 1500, textAlign: "center", padding: "0 70px" }}>
-      <div style={{ transform: `scale(${interpolate(pop, [0, 1], [0.5, 1])})`, position: "relative" }}>
-        <Logo size={196} />
-        <div style={{ position: "absolute", inset: 0, borderRadius: 47, overflow: "hidden", pointerEvents: "none" }}>
-          <div style={{ position: "absolute", top: 0, left: sweep, width: 64, height: "100%", background: "linear-gradient(100deg, transparent, rgba(255,255,255,0.5), transparent)", filter: "blur(7px)", transform: "skewX(-12deg)" }} />
-        </div>
+    <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", gap: 40, perspective: 1500, textAlign: "center", padding: "0 70px" }}>
+      <div style={{ opacity: Math.min(1, stamp * 1.6) }}>
+        <AuditSeal scale={sealScale} rot={sealRot} />
       </div>
-      <div style={{ fontFamily: FONT, fontWeight: 800, fontSize: 80, color: INK, letterSpacing: -2.5, opacity: word, transform: `translateY(${interpolate(word, [0, 1], [22, 0])}px)` }}>
-        AuditReady<span style={{ color: ROYAL }}> AI</span>
+      <div style={{ fontFamily: FONT, fontWeight: 800, fontSize: 78, color: INK, letterSpacing: -2.5, lineHeight: 1.04, opacity: hook, transform: `translateY(${interpolate(hook, [0, 1], [24, 0])}px)`, maxWidth: 900 }}>
+        Losing enterprise deals<br />over <span style={{ color: ROYAL }}>SOC 2?</span>
       </div>
-      <div style={{ fontFamily: FONT, fontWeight: 700, fontSize: 42, color: ROYAL, letterSpacing: -0.5, opacity: prop, transform: `translateY(${interpolate(prop, [0, 1], [18, 0])}px)` }}>
-        SOC 2 compliance, automated.
-      </div>
-      <div style={{ fontFamily: FONT, fontWeight: 500, fontSize: 34, color: SLATE, lineHeight: 1.35, maxWidth: 820, opacity: ctx }}>
-        Get audit-ready in days, not months — and close the enterprise deals waiting on it.
+      <div style={{ fontFamily: FONT, fontWeight: 500, fontSize: 36, color: SLATE, lineHeight: 1.35, maxWidth: 820, opacity: sub }}>
+        Get audit-ready in days — not months.
       </div>
     </AbsoluteFill>
   );
@@ -534,10 +547,10 @@ const Grain: React.FC = () => {
 // ===================== Audio cues =====================
 const cue = (src: string, from: number, volume = 0.5) => ({ src, from, volume });
 const CUES = [
-  // branded opener
-  cue("audio/impact.wav", T_OPEN + 1, 0.6),
-  cue("audio/sparkle.wav", T_OPEN + 12, 0.5),
-  cue("audio/pop.wav", T_OPEN + 26, 0.4),
+  // attention opener — seal stamp slam
+  cue("audio/impact.wav", T_OPEN + 2, 0.85),
+  cue("audio/pop.wav", T_OPEN + 14, 0.45),
+  cue("audio/pop.wav", T_OPEN + 30, 0.4),
   // hook (agenda)
   cue("audio/whoosh.wav", T_AGENDA - 4, 0.45),
   cue("audio/pop.wav", T_AGENDA + 8, 0.42),
