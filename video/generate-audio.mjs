@@ -134,82 +134,60 @@ function place(L, R, voice, offset, pan = 0, gain = 1) {
     const ch = prog[bi];
     const off = Math.floor(bi * bar * SR);
 
-    // PAD: sustained triad, saw+tri blend, soft lowpass, slight stereo detune
+    // PAD: warm sustained triad, soft saw+tri, heavy lowpass, slow swell
     for (let k = 0; k < ch.t.length; k++) {
       const f = midi(ch.t[k]);
-      const len = Math.floor((bar + 0.4) * SR);
-      const a = osc("saw", f, len, -6);
-      const b = osc("tri", f, len, +6);
+      const len = Math.floor((bar + 0.7) * SR);
+      const a = osc("saw", f, len, -7);
+      const b = osc("tri", f, len, +7);
       const v = new Float32Array(len);
-      for (let i = 0; i < len; i++) v[i] = (a[i] * 0.5 + b[i] * 0.7) * 0.5;
-      lowpass(v, 1700);
-      adsr(v, 0.25, 0.4, 0.85, 0.5, bar + 0.4);
-      place(padL, padR, v, off, k === 0 ? -0.4 : k === 2 ? 0.4 : 0, 0.16);
+      for (let i = 0; i < len; i++) v[i] = (a[i] * 0.38 + b[i] * 0.82) * 0.5;
+      lowpass(v, 1120);
+      adsr(v, 0.55, 0.6, 0.9, 0.8, bar + 0.7);
+      place(padL, padR, v, off, k === 0 ? -0.45 : k === 2 ? 0.45 : 0, 0.17);
     }
 
-    // BASS: root sub, two hits (beats 1 & 3)
-    for (const bt of [0, 2]) {
+    // SUB BASS: smooth root, one long note per bar
+    {
       const f = midi(ch.b);
-      const len = Math.floor(beat * 1.8 * SR);
+      const len = Math.floor((bar + 0.2) * SR);
       const v = osc("sine", f, len);
       const v2 = osc("tri", f * 2, len);
-      for (let i = 0; i < len; i++) v[i] = v[i] * 0.9 + v2[i] * 0.12;
-      lowpass(v, 320);
-      adsr(v, 0.005, 0.15, 0.6, 0.25, beat * 1.8);
-      place(L, R, v, off + Math.floor(bt * beat * SR), 0, 0.5);
+      for (let i = 0; i < len; i++) v[i] = v[i] * 0.9 + v2[i] * 0.08;
+      lowpass(v, 250);
+      adsr(v, 0.08, 0.4, 0.7, 0.5, bar + 0.2);
+      place(L, R, v, off, 0, 0.4);
     }
 
-    // ARP: chord tones, eighth notes, plucky tri+sine with reverb send
-    const arpNotes = [ch.t[0], ch.t[1], ch.t[2], ch.t[1], ch.t[0] + 12, ch.t[1], ch.t[2], ch.t[1]];
-    for (let e = 0; e < 8; e++) {
-      const f = midi(arpNotes[e]);
-      const len = Math.floor(beat * 0.5 * 1.6 * SR);
-      const a = osc("tri", f, len);
-      const s = osc("sine", f, len);
+    // BELL PLUCK: sparse & tasteful — top chord tone on beat 1, fifth on beat 3
+    const bells = [[0, ch.t[2] + 12], [2, ch.t[1] + 12]];
+    for (const [bt, note] of bells) {
+      const f = midi(note);
+      const len = Math.floor(beat * 2.4 * SR);
+      const s1 = osc("sine", f, len);
+      const s2 = osc("sine", f * 2.01, len);
       const v = new Float32Array(len);
-      for (let i = 0; i < len; i++) v[i] = (a[i] * 0.6 + s[i] * 0.5);
-      lowpass(v, 3200);
-      adsr(v, 0.004, 0.18, 0.0, 0.18, beat * 0.5 * 1.6);
-      const pan = ((e % 2) * 2 - 1) * 0.35;
-      place(arpL, arpR, v, off + Math.floor(e * beat * 0.5 * SR), pan, 0.10);
-    }
-
-    // soft KICK on beats 1 & 3
-    for (const bt of [0, 2]) {
-      const len = Math.floor(0.22 * SR), v = new Float32Array(len);
-      for (let i = 0; i < len; i++) {
-        const t = i / SR;
-        const f = 110 * Math.exp(-22 * t) + 45;
-        v[i] = Math.sin(2 * Math.PI * f * t) * Math.exp(-12 * t);
-      }
-      place(L, R, v, off + Math.floor(bt * beat * SR), 0, 0.34);
-    }
-    // soft SHAKER on offbeats
-    const rnd = rng(1000 + bi);
-    for (let e = 0; e < 8; e++) {
-      if (e % 2 === 0) continue;
-      const len = Math.floor(0.05 * SR), v = new Float32Array(len);
-      for (let i = 0; i < len; i++) v[i] = rnd() * Math.exp(-60 * (i / SR));
-      highpass(v, 6000);
-      place(L, R, v, off + Math.floor(e * beat * 0.5 * SR), (e % 4 === 1 ? -0.3 : 0.3), 0.06);
+      for (let i = 0; i < len; i++) v[i] = (s1[i] * 0.7 + s2[i] * 0.22) * Math.exp(-2.5 * (i / SR));
+      adsr(v, 0.004, 0.3, 0.0, 0.45, beat * 2.4);
+      place(arpL, arpR, v, off + Math.floor(bt * beat * SR), bt === 0 ? -0.25 : 0.3, 0.08);
     }
   }
 
-  // reverb the pad and arp buses, mix in
-  const [pRL, pRR] = reverb(padL, padR, 0.32, 0.82);
-  const [aRL, aRR] = reverb(arpL, arpR, 0.4, 0.8);
+  // reverb pad and bell buses generously for a spacious, premium feel
+  const [pRL, pRR] = reverb(padL, padR, 0.4, 0.86);
+  const [aRL, aRR] = reverb(arpL, arpR, 0.52, 0.85);
   for (let i = 0; i < n; i++) {
     L[i] += pRL[i] + aRL[i];
     R[i] += pRR[i] + aRR[i];
   }
   // master: gentle fade in/out + soft limit
-  const fin = 0.8 * SR, fout = 1.5 * SR;
+  const fin = 1.0 * SR, fout = 1.8 * SR;
   for (let i = 0; i < n; i++) {
     let g = 1;
     if (i < fin) g = i / fin;
     if (i > n - fout) g = Math.max(0, (n - i) / fout);
-    L[i] = tanh(L[i] * 1.1) * g * 0.9;
-    R[i] = tanh(R[i] * 1.1) * g * 0.9;
+    L[i] = tanh(L[i] * 1.05) * g * 0.85;
+    R[i] = tanh(R[i] * 1.05) * g * 0.85;
   }
   writeStereo("music", L, R);
 }

@@ -13,20 +13,26 @@ import {
   useVideoConfig,
 } from "remotion";
 
-// ===================== Timing =====================
-const S_INTRO = 56;
-const AGENDA = 74;
-const P1 = 92;
-const S1 = 58;
-const P2 = 92;
-const S2 = 58;
-const PHONE = 150;
-const P3 = 92;
-const S3 = 58;
+// ===================== Timing (authored in 30fps units, rendered at 60fps) =====================
+// Scene logic uses a virtual 30fps frame (useCurrentFrame()/K); only the Series
+// boundaries and audio cue offsets are scaled by K to real 60fps frames.
+const FPS = 60;
+const K = FPS / 30; // 2
+const S_INTRO = 54;
+const AGENDA = 104;
+const P1 = 100;
+const S1 = 60;
+const P2 = 100;
+const S2 = 60;
+const PHONE = 158;
+const P3 = 100;
+const S3 = 60;
 const BRAND = 46;
-const OUT = 72;
-export const GOD_DURATION =
+const OUT = 74;
+const BASE_TOTAL =
   S_INTRO + AGENDA + P1 + S1 + P2 + S2 + PHONE + P3 + S3 + BRAND + OUT;
+export const GOD_DURATION = BASE_TOTAL * K;
+export const GOD_FPS = FPS;
 
 const T_AGENDA = S_INTRO;
 const T_P1 = T_AGENDA + AGENDA;
@@ -86,7 +92,7 @@ const MOTIFS = [
 ];
 
 const ComplianceMotifs: React.FC = () => {
-  const frame = useCurrentFrame();
+  const frame = useCurrentFrame() / K;
   return (
     <AbsoluteFill style={{ overflow: "hidden" }}>
       {MOTIFS.map((m, i) => {
@@ -107,7 +113,7 @@ const ComplianceMotifs: React.FC = () => {
 };
 
 const Background: React.FC = () => {
-  const frame = useCurrentFrame();
+  const frame = useCurrentFrame() / K;
   const sway = Math.sin(frame * 0.012) * 60;
   const orb = (x: number, y: number, size: number, color: string) => (
     <div style={{ position: "absolute", left: x, top: y, width: size, height: size, borderRadius: "50%", background: `radial-gradient(circle at 50% 50%, ${color}, rgba(255,255,255,0) 70%)`, filter: "blur(80px)" }} />
@@ -120,7 +126,7 @@ const Background: React.FC = () => {
       {orb(W - 520 - sway, H - 760, 720, "rgba(37,99,235,0.18)")}
       {orb(W / 2 - 380, H / 2 - 380, 760, "rgba(191,219,254,0.30)")}
       <ComplianceMotifs />
-      <AbsoluteFill style={{ background: "radial-gradient(55% 40% at 50% 50%, rgba(255,255,255,0.80), rgba(255,255,255,0) 78%)" }} />
+      <AbsoluteFill style={{ background: "radial-gradient(78% 62% at 50% 47%, rgba(255,255,255,0.60), rgba(255,255,255,0) 90%)" }} />
       <AbsoluteFill style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0) 20%, rgba(255,255,255,0) 80%, rgba(255,255,255,0.45) 100%)" }} />
     </AbsoluteFill>
   );
@@ -128,8 +134,8 @@ const Background: React.FC = () => {
 
 // ===================== 3D scene wrapper =====================
 const Scene3D: React.FC<{ dur: number; axis?: "x" | "y"; children: React.ReactNode }> = ({ dur, axis = "x", children }) => {
-  const f = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const f = useCurrentFrame() / K;
+  const fps = 30;
   const ein = spring({ frame: f, fps, config: { damping: 18, mass: 0.85 } });
   const eout = interpolate(f, [dur - 13, dur - 1], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   const rot = (1 - ein) * -72 + eout * 72;
@@ -207,8 +213,8 @@ const Logo: React.FC<{ size: number }> = ({ size }) => {
 
 // ===================== Scene: Intro (3D logo + orbiting ring + sweep) =====================
 const SceneIntro: React.FC = () => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const frame = useCurrentFrame() / K;
+  const fps = 30;
   const pop = spring({ frame, fps, config: { damping: 11, mass: 0.8 } });
   const spin = interpolate(pop, [0, 1], [-150, 0]);
   const word = spring({ frame: frame - 18, fps, config: { damping: 200 } });
@@ -241,13 +247,13 @@ const AGENDA_ITEMS = [
   { n: "03", icon: <IClock s={40} />, title: "Deals stall on review", color: ROYAL, tint: "#eff6ff" },
 ];
 const AgendaScene: React.FC = () => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const frame = useCurrentFrame() / K;
+  const fps = 30;
   const sp = (delay: number, damping = 200) => spring({ frame: frame - delay, fps, config: { damping } });
   const k = sp(2);
   const h = sp(10);
   return (
-    <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", padding: "0 80px" }}>
+    <AbsoluteFill style={{ alignItems: "center", justifyContent: "flex-start", padding: "210px 80px 0" }}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 18, width: "100%" }}>
         <div style={{ opacity: k, transform: `translateY(${interpolate(k, [0, 1], [-16, 0])}px)` }}><Pill text="Sound familiar?" color={ROYAL} /></div>
         <div style={{ fontFamily: FONT, fontWeight: 800, fontSize: 70, color: INK, letterSpacing: -2.5, textAlign: "center", lineHeight: 1.06, opacity: h, transform: `translateY(${interpolate(h, [0, 1], [22, 0])}px)`, marginBottom: 20 }}>
@@ -255,7 +261,7 @@ const AgendaScene: React.FC = () => {
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 20, width: "100%", maxWidth: 800 }}>
           {AGENDA_ITEMS.map((it, i) => {
-            const p = sp(24 + i * 14, 16);
+            const p = sp(16 + i * 16, 16);
             return (
               <div key={it.n} style={{ display: "flex", alignItems: "center", gap: 24, background: "rgba(255,255,255,0.8)", border: "1px solid rgba(15,23,42,0.07)", borderRadius: 24, padding: "24px 28px", boxShadow: "0 18px 40px rgba(15,23,42,0.07)", opacity: p, transform: `translateX(${interpolate(p, [0, 1], [i % 2 ? 50 : -50, 0])}px)` }}>
                 <div style={{ fontFamily: FONT, fontWeight: 800, fontSize: 40, color: `${it.color}`, opacity: 0.4, width: 58 }}>{it.n}</div>
@@ -273,14 +279,14 @@ const AgendaScene: React.FC = () => {
 // ===================== Scene: Problem (with bullets) =====================
 type Bullet = { icon: React.ReactNode; title: string; sub: string };
 const ProblemScene: React.FC<{ index: string; color: string; tint: string; icon: React.ReactNode; bold: string; bullets: Bullet[] }> = ({ index, color, tint, icon, bold, bullets }) => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const frame = useCurrentFrame() / K;
+  const fps = 30;
   const sp = (delay: number, damping = 200) => spring({ frame: frame - delay, fps, config: { damping } });
   const head = sp(2);
   const big = sp(8, 14);
   const title = sp(14);
   return (
-    <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", padding: "0 70px" }}>
+    <AbsoluteFill style={{ alignItems: "center", justifyContent: "flex-start", padding: "250px 70px 0" }}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 26, width: "100%" }}>
         <div style={{ opacity: head, transform: `translateY(${interpolate(head, [0, 1], [-18, 0])}px)` }}><Pill text={index} color={color} /></div>
         <BigIcon color={color} tint={tint} scale={big} frame={frame}>{icon}</BigIcon>
@@ -311,15 +317,15 @@ const ProblemScene: React.FC<{ index: string; color: string; tint: string; icon:
 
 // ===================== Scene: Solution =====================
 const SolutionScene: React.FC<{ icon: React.ReactNode; bold: string; detail: string }> = ({ icon, bold, detail }) => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const frame = useCurrentFrame() / K;
+  const fps = 30;
   const sp = (delay: number, damping = 200) => spring({ frame: frame - delay, fps, config: { damping } });
   const head = sp(2);
   const big = sp(6, 14);
   const title = sp(12);
   const det = sp(20);
   return (
-    <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", padding: "0 80px" }}>
+    <AbsoluteFill style={{ alignItems: "center", justifyContent: "flex-start", padding: "380px 80px 0" }}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 30, textAlign: "center" }}>
         <div style={{ opacity: head }}><Pill text="AuditReady" color={ROYAL} /></div>
         <BigIcon color={ROYAL} tint="#eff6ff" scale={big} frame={frame}>{icon}</BigIcon>
@@ -341,8 +347,8 @@ const DASH_RATIO = 3255 / 1290;
 const CTRL_RATIO = 2640 / 1290;
 
 const ScenePhone: React.FC = () => {
-  const f = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const f = useCurrentFrame() / K;
+  const fps = 30;
 
   // natural entrance: float up, settle with subtle overshoot
   const enter = spring({ frame: f, fps, config: { damping: 14, mass: 1.1, stiffness: 90 } });
@@ -390,9 +396,9 @@ const ScenePhone: React.FC = () => {
 
       <div style={{ position: "absolute", top: 392, transformStyle: "preserve-3d" }}>
         {/* contact shadow */}
-        <div style={{ position: "absolute", left: PHONE_W / 2 - 170, top: PHONE_H + 40 + ty * 0.1, width: 340, height: 60, borderRadius: "50%", background: "rgba(37,99,235,0.28)", filter: "blur(34px)", opacity: opacity * (0.7 - Math.abs(bob) * 0.01), transform: `scale(${1 - Math.abs(bob) * 0.01})` }} />
+        <div style={{ position: "absolute", left: PHONE_W / 2 - 170, top: PHONE_H + 40 + ty * 0.1, width: 360, height: 64, borderRadius: "50%", background: "rgba(37,99,235,0.16)", filter: "blur(42px)", opacity: opacity * (0.7 - Math.abs(bob) * 0.01), transform: `scale(${1 - Math.abs(bob) * 0.01})` }} />
 
-        <div style={{ width: PHONE_W, height: PHONE_H, borderRadius: 72, background: "linear-gradient(155deg, #fdfdff, #e4eaf2)", border: "3px solid #d7deea", boxShadow: "0 80px 160px rgba(37,99,235,0.30), 0 30px 70px rgba(15,23,42,0.18), inset 0 2px 3px rgba(255,255,255,0.9)", transform: `translateY(${ty}px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(${scale})`, opacity, transformStyle: "preserve-3d", position: "relative" }}>
+        <div style={{ width: PHONE_W, height: PHONE_H, borderRadius: 72, background: "linear-gradient(155deg, #fdfdff, #e7ecf3)", border: "3px solid #dce3ed", boxShadow: "0 50px 90px rgba(37,99,235,0.14), 0 18px 44px rgba(15,23,42,0.12), inset 0 2px 3px rgba(255,255,255,0.9)", transform: `translateY(${ty}px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(${scale})`, opacity, transformStyle: "preserve-3d", position: "relative" }}>
           {/* camera pill */}
           <div style={{ position: "absolute", top: 28, left: "50%", transform: "translateX(-50%)", width: 130, height: 32, borderRadius: 999, background: "#d7deea", zIndex: 6 }} />
           {/* screen — single tall page, natural vertical scroll */}
@@ -417,8 +423,8 @@ const ScenePhone: React.FC = () => {
 
 // ===================== Scene: Brand =====================
 const SceneBrand: React.FC = () => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const frame = useCurrentFrame() / K;
+  const fps = 30;
   const pop = spring({ frame, fps, config: { damping: 12 } });
   const line = spring({ frame: frame - 14, fps, config: { damping: 200 } });
   return (
@@ -431,8 +437,8 @@ const SceneBrand: React.FC = () => {
 
 // ===================== Scene: Outro =====================
 const SceneOutro: React.FC = () => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const frame = useCurrentFrame() / K;
+  const fps = 30;
   const p = spring({ frame, fps, config: { damping: 13 } });
   const underline = spring({ frame: frame - 12, fps, config: { damping: 200 }, durationInFrames: 30 });
   const shimmer = interpolate(frame % 80, [0, 80], [-300, 300]);
@@ -455,6 +461,27 @@ const ProgressBar: React.FC = () => {
   const { durationInFrames } = useVideoConfig();
   const w = interpolate(frame, [0, durationInFrames - 1], [0, 100], { extrapolateRight: "clamp" });
   return <div style={{ position: "absolute", bottom: 0, left: 0, height: 6, width: `${w}%`, background: `linear-gradient(90deg, ${ROYAL}, ${SKY})` }} />;
+};
+
+// ===================== Grain (dithers gradients, kills banding) =====================
+const NOISE_URI =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E\")";
+const Grain: React.FC = () => {
+  const frame = useCurrentFrame();
+  const x = (frame * 13) % 200;
+  const y = (frame * 7) % 200;
+  return (
+    <AbsoluteFill
+      style={{
+        backgroundImage: NOISE_URI,
+        backgroundRepeat: "repeat",
+        backgroundPosition: `${x}px ${y}px`,
+        opacity: 0.045,
+        mixBlendMode: "overlay",
+        pointerEvents: "none",
+      }}
+    />
+  );
 };
 
 // ===================== Audio cues =====================
@@ -507,15 +534,15 @@ export const VerticalGod: React.FC = () => {
       <Background />
       <Audio src={staticFile("audio/music.wav")} volume={0.9} />
       {CUES.map((c, i) => (
-        <Sequence key={i} from={c.from}>
+        <Sequence key={i} from={Math.round(c.from * K)}>
           <Audio src={staticFile(c.src)} volume={c.volume} />
         </Sequence>
       ))}
 
       <Series>
-        <Series.Sequence durationInFrames={S_INTRO}><Scene3D dur={S_INTRO} axis="y"><SceneIntro /></Scene3D></Series.Sequence>
-        <Series.Sequence durationInFrames={AGENDA}><Scene3D dur={AGENDA} axis="x"><AgendaScene /></Scene3D></Series.Sequence>
-        <Series.Sequence durationInFrames={P1}>
+        <Series.Sequence durationInFrames={S_INTRO * K}><Scene3D dur={S_INTRO} axis="y"><SceneIntro /></Scene3D></Series.Sequence>
+        <Series.Sequence durationInFrames={AGENDA * K}><Scene3D dur={AGENDA} axis="x"><AgendaScene /></Scene3D></Series.Sequence>
+        <Series.Sequence durationInFrames={P1 * K}>
           <Scene3D dur={P1} axis="x">
             <ProblemScene index="Problem 01" color={ROSE} tint="#fff1f2" icon={<IScatter />} bold="Evidence lives everywhere." bullets={[
               { icon: <IScatter s={34} />, title: "Scattered files", sub: "Screenshots & spreadsheets across 12+ tools" },
@@ -524,8 +551,8 @@ export const VerticalGod: React.FC = () => {
             ]} />
           </Scene3D>
         </Series.Sequence>
-        <Series.Sequence durationInFrames={S1}><Scene3D dur={S1} axis="y"><SolutionScene icon={<ILock />} bold="One Evidence Locker." detail="Auto-collected from GitHub, Google & Slack — always current." /></Scene3D></Series.Sequence>
-        <Series.Sequence durationInFrames={P2}>
+        <Series.Sequence durationInFrames={S1 * K}><Scene3D dur={S1} axis="y"><SolutionScene icon={<ILock />} bold="One Evidence Locker." detail="Auto-collected from GitHub, Google & Slack — always current." /></Scene3D></Series.Sequence>
+        <Series.Sequence durationInFrames={P2 * K}>
           <Scene3D dur={P2} axis="x">
             <ProblemScene index="Problem 02" color={VIOLET} tint="#f5f3ff" icon={<IHourglass />} bold="Audit prep eats months." bullets={[
               { icon: <IHourglass s={34} />, title: "Manual mapping", sub: "Hand-mapping every SOC 2 control" },
@@ -534,9 +561,9 @@ export const VerticalGod: React.FC = () => {
             ]} />
           </Scene3D>
         </Series.Sequence>
-        <Series.Sequence durationInFrames={S2}><Scene3D dur={S2} axis="y"><SolutionScene icon={<IGauge />} bold="A score in 10 minutes." detail="Connect your stack and see exactly where you stand." /></Scene3D></Series.Sequence>
-        <Series.Sequence durationInFrames={PHONE}><ScenePhone /></Series.Sequence>
-        <Series.Sequence durationInFrames={P3}>
+        <Series.Sequence durationInFrames={S2 * K}><Scene3D dur={S2} axis="y"><SolutionScene icon={<IGauge />} bold="A score in 10 minutes." detail="Connect your stack and see exactly where you stand." /></Scene3D></Series.Sequence>
+        <Series.Sequence durationInFrames={PHONE * K}><ScenePhone /></Series.Sequence>
+        <Series.Sequence durationInFrames={P3 * K}>
           <Scene3D dur={P3} axis="x">
             <ProblemScene index="Problem 03" color={ROSE} tint="#fff1f2" icon={<IClock />} bold="Deals stall on security review." bullets={[
               { icon: <IClock s={34} />, title: "Slow buyers", sub: "Enterprise security reviews drag for weeks" },
@@ -545,11 +572,12 @@ export const VerticalGod: React.FC = () => {
             ]} />
           </Scene3D>
         </Series.Sequence>
-        <Series.Sequence durationInFrames={S3}><Scene3D dur={S3} axis="y"><SolutionScene icon={<IShieldCheck />} bold="Share a live Trust Page." detail="Send real-time proof and close enterprise deals faster." /></Scene3D></Series.Sequence>
-        <Series.Sequence durationInFrames={BRAND}><Scene3D dur={BRAND} axis="y"><SceneBrand /></Scene3D></Series.Sequence>
-        <Series.Sequence durationInFrames={OUT}><SceneOutro /></Series.Sequence>
+        <Series.Sequence durationInFrames={S3 * K}><Scene3D dur={S3} axis="y"><SolutionScene icon={<IShieldCheck />} bold="Share a live Trust Page." detail="Send real-time proof and close enterprise deals faster." /></Scene3D></Series.Sequence>
+        <Series.Sequence durationInFrames={BRAND * K}><Scene3D dur={BRAND} axis="y"><SceneBrand /></Scene3D></Series.Sequence>
+        <Series.Sequence durationInFrames={OUT * K}><SceneOutro /></Series.Sequence>
       </Series>
 
+      <Grain />
       <ProgressBar />
     </AbsoluteFill>
   );
