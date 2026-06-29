@@ -1920,26 +1920,25 @@ function handleCallback() {
 }
 
 // ── Ad / sitelink deep-links ──────────────────────────────────
-// Lets Google Ads sitelinks land on a specific view (e.g. ?view=pricing
-// opens the pricing modal, ?view=soc2 opens the SOC 2 guide). These open
+// Lets Google Ads sitelinks use clean paths (e.g. /pricing opens the pricing
+// modal, /soc2 opens the SOC 2 guide). The catch-all rewrite in vercel.json
+// already serves index.html for these paths, so they never 404. These open
 // only PUBLIC modals — no auth, no account data — so they're safe for a
-// logged-out ad visitor. The `view` param is stripped from the address bar
-// after use, while gclid/utm_* tracking params are preserved so Google Ads
-// conversion attribution still works.
+// logged-out ad visitor. After acting we normalize the address bar back to
+// "/" while preserving gclid/utm_* so Google Ads conversion attribution still
+// works and the SPA's own routing/login state isn't affected.
 function applyDeepLink() {
   try {
-    const p = new URLSearchParams(location.search);
-    const view = p.get('view');
-    if (!view) return;
+    const path = location.pathname.replace(/\/+$/, '').toLowerCase();
     const open = {
-      pricing: () => { if (typeof openPricingModal === 'function') openPricingModal(); },
-      soc2:    () => { if (typeof openSoc2Modal === 'function') openSoc2Modal(); },
-    }[view];
-    // Strip only `view`; keep gclid/utm_* so ad tracking is untouched.
-    p.delete('view');
-    const qs = p.toString();
-    history.replaceState({}, '', location.pathname + (qs ? '?' + qs : ''));
-    if (open) setTimeout(open, 150);
+      '/pricing':      () => { if (typeof openPricingModal === 'function') openPricingModal(); },
+      '/soc2':         () => { if (typeof openSoc2Modal === 'function') openSoc2Modal(); },
+      '/how-it-works': () => { if (typeof openSoc2Modal === 'function') openSoc2Modal(); },
+      '/get-started':  () => {},  // lands on the hero CTA, no modal
+    }[path];
+    if (!open) return;
+    history.replaceState({}, '', '/' + location.search);  // keep gclid/utm
+    setTimeout(open, 150);
   } catch {}
 }
 
