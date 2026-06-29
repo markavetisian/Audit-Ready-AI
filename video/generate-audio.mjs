@@ -114,7 +114,7 @@ function place(L, R, voice, offset, pan = 0, gain = 1) {
 // ============================================================
 {
   const bpm = 84, beat = 60 / bpm, bar = beat * 4;
-  const bars = 11, dur = bar * bars + 1.2;
+  const bars = 13, dur = bar * bars + 1.2;
   const n = Math.floor(dur * SR);
   const L = new Float32Array(n), R = new Float32Array(n);
   // dry buses we will reverb

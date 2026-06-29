@@ -18,7 +18,9 @@ import {
 // boundaries and audio cue offsets are scaled by K to real 60fps frames.
 const FPS = 120;
 const K = FPS / 30; // 4
-// Order: cold-open agenda (hook) -> 3 problems -> "Presenting" reveal -> solutions -> outro
+// Order: branded context opener -> agenda hook -> 3 problems -> "Presenting"
+// reveal -> solutions -> outro
+const OPEN = 86;
 const AGENDA = 104;
 const P1 = 100;
 const P2 = 100;
@@ -31,11 +33,12 @@ const S3 = 60;
 const BRAND = 46;
 const OUT = 74;
 const BASE_TOTAL =
-  AGENDA + P1 + P2 + P3 + REVEAL + S1 + S2 + PHONE + S3 + BRAND + OUT;
+  OPEN + AGENDA + P1 + P2 + P3 + REVEAL + S1 + S2 + PHONE + S3 + BRAND + OUT;
 export const GOD_DURATION = BASE_TOTAL * K;
 export const GOD_FPS = FPS;
 
-const T_AGENDA = 0;
+const T_OPEN = 0;
+const T_AGENDA = T_OPEN + OPEN;
 const T_P1 = T_AGENDA + AGENDA;
 const T_P2 = T_P1 + P1;
 const T_P3 = T_P2 + P2;
@@ -220,6 +223,36 @@ const Logo: React.FC<{ size: number }> = ({ size }) => {
         </span>
       </div>
     </div>
+  );
+};
+
+// ===================== Scene: Opener — branded context (what this is) =====================
+const SceneOpen: React.FC = () => {
+  const frame = useCurrentFrame() / K;
+  const fps = 30;
+  const pop = spring({ frame, fps, config: { damping: 12, mass: 0.8 } });
+  const word = spring({ frame: frame - 14, fps, config: { damping: 200 } });
+  const prop = spring({ frame: frame - 26, fps, config: { damping: 200 } });
+  const ctx = spring({ frame: frame - 40, fps, config: { damping: 200 } });
+  const sweep = interpolate(frame % 70, [0, 70], [-160, 160]);
+  return (
+    <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", gap: 34, perspective: 1500, textAlign: "center", padding: "0 70px" }}>
+      <div style={{ transform: `scale(${interpolate(pop, [0, 1], [0.5, 1])})`, position: "relative" }}>
+        <Logo size={196} />
+        <div style={{ position: "absolute", inset: 0, borderRadius: 47, overflow: "hidden", pointerEvents: "none" }}>
+          <div style={{ position: "absolute", top: 0, left: sweep, width: 64, height: "100%", background: "linear-gradient(100deg, transparent, rgba(255,255,255,0.5), transparent)", filter: "blur(7px)", transform: "skewX(-12deg)" }} />
+        </div>
+      </div>
+      <div style={{ fontFamily: FONT, fontWeight: 800, fontSize: 80, color: INK, letterSpacing: -2.5, opacity: word, transform: `translateY(${interpolate(word, [0, 1], [22, 0])}px)` }}>
+        AuditReady<span style={{ color: ROYAL }}> AI</span>
+      </div>
+      <div style={{ fontFamily: FONT, fontWeight: 700, fontSize: 42, color: ROYAL, letterSpacing: -0.5, opacity: prop, transform: `translateY(${interpolate(prop, [0, 1], [18, 0])}px)` }}>
+        SOC 2 compliance, automated.
+      </div>
+      <div style={{ fontFamily: FONT, fontWeight: 500, fontSize: 34, color: SLATE, lineHeight: 1.35, maxWidth: 820, opacity: ctx }}>
+        Get audit-ready in days, not months — and close the enterprise deals waiting on it.
+      </div>
+    </AbsoluteFill>
   );
 };
 
@@ -501,8 +534,12 @@ const Grain: React.FC = () => {
 // ===================== Audio cues =====================
 const cue = (src: string, from: number, volume = 0.5) => ({ src, from, volume });
 const CUES = [
-  // cold open (agenda hook)
-  cue("audio/whoosh.wav", 2, 0.4),
+  // branded opener
+  cue("audio/impact.wav", T_OPEN + 1, 0.6),
+  cue("audio/sparkle.wav", T_OPEN + 12, 0.5),
+  cue("audio/pop.wav", T_OPEN + 26, 0.4),
+  // hook (agenda)
+  cue("audio/whoosh.wav", T_AGENDA - 4, 0.45),
   cue("audio/pop.wav", T_AGENDA + 8, 0.42),
   cue("audio/tick.wav", T_AGENDA + 22, 0.32),
   cue("audio/tick.wav", T_AGENDA + 38, 0.32),
@@ -562,7 +599,9 @@ export const VerticalGod: React.FC = () => {
       ))}
 
       <Series>
-        {/* COLD OPEN — hook + the 3 problems, no logo */}
+        {/* BRANDED CONTEXT OPENER — what this is */}
+        <Series.Sequence durationInFrames={OPEN * K}><Scene3D dur={OPEN} axis="y"><SceneOpen /></Scene3D></Series.Sequence>
+        {/* HOOK + the 3 problems */}
         <Series.Sequence durationInFrames={AGENDA * K}><Scene3D dur={AGENDA} axis="x"><AgendaScene /></Scene3D></Series.Sequence>
         <Series.Sequence durationInFrames={P1 * K}>
           <Scene3D dur={P1} axis="x">
