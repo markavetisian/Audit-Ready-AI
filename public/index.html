@@ -901,9 +901,9 @@ header{
     <p>Connect your tools, get your SOC 2 readiness score instantly, and walk into every enterprise conversation audit-ready.</p>
     <button class="lp-estimate-cta" onclick="openEstimate()">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-      Get your free SOC 2 score — no login, 30 seconds
+      See where you stand on SOC 2 →
     </button>
-    <div style="font-size:11.5px;color:#94a3b8;margin:2px 0 14px">or connect your stack for a full automated scan ↓</div>
+    <div style="font-size:11.5px;color:#94a3b8;margin:2px 0 14px">Benchmark your readiness in a few questions — or connect your stack below for the verified score.</div>
     <div class="lp-btns">
       <button class="lp-btn-gh" onclick="location.href='/api/auth?provider=github'">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12"/></svg>
@@ -1499,8 +1499,8 @@ header{
 
     <!-- Quiz -->
     <div id="estQuiz">
-      <div style="font-size:21px;font-weight:800;color:#0f172a;margin-bottom:4px;letter-spacing:-.01em">Your instant SOC 2 readiness estimate</div>
-      <div style="font-size:13px;color:#64748b;margin-bottom:16px">7 quick questions. No login, no card — get your score and top gaps in 30 seconds.</div>
+      <div style="font-size:21px;font-weight:800;color:#0f172a;margin-bottom:4px;letter-spacing:-.01em">How audit-ready are you, really?</div>
+      <div style="font-size:13px;color:#64748b;margin-bottom:16px">Answer 7 questions to benchmark your readiness against what auditors and enterprise security teams actually require.</div>
       <div id="estQuestions"></div>
       <button class="btn btn-primary btn-full" style="margin-top:16px" onclick="computeEstimate()">See my readiness score →</button>
       <div style="font-size:10.5px;color:#94a3b8;text-align:center;margin-top:10px">A self-assessment estimate. Your real, continuously-monitored score comes from connecting your stack.</div>
@@ -1511,11 +1511,11 @@ header{
       <div id="estScoreBox"></div>
 
       <div id="estLeadBox" style="margin-top:18px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px">
-        <div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:4px">Unlock your full 30-day fix plan</div>
-        <div style="font-size:12px;color:#64748b;margin-bottom:11px">See exactly how to close each gap. Enter your email and we'll save your results.</div>
+        <div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:4px">Get your full readiness roadmap</div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:11px">See exactly what an enterprise security review checks — and what it takes to pass each one.</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <input id="estEmail" type="email" placeholder="you@company.com" style="flex:1;min-width:180px;padding:11px 13px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px">
-          <button class="btn btn-primary" onclick="submitEstimateLead()" style="white-space:nowrap">Unlock my fix plan</button>
+          <button class="btn btn-primary" onclick="submitEstimateLead()" style="white-space:nowrap">Get my roadmap</button>
         </div>
         <div id="estLeadMsg" style="font-size:12px;margin-top:8px;min-height:16px"></div>
       </div>
@@ -1523,9 +1523,9 @@ header{
       <div id="estPlan" style="display:none;margin-top:16px"></div>
 
       <div style="margin-top:18px;background:linear-gradient(135deg,#eff6ff,#f8fafc);border:1px solid rgba(37,99,235,.25);border-radius:12px;padding:16px">
-        <div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:5px">This isn't a one-time check.</div>
-        <div style="font-size:12.5px;color:#475569;line-height:1.55;margin-bottom:12px">Your readiness changes every time your team ships code or hires. Connect your stack to turn this estimate into a <strong>live score we monitor continuously</strong> — keep your Trust Page current and get alerted before every renewal.</div>
-        <button class="btn btn-primary btn-full" onclick="location.href='/api/auth?provider=github'">Connect your stack for your live score →</button>
+        <div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:5px">Self-reported won't pass a security review.</div>
+        <div style="font-size:12.5px;color:#475569;line-height:1.55;margin-bottom:12px">When a customer asks for SOC 2, they need <strong>verified evidence</strong> — not a checklist you filled out yourself. Connect your stack and AuditReady turns these answers into auditor-grade, continuously-monitored proof and a <strong>Trust Page you can send to the deal that's waiting</strong>.</div>
+        <button class="btn btn-primary btn-full" onclick="location.href='/api/auth?provider=github'">Connect your stack for your verified score →</button>
       </div>
     </div>
   </div>
@@ -3279,20 +3279,35 @@ function computeEstimate() {
   const score = estScore();
   const gaps = EST_QUESTIONS.filter(q => !_estAnswers[q.id]);
   const color = score >= 80 ? '#16a34a' : score >= 50 ? '#f59e0b' : '#ef4444';
-  const band  = score >= 80 ? 'Nearly audit-ready' : score >= 50 ? 'Getting close' : 'Significant gaps';
+  const band  = score >= 80 ? 'Looks ready — on paper' : score >= 50 ? 'Partly there' : 'Real exposure';
+
+  // The conversion driver: a self-assessment is worthless to a customer's
+  // security team. Every band ends pointing at verified proof + the stuck deal,
+  // so even a 100% scorer has a reason to connect (they can't PROVE it yet).
+  let pitch;
+  if (score >= 80) {
+    pitch = "Strong answers. But here's what every founder hits at the security-review stage: <strong>saying you have a control isn't proving it.</strong> A customer's security team wants evidence for every one — collected, current, on demand. That's the gap between looking ready and closing the deal.";
+  } else if (score >= 50) {
+    pitch = "You're partway there — and the gaps below are <strong>exactly where enterprise deals stall</strong> at the security review. Even your 'yes' answers need evidence to back them up before a customer will accept them.";
+  } else {
+    pitch = "There's real exposure here, and <strong>a customer's security team will find it fast.</strong> None of this is something you could prove if an enterprise prospect asked you tomorrow.";
+  }
+
   const gapHtml = gaps.length
-    ? gaps.slice(0, 4).map(g =>
+    ? '<div style="font-size:13px;font-weight:700;color:#0f172a;margin:15px 0 9px">Where a security review will probe you</div>' +
+      gaps.slice(0, 7).map(g =>
         '<div class="est-gap"><span class="est-gap-cc">' + g.cc + '</span><span class="est-gap-txt">' + esc(g.gap) + '</span></div>'
       ).join('')
-    : '<div style="font-size:13px;color:#16a34a;font-weight:600">No major gaps flagged — you\'re in strong shape. Connect your stack to prove it with a live Trust Page.</div>';
+    : '<div style="font-size:13px;font-weight:700;color:#0f172a;margin:15px 0 9px">Can you prove all 7?</div>' +
+      '<div style="font-size:12.5px;color:#475569;line-height:1.55">You answered yes to everything — strong. But a customer needs <strong>evidence</strong> for each control, not your word. A verified score and Trust Page are what actually close the deal.</div>';
 
   document.getElementById('estScoreBox').innerHTML =
-    '<div style="display:flex;align-items:center;gap:18px;margin-bottom:16px">' +
+    '<div style="display:flex;align-items:center;gap:18px;margin-bottom:12px">' +
       '<div style="font-size:48px;font-weight:800;color:' + color + ';font-family:var(--mono,monospace);line-height:1">' + score + '%</div>' +
       '<div><div style="font-size:16px;font-weight:700;color:#0f172a">' + band + '</div>' +
-      '<div style="font-size:12.5px;color:#64748b">' + (EST_QUESTIONS.length - gaps.length) + ' of ' + EST_QUESTIONS.length + ' key controls in place</div></div>' +
+      '<div style="font-size:12.5px;color:#64748b">' + (EST_QUESTIONS.length - gaps.length) + ' of ' + EST_QUESTIONS.length + ' controls self-reported</div></div>' +
     '</div>' +
-    '<div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:9px">Your top gaps to close</div>' +
+    '<div style="font-size:13px;color:#334155;line-height:1.6;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 14px">' + pitch + '</div>' +
     gapHtml;
 
   document.getElementById('estQuiz').style.display = 'none';
@@ -3315,18 +3330,21 @@ async function submitEstimateLead() {
       body: JSON.stringify({ email, score, answers: _estAnswers, gaps, source: 'estimate' }),
     });
     if (!r.ok) throw new Error();
-    // Reveal the full fix plan inline (honest: no email is "sent" — we unlock it here).
-    const fixes = EST_QUESTIONS.filter(q => !_estAnswers[q.id]);
+    // Reveal the roadmap inline (honest: no email is "sent" — we unlock it here).
+    // Framed as what a review checks + that the platform is what verifies it,
+    // so it builds authority without giving away the product (the proof itself).
+    const items = EST_QUESTIONS.filter(q => !_estAnswers[q.id]);
+    const list = items.length ? items : EST_QUESTIONS;
     document.getElementById('estPlan').innerHTML =
-      '<div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:9px">Your 30-day fix plan</div>' +
-      (fixes.length
-        ? fixes.map((q, i) =>
-            '<div class="est-gap" style="border-color:#e2e8f0">' +
-              '<span class="est-gap-cc" style="color:#1d4ed8;background:#eff6ff">' + (i + 1) + '</span>' +
-              '<span class="est-gap-txt"><strong>' + esc(q.gap) + '</strong><br>' + esc(q.fix) + '</span>' +
-            '</div>'
-          ).join('')
-        : '<div style="font-size:12.5px;color:#475569">You\'ve got the fundamentals covered — connect your stack to turn it into audit-ready evidence.</div>');
+      '<div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:4px">Your readiness roadmap</div>' +
+      '<div style="font-size:12px;color:#64748b;margin-bottom:10px">What an enterprise security review checks — and how it becomes provable.</div>' +
+      list.map(q =>
+        '<div class="est-gap" style="border-color:#e2e8f0">' +
+          '<span class="est-gap-cc" style="color:#1d4ed8;background:#eff6ff">' + q.cc + '</span>' +
+          '<span class="est-gap-txt">' + esc(q.fix) +
+            ' <span style="color:#1d4ed8;font-weight:600">→ auto-verified when you connect your stack.</span></span>' +
+        '</div>'
+      ).join('');
     document.getElementById('estPlan').style.display = '';
     msg.style.color = '#16a34a'; msg.textContent = '✓ Unlocked below.';
     document.getElementById('estEmail').disabled = true;
