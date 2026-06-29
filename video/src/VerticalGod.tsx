@@ -18,7 +18,7 @@ import {
 // boundaries and audio cue offsets are scaled by K to real 60fps frames.
 const FPS = 60;
 const K = FPS / 30; // 2
-const S_INTRO = 54;
+const S_INTRO = 72;
 const AGENDA = 104;
 const P1 = 100;
 const S1 = 60;
@@ -132,21 +132,31 @@ const Background: React.FC = () => {
   );
 };
 
-// ===================== 3D scene wrapper =====================
+// ===================== 3D scene wrapper — premium depth fly-through + light streak =====================
 const Scene3D: React.FC<{ dur: number; axis?: "x" | "y"; children: React.ReactNode }> = ({ dur, axis = "x", children }) => {
   const f = useCurrentFrame() / K;
-  const fps = 30;
-  const ein = spring({ frame: f, fps, config: { damping: 18, mass: 0.85 } });
-  const eout = interpolate(f, [dur - 13, dur - 1], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const rot = (1 - ein) * -72 + eout * 72;
-  const ty = (1 - ein) * 70 - eout * 70;
-  const tz = (1 - ein) * -360 - eout * 260;
-  const op = ein * (1 - eout);
-  const r = axis === "y" ? `rotateY(${rot}deg)` : `rotateX(${rot}deg)`;
+  const ein = spring({ frame: f, fps: 30, config: { damping: 15, mass: 0.9, stiffness: 130 } });
+  const eout = interpolate(f, [dur - 12, dur - 1], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.in(Easing.cubic) });
+
+  // enter: rush in from depth with overshoot; exit: push back + fade
+  const scale = interpolate(ein, [0, 1], [0.82, 1]) + eout * 0.16;
+  const tz = interpolate(ein, [0, 1], [-700, 0]) + eout * 440;
+  const rotV = (1 - ein) * 22 + eout * -20;
+  const r = axis === "y" ? `rotateY(${rotV}deg)` : `rotateX(${rotV}deg)`;
+  const blur = (1 - Math.min(1, ein)) * 6 + eout * 6;
+  const op = Math.min(ein, 1 - eout);
+
+  // light streak sweep on entrance
+  const streak = interpolate(f, [0, 13], [-35, 135], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const streakOp = interpolate(f, [0, 4, 13], [0, 0.55, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+
   return (
     <AbsoluteFill style={{ perspective: 1700 }}>
-      <AbsoluteFill style={{ transform: `translateY(${ty}px) translateZ(${tz}px) ${r}`, opacity: op, transformStyle: "preserve-3d" }}>
+      <AbsoluteFill style={{ transform: `translateZ(${tz}px) ${r} scale(${scale})`, opacity: op, filter: blur > 0.4 ? `blur(${blur}px)` : "none", transformStyle: "preserve-3d" }}>
         {children}
+      </AbsoluteFill>
+      <AbsoluteFill style={{ pointerEvents: "none", overflow: "hidden", opacity: streakOp, mixBlendMode: "screen" }}>
+        <div style={{ position: "absolute", top: "-20%", left: `${streak}%`, width: "32%", height: "140%", background: "linear-gradient(105deg, transparent, rgba(96,165,250,0.55), rgba(255,255,255,0.7), transparent)", filter: "blur(16px)", transform: "skewX(-14deg)" }} />
       </AbsoluteFill>
     </AbsoluteFill>
   );
@@ -211,17 +221,19 @@ const Logo: React.FC<{ size: number }> = ({ size }) => {
   );
 };
 
-// ===================== Scene: Intro (3D logo + orbiting ring + sweep) =====================
+// ===================== Scene: Intro — "Presenting AuditReady AI" =====================
 const SceneIntro: React.FC = () => {
   const frame = useCurrentFrame() / K;
   const fps = 30;
-  const pop = spring({ frame, fps, config: { damping: 11, mass: 0.8 } });
+  const kick = spring({ frame, fps, config: { damping: 200 } });
+  const pop = spring({ frame: frame - 12, fps, config: { damping: 11, mass: 0.8 } });
   const spin = interpolate(pop, [0, 1], [-150, 0]);
-  const word = spring({ frame: frame - 18, fps, config: { damping: 200 } });
-  const tag = spring({ frame: frame - 30, fps, config: { damping: 200 } });
+  const word = spring({ frame: frame - 28, fps, config: { damping: 200 } });
+  const tag = spring({ frame: frame - 40, fps, config: { damping: 200 } });
   const sweep = interpolate(frame % 70, [0, 70], [-220, 220]);
   return (
-    <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", gap: 50, perspective: 1500 }}>
+    <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", gap: 44, perspective: 1500 }}>
+      <div style={{ fontFamily: FONT, fontWeight: 700, fontSize: 30, color: SLATE, letterSpacing: interpolate(kick, [0, 1], [2, 14]), textTransform: "uppercase", opacity: kick, transform: `translateY(${interpolate(kick, [0, 1], [16, 0])}px)` }}>Presenting</div>
       <div style={{ transform: `rotateY(${spin}deg) scale(${interpolate(pop, [0, 1], [0.4, 1])})`, transformStyle: "preserve-3d", position: "relative" }}>
         {/* orbiting ring */}
         <div style={{ position: "absolute", inset: -54, borderRadius: "50%", border: `4px solid ${SKY}55`, transform: `rotateX(72deg) rotateZ(${frame * 3}deg)` }} />
@@ -354,14 +366,14 @@ const ScenePhone: React.FC = () => {
   const enter = spring({ frame: f, fps, config: { damping: 14, mass: 1.1, stiffness: 90 } });
   const exit = interpolate(f, [PHONE - 28, PHONE - 2], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
-  // resting tilt + gentle held-in-hand sway (subtle so text stays readable)
-  const swayY = Math.sin(f * 0.045) * 2.4;
-  const swayX = Math.sin(f * 0.035 + 1) * 1.4;
-  const tiltY = interpolate(enter, [0, 1], [34, -9]) + swayY + exit * 26;
-  const tiltX = interpolate(enter, [0, 1], [18, 4]) + swayX - exit * 8;
-  const bob = Math.sin(f * 0.05) * 10;
-  const ty = interpolate(enter, [0, 1], [1280, 0]) + bob - exit * 360;
-  const scale = interpolate(enter, [0, 1], [0.82, 1]) - exit * 0.08;
+  // resting tilt + gentle held-in-hand sway (shallow angles so no 3D aliasing seams)
+  const swayY = Math.sin(f * 0.045) * 2.2;
+  const swayX = Math.sin(f * 0.035 + 1) * 1.2;
+  const tiltY = interpolate(enter, [0, 1], [15, -8]) + swayY + exit * 18;
+  const tiltX = interpolate(enter, [0, 1], [7, 4]) + swayX - exit * 5;
+  const bob = Math.sin(f * 0.05) * 9;
+  const ty = interpolate(enter, [0, 1], [820, 0]) + bob - exit * 360;
+  const scale = interpolate(enter, [0, 1], [0.9, 1]) - exit * 0.08;
   const opacity = enter * (1 - exit);
 
   // fast, natural vertical scroll through the real app (dashboard then controls)
@@ -398,7 +410,7 @@ const ScenePhone: React.FC = () => {
         {/* contact shadow */}
         <div style={{ position: "absolute", left: PHONE_W / 2 - 170, top: PHONE_H + 40 + ty * 0.1, width: 360, height: 64, borderRadius: "50%", background: "rgba(37,99,235,0.16)", filter: "blur(42px)", opacity: opacity * (0.7 - Math.abs(bob) * 0.01), transform: `scale(${1 - Math.abs(bob) * 0.01})` }} />
 
-        <div style={{ width: PHONE_W, height: PHONE_H, borderRadius: 72, background: "linear-gradient(155deg, #fdfdff, #e7ecf3)", border: "3px solid #dce3ed", boxShadow: "0 50px 90px rgba(37,99,235,0.14), 0 18px 44px rgba(15,23,42,0.12), inset 0 2px 3px rgba(255,255,255,0.9)", transform: `translateY(${ty}px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(${scale})`, opacity, transformStyle: "preserve-3d", position: "relative" }}>
+        <div style={{ width: PHONE_W, height: PHONE_H, borderRadius: 72, background: "linear-gradient(155deg, #fdfdff, #e7ecf3)", border: "3px solid #dce3ed", boxShadow: "0 50px 90px rgba(37,99,235,0.14), 0 18px 44px rgba(15,23,42,0.12), inset 0 2px 3px rgba(255,255,255,0.9)", transform: `translateY(${ty}px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(${scale})`, opacity, transformStyle: "flat", backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", isolation: "isolate", willChange: "transform", position: "relative" }}>
           {/* camera pill */}
           <div style={{ position: "absolute", top: 28, left: "50%", transform: "translateX(-50%)", width: 130, height: 32, borderRadius: 999, background: "#d7deea", zIndex: 6 }} />
           {/* screen — single tall page, natural vertical scroll */}

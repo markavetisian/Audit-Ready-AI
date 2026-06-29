@@ -227,20 +227,19 @@ sfx("tick", 0.12, (L, R, n) => {
   lowpass(L, 4000); lowpass(R, 4000);
 }, { rev: 0.12, gain: 0.4 });
 
-// WHOOSH — filtered noise swoosh, stereo pan sweep
-sfx("whoosh", 0.7, (L, R, n) => {
-  const rnd = rng(13);
+// SWELL — clean tonal transition (no noise): rising sine + low body, soft swell
+sfx("whoosh", 0.6, (L, R, n) => {
   for (let i = 0; i < n; i++) {
-    const p = i / n;
-    const env = Math.sin(Math.PI * p);
-    const nz = rnd() * env;
-    const pan = -1 + 2 * p; // L -> R
-    const gl = Math.cos((pan + 1) * Math.PI / 4), gr = Math.sin((pan + 1) * Math.PI / 4);
-    L[i] = nz * gl; R[i] = nz * gr;
+    const t = i / SR, p = i / n;
+    const f = 180 + 560 * p; // gentle upward glide
+    const tone = Math.sin(2 * Math.PI * f * t);
+    const sub = Math.sin(2 * Math.PI * (72 + 26 * p) * t) * 0.45;
+    const env = Math.sin(Math.PI * p); // smooth in/out
+    const s = (tone * 0.5 + sub) * env;
+    L[i] = s; R[i] = s;
   }
-  // sweeping band: highpass rising
-  highpass(L, 500); highpass(R, 500); lowpass(L, 5500); lowpass(R, 5500);
-}, { rev: 0.25, decay: 0.75, gain: 0.5 });
+  lowpass(L, 2000); lowpass(R, 2000);
+}, { rev: 0.32, decay: 0.84, gain: 0.42 });
 
 // RISER — rising tone + noise, smooth build
 sfx("riser", 1.1, (L, R, n) => {
@@ -249,13 +248,13 @@ sfx("riser", 1.1, (L, R, n) => {
     const t = i / SR, p = i / n;
     const f = 180 + 1000 * p * p;
     const tone = Math.sin(2 * Math.PI * f * t);
-    const nz = rnd() * 0.35;
+    const nz = rnd() * 0.12;
     const e = p * p;
-    const s = (tone * 0.5 + nz) * e;
+    const s = (tone * 0.6 + nz) * e;
     L[i] = s; R[i] = s;
   }
-  lowpass(L, 5000); lowpass(R, 5000);
-}, { rev: 0.3, decay: 0.82, gain: 0.5 });
+  lowpass(L, 3400); lowpass(R, 3400);
+}, { rev: 0.32, decay: 0.84, gain: 0.45 });
 
 // IMPACT — deep soft boom with body + tail
 sfx("impact", 0.9, (L, R, n) => {
