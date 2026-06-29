@@ -899,6 +899,11 @@ header{
   <div class="lp-hero">
     <h1>Close enterprise deals.<br/><em>Stop losing them</em> to compliance.</h1>
     <p>Connect your tools, get your SOC 2 readiness score instantly, and walk into every enterprise conversation audit-ready.</p>
+    <button class="lp-estimate-cta" onclick="openEstimate()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      Get your free SOC 2 score — no login, 30 seconds
+    </button>
+    <div style="font-size:11.5px;color:#94a3b8;margin:2px 0 14px">or connect your stack for a full automated scan ↓</div>
     <div class="lp-btns">
       <button class="lp-btn-gh" onclick="location.href='/api/auth?provider=github'">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12"/></svg>
@@ -1474,6 +1479,57 @@ header{
     <div class="pm-free-note">Free sandbox: manual tracking, score dashboard, up to 3 scans/hour. No credit card required.</div>
   </div>
 </div>
+<!-- ── Instant Readiness Estimate (no-login lead magnet) ──────── -->
+<style>
+  .lp-estimate-cta{display:inline-flex;align-items:center;gap:9px;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;border-radius:12px;padding:15px 26px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 10px 28px rgba(37,99,235,.32);transition:transform .15s,box-shadow .15s}
+  .lp-estimate-cta:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(37,99,235,.4)}
+  .est-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #f1f5f9}
+  .est-q{flex:1;font-size:13px;color:#0f172a;line-height:1.45}
+  .est-toggle{display:inline-flex;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;flex-shrink:0}
+  .est-toggle button{border:none;background:#fff;padding:7px 15px;font-size:12px;font-weight:700;cursor:pointer;color:#64748b}
+  .est-toggle .est-on{background:var(--accent);color:#fff}
+  .est-toggle .est-no.est-on{background:#94a3b8;color:#fff}
+  .est-gap{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;background:#fff;border:1px solid #fee2e2;border-radius:8px;margin-bottom:7px}
+  .est-gap-cc{font-family:var(--mono,monospace);font-size:11px;font-weight:700;color:#b91c1c;background:#fef2f2;border-radius:5px;padding:2px 6px;flex-shrink:0;margin-top:1px}
+  .est-gap-txt{font-size:12.5px;color:#334155;line-height:1.45}
+</style>
+<div id="estimateModal" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeEstimate()">
+  <div class="modal-box" style="max-width:560px;position:relative">
+    <button onclick="closeEstimate()" style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:#94a3b8;line-height:1">✕</button>
+
+    <!-- Quiz -->
+    <div id="estQuiz">
+      <div style="font-size:21px;font-weight:800;color:#0f172a;margin-bottom:4px;letter-spacing:-.01em">Your instant SOC 2 readiness estimate</div>
+      <div style="font-size:13px;color:#64748b;margin-bottom:16px">7 quick questions. No login, no card — get your score and top gaps in 30 seconds.</div>
+      <div id="estQuestions"></div>
+      <button class="btn btn-primary btn-full" style="margin-top:16px" onclick="computeEstimate()">See my readiness score →</button>
+      <div style="font-size:10.5px;color:#94a3b8;text-align:center;margin-top:10px">A self-assessment estimate. Your real, continuously-monitored score comes from connecting your stack.</div>
+    </div>
+
+    <!-- Result -->
+    <div id="estResult" style="display:none">
+      <div id="estScoreBox"></div>
+
+      <div id="estLeadBox" style="margin-top:18px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px">
+        <div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:4px">Unlock your full 30-day fix plan</div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:11px">See exactly how to close each gap. Enter your email and we'll save your results.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input id="estEmail" type="email" placeholder="you@company.com" style="flex:1;min-width:180px;padding:11px 13px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px">
+          <button class="btn btn-primary" onclick="submitEstimateLead()" style="white-space:nowrap">Unlock my fix plan</button>
+        </div>
+        <div id="estLeadMsg" style="font-size:12px;margin-top:8px;min-height:16px"></div>
+      </div>
+
+      <div id="estPlan" style="display:none;margin-top:16px"></div>
+
+      <div style="margin-top:18px;background:linear-gradient(135deg,#eff6ff,#f8fafc);border:1px solid rgba(37,99,235,.25);border-radius:12px;padding:16px">
+        <div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:5px">This isn't a one-time check.</div>
+        <div style="font-size:12.5px;color:#475569;line-height:1.55;margin-bottom:12px">Your readiness changes every time your team ships code or hires. Connect your stack to turn this estimate into a <strong>live score we monitor continuously</strong> — keep your Trust Page current and get alerted before every renewal.</div>
+        <button class="btn btn-primary btn-full" onclick="location.href='/api/auth?provider=github'">Connect your stack for your live score →</button>
+      </div>
+    </div>
+  </div>
+</div>
 <!-- SOC 2 Education Modal -->
 <div id="soc2Modal" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeSoc2Modal()">
   <div class="modal-box" style="max-width:560px">
@@ -1934,6 +1990,7 @@ function applyDeepLink() {
       '/pricing':      () => { if (typeof openPricingModal === 'function') openPricingModal(); },
       '/soc2':         () => { if (typeof openSoc2Modal === 'function') openSoc2Modal(); },
       '/how-it-works': () => { if (typeof openSoc2Modal === 'function') openSoc2Modal(); },
+      '/estimate':     () => { if (typeof openEstimate === 'function') openEstimate(); },
       '/get-started':  () => {},  // lands on the hero CTA, no modal
     }[path];
     if (!open) return;
@@ -3168,6 +3225,113 @@ function pmToggleBilling(annual) {
   setPmBilling(annual);
   if (annual && typeof confetti === 'function') {
     confetti({ particleCount: 80, spread: 60, origin: { y: 0.4 }, colors: ['#2563eb','#16a34a','#f59e0b'] });
+  }
+}
+
+// ── Instant Readiness Estimate (no-login lead magnet) ─────────
+const EST_QUESTIONS = [
+  { id:'mfa',      q:'Do you enforce MFA on all critical systems (email, cloud, code)?',      cc:'CC6.1', gap:'MFA not enforced on all critical systems',          fix:'Turn on MFA org-wide across Google/Microsoft, your cloud console, and GitHub.' },
+  { id:'review',   q:'Is code review / branch protection required before deploying to production?', cc:'CC8.1', gap:'Code changes not reviewed before production',     fix:'Require pull-request review and branch protection on your main branch.' },
+  { id:'policy',   q:'Do you have a written Information Security Policy your team has acknowledged?', cc:'CC1.1', gap:'No documented, acknowledged InfoSec policy',     fix:'Adopt a written InfoSec policy and have every employee formally acknowledge it.' },
+  { id:'training', q:'Do new hires get background checks and security awareness training?',     cc:'CC1.4', gap:'No background checks / security training',           fix:'Run background checks at hire and annual security-awareness training.' },
+  { id:'ir',       q:'Do you have a documented incident response plan?',                        cc:'CC7.3', gap:'No documented incident response plan',              fix:'Document an IR plan: roles, severity levels, and step-by-step response.' },
+  { id:'access',   q:'Do you review and document who has access to what, on a schedule?',       cc:'CC6.2', gap:'Access reviews not performed or documented',        fix:'Run quarterly access reviews and log who approved each access grant.' },
+  { id:'crypto',   q:'Is data encrypted in transit and at rest, with backups tested?',         cc:'CC6.7', gap:'Data encryption / backup not verified',             fix:'Confirm TLS everywhere and encryption at rest, then test a backup restore.' },
+];
+let _estAnswers = {};
+
+function openEstimate() {
+  _estAnswers = {};
+  EST_QUESTIONS.forEach(q => { _estAnswers[q.id] = false; });
+  document.getElementById('estQuestions').innerHTML = EST_QUESTIONS.map(q =>
+    '<div class="est-row">' +
+      '<div class="est-q">' + esc(q.q) + '</div>' +
+      '<div class="est-toggle" data-q="' + q.id + '">' +
+        '<button type="button" onclick="setEst(\'' + q.id + '\',true,this)">Yes</button>' +
+        '<button type="button" class="est-no est-on" onclick="setEst(\'' + q.id + '\',false,this)">No</button>' +
+      '</div>' +
+    '</div>'
+  ).join('');
+  document.getElementById('estQuiz').style.display = '';
+  document.getElementById('estResult').style.display = 'none';
+  document.getElementById('estPlan').style.display = 'none';
+  const msg = document.getElementById('estLeadMsg'); if (msg) msg.textContent = '';
+  const em = document.getElementById('estEmail'); if (em) { em.value = ''; em.disabled = false; }
+  document.getElementById('estimateModal').style.display = 'flex';
+}
+
+function setEst(id, val, btn) {
+  _estAnswers[id] = val;
+  const group = btn.parentElement;
+  group.querySelectorAll('button').forEach(b => b.classList.remove('est-on'));
+  // Keep the grey styling hook on the No button so an active No reads neutral.
+  btn.classList.add('est-on');
+}
+
+function closeEstimate() { document.getElementById('estimateModal').style.display = 'none'; }
+
+function estScore() {
+  const yes = EST_QUESTIONS.filter(q => _estAnswers[q.id]).length;
+  return Math.round((yes / EST_QUESTIONS.length) * 100);
+}
+
+function computeEstimate() {
+  const score = estScore();
+  const gaps = EST_QUESTIONS.filter(q => !_estAnswers[q.id]);
+  const color = score >= 80 ? '#16a34a' : score >= 50 ? '#f59e0b' : '#ef4444';
+  const band  = score >= 80 ? 'Nearly audit-ready' : score >= 50 ? 'Getting close' : 'Significant gaps';
+  const gapHtml = gaps.length
+    ? gaps.slice(0, 4).map(g =>
+        '<div class="est-gap"><span class="est-gap-cc">' + g.cc + '</span><span class="est-gap-txt">' + esc(g.gap) + '</span></div>'
+      ).join('')
+    : '<div style="font-size:13px;color:#16a34a;font-weight:600">No major gaps flagged — you\'re in strong shape. Connect your stack to prove it with a live Trust Page.</div>';
+
+  document.getElementById('estScoreBox').innerHTML =
+    '<div style="display:flex;align-items:center;gap:18px;margin-bottom:16px">' +
+      '<div style="font-size:48px;font-weight:800;color:' + color + ';font-family:var(--mono,monospace);line-height:1">' + score + '%</div>' +
+      '<div><div style="font-size:16px;font-weight:700;color:#0f172a">' + band + '</div>' +
+      '<div style="font-size:12.5px;color:#64748b">' + (EST_QUESTIONS.length - gaps.length) + ' of ' + EST_QUESTIONS.length + ' key controls in place</div></div>' +
+    '</div>' +
+    '<div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:9px">Your top gaps to close</div>' +
+    gapHtml;
+
+  document.getElementById('estQuiz').style.display = 'none';
+  document.getElementById('estResult').style.display = '';
+}
+
+async function submitEstimateLead() {
+  const email = (document.getElementById('estEmail').value || '').trim();
+  const msg = document.getElementById('estLeadMsg');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    msg.style.color = '#ef4444'; msg.textContent = 'Please enter a valid email.'; return;
+  }
+  msg.style.color = '#64748b'; msg.textContent = 'Saving…';
+  const score = estScore();
+  const gaps = EST_QUESTIONS.filter(q => !_estAnswers[q.id]).map(q => q.cc + ' ' + q.gap);
+  try {
+    const r = await fetch('/api/lead', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, score, answers: _estAnswers, gaps, source: 'estimate' }),
+    });
+    if (!r.ok) throw new Error();
+    // Reveal the full fix plan inline (honest: no email is "sent" — we unlock it here).
+    const fixes = EST_QUESTIONS.filter(q => !_estAnswers[q.id]);
+    document.getElementById('estPlan').innerHTML =
+      '<div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:9px">Your 30-day fix plan</div>' +
+      (fixes.length
+        ? fixes.map((q, i) =>
+            '<div class="est-gap" style="border-color:#e2e8f0">' +
+              '<span class="est-gap-cc" style="color:#1d4ed8;background:#eff6ff">' + (i + 1) + '</span>' +
+              '<span class="est-gap-txt"><strong>' + esc(q.gap) + '</strong><br>' + esc(q.fix) + '</span>' +
+            '</div>'
+          ).join('')
+        : '<div style="font-size:12.5px;color:#475569">You\'ve got the fundamentals covered — connect your stack to turn it into audit-ready evidence.</div>');
+    document.getElementById('estPlan').style.display = '';
+    msg.style.color = '#16a34a'; msg.textContent = '✓ Unlocked below.';
+    document.getElementById('estEmail').disabled = true;
+  } catch {
+    msg.style.color = '#ef4444'; msg.textContent = 'Could not save — please try again.';
   }
 }
 
