@@ -15,6 +15,7 @@ import {
 
 // ===================== Timing =====================
 const S_INTRO = 56;
+const AGENDA = 74;
 const P1 = 92;
 const S1 = 58;
 const P2 = 92;
@@ -25,9 +26,10 @@ const S3 = 58;
 const BRAND = 46;
 const OUT = 72;
 export const GOD_DURATION =
-  S_INTRO + P1 + S1 + P2 + S2 + PHONE + P3 + S3 + BRAND + OUT;
+  S_INTRO + AGENDA + P1 + S1 + P2 + S2 + PHONE + P3 + S3 + BRAND + OUT;
 
-const T_P1 = S_INTRO;
+const T_AGENDA = S_INTRO;
+const T_P1 = T_AGENDA + AGENDA;
 const T_S1 = T_P1 + P1;
 const T_P2 = T_S1 + S1;
 const T_S2 = T_P2 + P2;
@@ -51,83 +53,53 @@ const FONT =
 const W = 1080;
 const H = 1920;
 
-// ===================== Eye-candy: floating 3D shapes + particles =====================
-const SHAPES = [
-  { type: "ring", x: 150, y: 360, size: 220, color: ROYAL, depth: 0.5, rot: 0.5, spd: 0.5 },
-  { type: "cube", x: 860, y: 300, size: 150, color: VIOLET, depth: 0.8, rot: 0.7, spd: 0.7 },
-  { type: "pill", x: 920, y: 1080, size: 200, color: SKY, depth: 0.4, rot: -0.4, spd: 0.4 },
-  { type: "cube", x: 120, y: 1180, size: 130, color: ROYAL, depth: 0.9, rot: -0.6, spd: 0.6 },
-  { type: "ring", x: 820, y: 1620, size: 180, color: VIOLET, depth: 0.55, rot: 0.4, spd: 0.5 },
-  { type: "dot", x: 200, y: 1680, size: 90, color: SKY, depth: 0.7, rot: 0, spd: 0.8 },
-  { type: "pill", x: 130, y: 760, size: 120, color: VIOLET, depth: 0.6, rot: 0.5, spd: 0.45 },
+// ===================== Eye-candy: floating compliance motifs (on-theme) =====================
+// Soft, slowly drifting SOC 2 / audit glyphs — shields, checks, locks, docs,
+// gauges — that belong in a compliance product video.
+const motifPath = (kind: string) => {
+  switch (kind) {
+    case "shield":
+      return (<><path d="M32 11l19 7v13c0 13-9 19-19 23-10-4-19-10-19-23V18z" /><path d="M24 32l6 6 11-12" /></>);
+    case "check":
+      return (<><circle cx="32" cy="32" r="21" /><path d="M22 33l7 7 13-15" /></>);
+    case "lock":
+      return (<><rect x="13" y="27" width="38" height="27" rx="6" /><path d="M21 27v-6a11 11 0 0 1 22 0v6" /><path d="M32 38v6" /></>);
+    case "doc":
+      return (<><path d="M18 10h20l8 8v36H18z" /><path d="M38 10v8h8" /><path d="M24 30h16M24 38h16M24 46h10" /></>);
+    case "gauge":
+      return (<><path d="M12 45a20 20 0 0 1 40 0" /><path d="M32 45l11-13" /><circle cx="32" cy="45" r="3" fill="currentColor" stroke="none" /></>);
+    default:
+      return null;
+  }
+};
+const MOTIFS = [
+  { kind: "shield", x: 96, y: 305, size: 150, color: ROYAL, depth: 0.5, spd: 0.42, rot: 7 },
+  { kind: "check", x: 880, y: 250, size: 120, color: "#10b981", depth: 0.7, spd: 0.5, rot: -9 },
+  { kind: "lock", x: 905, y: 1130, size: 138, color: VIOLET, depth: 0.45, spd: 0.46, rot: 6 },
+  { kind: "doc", x: 100, y: 1175, size: 130, color: SKY, depth: 0.8, spd: 0.6, rot: -8 },
+  { kind: "check", x: 838, y: 1640, size: 116, color: ROYAL, depth: 0.55, spd: 0.5, rot: 10 },
+  { kind: "shield", x: 160, y: 775, size: 110, color: "#10b981", depth: 0.6, spd: 0.52, rot: -6 },
+  { kind: "gauge", x: 905, y: 770, size: 120, color: ROYAL, depth: 0.5, spd: 0.45, rot: 8 },
+  { kind: "doc", x: 858, y: 1185, size: 108, color: ROYAL, depth: 0.66, spd: 0.55, rot: 5 },
+  { kind: "lock", x: 170, y: 1560, size: 118, color: SKY, depth: 0.5, spd: 0.43, rot: -7 },
+  { kind: "check", x: 150, y: 470, size: 100, color: VIOLET, depth: 0.74, spd: 0.6, rot: 8 },
 ];
 
-const FloatingShapes: React.FC = () => {
-  const frame = useCurrentFrame();
-  return (
-    <AbsoluteFill style={{ perspective: 1400, overflow: "hidden" }}>
-      <AbsoluteFill style={{ transformStyle: "preserve-3d" }}>
-        {SHAPES.map((s, i) => {
-          const drift = Math.sin(frame * 0.013 * s.spd + i) * 40 * s.depth;
-          const driftX = Math.cos(frame * 0.011 * s.spd + i * 1.7) * 30 * s.depth;
-          const rx = frame * 0.25 * s.rot;
-          const ry = frame * 0.35 * s.rot;
-          const z = -300 * s.depth;
-          const common = {
-            position: "absolute" as const,
-            left: s.x + driftX,
-            top: s.y + drift,
-            width: s.size,
-            height: s.size,
-            transform: `translateZ(${z}px) rotateX(${rx}deg) rotateY(${ry}deg)`,
-            filter: `blur(${1.5 + s.depth * 3}px)`,
-            opacity: 0.5 - s.depth * 0.22,
-          };
-          if (s.type === "ring")
-            return <div key={i} style={{ ...common, borderRadius: "50%", border: `10px solid ${s.color}`, background: "transparent" }} />;
-          if (s.type === "dot")
-            return <div key={i} style={{ ...common, borderRadius: "50%", background: `radial-gradient(circle at 35% 30%, ${s.color}cc, ${s.color}22 70%)` }} />;
-          if (s.type === "pill")
-            return <div key={i} style={{ ...common, height: s.size * 0.5, borderRadius: 999, background: `linear-gradient(135deg, ${s.color}aa, ${s.color}33)` }} />;
-          // cube (rounded glass square)
-          return <div key={i} style={{ ...common, borderRadius: 28, background: `linear-gradient(150deg, ${s.color}aa, ${s.color}22)`, boxShadow: `inset 0 0 30px ${s.color}55` }} />;
-        })}
-      </AbsoluteFill>
-    </AbsoluteFill>
-  );
-};
-
-const PARTICLES = Array.from({ length: 40 }, (_, i) => {
-  const r = (n: number) => {
-    const x = Math.sin(i * 12.9898 + n * 78.233) * 43758.5453;
-    return x - Math.floor(x);
-  };
-  return { x: r(1) * W, y: r(2) * H, size: 3 + r(3) * 7, spd: 0.3 + r(4) * 0.9, ph: r(5) * 6.28, blur: r(6) > 0.6 };
-});
-
-const Particles: React.FC = () => {
+const ComplianceMotifs: React.FC = () => {
   const frame = useCurrentFrame();
   return (
     <AbsoluteFill style={{ overflow: "hidden" }}>
-      {PARTICLES.map((p, i) => {
-        const y = (p.y - frame * p.spd * 1.4) % (H + 40);
-        const yy = y < -20 ? y + H + 40 : y;
-        const tw = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(frame * 0.06 * p.spd + p.ph));
+      {MOTIFS.map((m, i) => {
+        const dy = Math.sin(frame * 0.012 * m.spd + i) * 34 * m.depth;
+        const dx = Math.cos(frame * 0.010 * m.spd + i * 1.7) * 26 * m.depth;
+        const rot = Math.sin(frame * 0.01 * m.spd + i) * m.rot;
+        const op = (0.16 - m.depth * 0.06);
         return (
-          <div
-            key={i}
-            style={{
-              position: "absolute",
-              left: p.x + Math.sin(frame * 0.02 + p.ph) * 18,
-              top: yy,
-              width: p.size,
-              height: p.size,
-              borderRadius: "50%",
-              background: i % 3 === 0 ? SKY : i % 3 === 1 ? VIOLET : ROYAL,
-              opacity: tw * 0.4,
-              filter: p.blur ? "blur(2px)" : "none",
-            }}
-          />
+          <div key={i} style={{ position: "absolute", left: m.x + dx, top: m.y + dy, color: m.color, opacity: op, transform: `rotate(${rot}deg)`, filter: `blur(${0.6 + m.depth * 1.4}px)` }}>
+            <svg width={m.size} height={m.size} viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+              {motifPath(m.kind)}
+            </svg>
+          </div>
         );
       })}
     </AbsoluteFill>
@@ -147,8 +119,7 @@ const Background: React.FC = () => {
       {orb(-200 + sway, H - 760, 720, "rgba(125,211,252,0.30)")}
       {orb(W - 520 - sway, H - 760, 720, "rgba(37,99,235,0.18)")}
       {orb(W / 2 - 380, H / 2 - 380, 760, "rgba(191,219,254,0.30)")}
-      <FloatingShapes />
-      <Particles />
+      <ComplianceMotifs />
       <AbsoluteFill style={{ background: "radial-gradient(55% 40% at 50% 50%, rgba(255,255,255,0.80), rgba(255,255,255,0) 78%)" }} />
       <AbsoluteFill style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0) 20%, rgba(255,255,255,0) 80%, rgba(255,255,255,0.45) 100%)" }} />
     </AbsoluteFill>
@@ -250,12 +221,51 @@ const SceneIntro: React.FC = () => {
         <div style={{ position: "absolute", inset: -54, borderRadius: "50%", border: `4px solid ${SKY}55`, transform: `rotateX(72deg) rotateZ(${frame * 3}deg)` }} />
         <div style={{ position: "absolute", inset: -54, borderRadius: "50%", borderTop: `5px solid ${ROYAL}`, borderRight: "5px solid transparent", borderBottom: "5px solid transparent", borderLeft: "5px solid transparent", transform: `rotateX(72deg) rotateZ(${frame * 3}deg)` }} />
         <Logo size={300} />
-        <div style={{ position: "absolute", top: 0, left: sweep, width: 80, height: "100%", background: "linear-gradient(100deg, transparent, rgba(255,255,255,0.6), transparent)", filter: "blur(6px)", borderRadius: 40 }} />
+        {/* gloss sweep, clipped to the badge so it reads as a shine (no band) */}
+        <div style={{ position: "absolute", inset: 0, borderRadius: 72, overflow: "hidden", pointerEvents: "none" }}>
+          <div style={{ position: "absolute", top: 0, left: sweep, width: 90, height: "100%", background: "linear-gradient(100deg, transparent, rgba(255,255,255,0.5), transparent)", filter: "blur(8px)", transform: "skewX(-12deg)" }} />
+        </div>
       </div>
       <div style={{ fontFamily: FONT, fontWeight: 800, fontSize: 88, color: INK, letterSpacing: -2, opacity: word, transform: `translateY(${interpolate(word, [0, 1], [24, 0])}px)` }}>
         AuditReady<span style={{ color: ROYAL }}> AI</span>
       </div>
       <div style={{ fontFamily: FONT, fontWeight: 600, fontSize: 30, color: SLATE, letterSpacing: 6, textTransform: "uppercase", opacity: tag }}>SOC 2, on autopilot</div>
+    </AbsoluteFill>
+  );
+};
+
+// ===================== Scene: Agenda (what problems, where) =====================
+const AGENDA_ITEMS = [
+  { n: "01", icon: <IScatter s={40} />, title: "Evidence everywhere", color: ROSE, tint: "#fff1f2" },
+  { n: "02", icon: <IHourglass s={40} />, title: "Months of audit prep", color: VIOLET, tint: "#f5f3ff" },
+  { n: "03", icon: <IClock s={40} />, title: "Deals stall on review", color: ROYAL, tint: "#eff6ff" },
+];
+const AgendaScene: React.FC = () => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const sp = (delay: number, damping = 200) => spring({ frame: frame - delay, fps, config: { damping } });
+  const k = sp(2);
+  const h = sp(10);
+  return (
+    <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", padding: "0 80px" }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 18, width: "100%" }}>
+        <div style={{ opacity: k, transform: `translateY(${interpolate(k, [0, 1], [-16, 0])}px)` }}><Pill text="Sound familiar?" color={ROYAL} /></div>
+        <div style={{ fontFamily: FONT, fontWeight: 800, fontSize: 70, color: INK, letterSpacing: -2.5, textAlign: "center", lineHeight: 1.06, opacity: h, transform: `translateY(${interpolate(h, [0, 1], [22, 0])}px)`, marginBottom: 20 }}>
+          3 things slowing<br />down your <span style={{ color: ROYAL }}>SOC 2</span>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 20, width: "100%", maxWidth: 800 }}>
+          {AGENDA_ITEMS.map((it, i) => {
+            const p = sp(24 + i * 14, 16);
+            return (
+              <div key={it.n} style={{ display: "flex", alignItems: "center", gap: 24, background: "rgba(255,255,255,0.8)", border: "1px solid rgba(15,23,42,0.07)", borderRadius: 24, padding: "24px 28px", boxShadow: "0 18px 40px rgba(15,23,42,0.07)", opacity: p, transform: `translateX(${interpolate(p, [0, 1], [i % 2 ? 50 : -50, 0])}px)` }}>
+                <div style={{ fontFamily: FONT, fontWeight: 800, fontSize: 40, color: `${it.color}`, opacity: 0.4, width: 58 }}>{it.n}</div>
+                <div style={{ width: 72, height: 72, borderRadius: 20, flexShrink: 0, background: it.tint, color: it.color, display: "flex", alignItems: "center", justifyContent: "center" }}>{it.icon}</div>
+                <div style={{ fontFamily: FONT, fontWeight: 800, fontSize: 40, color: INK, letterSpacing: -1 }}>{it.title}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </AbsoluteFill>
   );
 };
@@ -330,13 +340,6 @@ const SH = PHONE_H - INSET * 2;
 const DASH_RATIO = 3255 / 1290;
 const CTRL_RATIO = 2640 / 1290;
 
-const ScreenCol: React.FC<{ src: string; ratio: number; scroll: number; dim: number }> = ({ src, ratio, scroll, dim }) => (
-  <div style={{ position: "relative", width: SW, height: SH, overflow: "hidden", flexShrink: 0 }}>
-    <Img src={staticFile(src)} style={{ position: "absolute", top: 0, left: 0, width: SW, height: SW * ratio, transform: `translateY(${scroll}px)` }} />
-    <div style={{ position: "absolute", inset: 0, background: `rgba(15,23,42,${dim})` }} />
-  </div>
-);
-
 const ScenePhone: React.FC = () => {
   const f = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -355,11 +358,22 @@ const ScenePhone: React.FC = () => {
   const scale = interpolate(enter, [0, 1], [0.82, 1]) - exit * 0.08;
   const opacity = enter * (1 - exit);
 
-  // real app-style horizontal swipe between the two screens
-  const swipe = interpolate(f, [74, 96], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.inOut(Easing.cubic) });
-  const trackX = -SW * swipe;
-  const dashScroll = interpolate(f, [10, 84], [78, -Math.max(0, SW * DASH_RATIO - SH)], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const ctrlScroll = interpolate(f, [98, PHONE - 12], [52, -Math.max(0, SW * CTRL_RATIO - SH + 52)], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  // fast, natural vertical scroll through the real app (dashboard then controls)
+  const Hd = SW * DASH_RATIO;
+  const Hc = SW * CTRL_RATIO;
+  const TOTAL = Hd + Hc;
+  const TOP = 78;
+  const BOTTOM = -(TOTAL - SH);
+  const MID = -(Hd - SH + 24); // dashboard fully read; top of controls peeking
+  // hold on the score, quick flick down the dashboard, brief settle, flick into controls
+  const scroll = interpolate(f, [18, 50, 64, PHONE - 20], [TOP, MID, MID, BOTTOM], {
+    easing: Easing.out(Easing.cubic),
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const prog = (TOP - scroll) / (TOP - BOTTOM);
+  const thumbH = Math.max(70, SH * (SH / TOTAL));
+  const thumbTop = prog * (SH - thumbH);
 
   const head = spring({ frame: f - 6, fps, config: { damping: 200 } });
   const headOp = head * (1 - exit);
@@ -381,19 +395,16 @@ const ScenePhone: React.FC = () => {
         <div style={{ width: PHONE_W, height: PHONE_H, borderRadius: 72, background: "linear-gradient(155deg, #fdfdff, #e4eaf2)", border: "3px solid #d7deea", boxShadow: "0 80px 160px rgba(37,99,235,0.30), 0 30px 70px rgba(15,23,42,0.18), inset 0 2px 3px rgba(255,255,255,0.9)", transform: `translateY(${ty}px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(${scale})`, opacity, transformStyle: "preserve-3d", position: "relative" }}>
           {/* camera pill */}
           <div style={{ position: "absolute", top: 28, left: "50%", transform: "translateX(-50%)", width: 130, height: 32, borderRadius: 999, background: "#d7deea", zIndex: 6 }} />
-          {/* screen */}
+          {/* screen — single tall page, natural vertical scroll */}
           <div style={{ position: "absolute", inset: INSET, borderRadius: 56, overflow: "hidden", background: "#fff" }}>
-            <div style={{ display: "flex", width: SW * 2, height: SH, transform: `translateX(${trackX}px)` }}>
-              <ScreenCol src="ui/dashboard.png" ratio={DASH_RATIO} scroll={dashScroll} dim={swipe * 0.12} />
-              <ScreenCol src="ui/controls.png" ratio={CTRL_RATIO} scroll={ctrlScroll} dim={(1 - swipe) * 0.12} />
+            <div style={{ position: "absolute", top: 0, left: 0, width: SW, transform: `translateY(${scroll}px)` }}>
+              <Img src={staticFile("ui/dashboard.png")} style={{ display: "block", width: SW, height: Hd }} />
+              <Img src={staticFile("ui/controls.png")} style={{ display: "block", width: SW, height: Hc }} />
             </div>
             {/* clean fade under the notch */}
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 76, background: "linear-gradient(180deg, #fff 38%, rgba(255,255,255,0) 100%)", pointerEvents: "none" }} />
-            {/* page dots */}
-            <div style={{ position: "absolute", bottom: 18, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 10 }}>
-              <div style={{ width: 9, height: 9, borderRadius: 9, background: swipe < 0.5 ? ROYAL : "#cbd5e1" }} />
-              <div style={{ width: 9, height: 9, borderRadius: 9, background: swipe >= 0.5 ? ROYAL : "#cbd5e1" }} />
-            </div>
+            {/* scroll indicator */}
+            <div style={{ position: "absolute", right: 7, top: thumbTop, width: 5, height: thumbH, borderRadius: 999, background: "rgba(15,23,42,0.16)" }} />
             {/* glass gloss sweep */}
             <div style={{ position: "absolute", top: 0, left: gloss, width: 160, height: "100%", background: "linear-gradient(100deg, transparent, rgba(255,255,255,0.35), transparent)", filter: "blur(8px)", pointerEvents: "none" }} />
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 28%, rgba(255,255,255,0) 78%, rgba(255,255,255,0.10) 100%)", pointerEvents: "none" }} />
@@ -457,6 +468,11 @@ const CUES = [
   cue("audio/tick.wav", T_P1 + 36, 0.32),
   cue("audio/tick.wav", T_P1 + 48, 0.32),
   cue("audio/whoosh.wav", T_S1 - 4, 0.5),
+  cue("audio/whoosh.wav", T_AGENDA - 4, 0.5),
+  cue("audio/pop.wav", T_AGENDA + 8, 0.42),
+  cue("audio/tick.wav", T_AGENDA + 26, 0.34),
+  cue("audio/tick.wav", T_AGENDA + 40, 0.34),
+  cue("audio/tick.wav", T_AGENDA + 54, 0.34),
   cue("audio/pop.wav", T_S1 + 6, 0.45),
   cue("audio/whoosh.wav", T_P2 - 4, 0.5),
   cue("audio/pop.wav", T_P2 + 8, 0.45),
@@ -467,8 +483,9 @@ const CUES = [
   cue("audio/pop.wav", T_S2 + 6, 0.45),
   cue("audio/riser.wav", T_PHONE - 28, 0.55),
   cue("audio/whoosh.wav", T_PHONE - 2, 0.55),
-  cue("audio/ding.wav", T_PHONE + 40, 0.55),
-  cue("audio/pop.wav", T_PHONE + 78, 0.4),
+  cue("audio/ding.wav", T_PHONE + 16, 0.55),
+  cue("audio/whoosh.wav", T_PHONE + 18, 0.32),
+  cue("audio/whoosh.wav", T_PHONE + 64, 0.32),
   cue("audio/whoosh.wav", T_P3 - 4, 0.5),
   cue("audio/pop.wav", T_P3 + 8, 0.45),
   cue("audio/tick.wav", T_P3 + 24, 0.32),
@@ -497,6 +514,7 @@ export const VerticalGod: React.FC = () => {
 
       <Series>
         <Series.Sequence durationInFrames={S_INTRO}><Scene3D dur={S_INTRO} axis="y"><SceneIntro /></Scene3D></Series.Sequence>
+        <Series.Sequence durationInFrames={AGENDA}><Scene3D dur={AGENDA} axis="x"><AgendaScene /></Scene3D></Series.Sequence>
         <Series.Sequence durationInFrames={P1}>
           <Scene3D dur={P1} axis="x">
             <ProblemScene index="Problem 01" color={ROSE} tint="#fff1f2" icon={<IScatter />} bold="Evidence lives everywhere." bullets={[
