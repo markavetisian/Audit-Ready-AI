@@ -2,6 +2,7 @@ import { Composition } from "remotion";
 import { Promo, PROMO_DURATION } from "./Promo";
 import { VerticalPromo, VPROMO_DURATION } from "./VerticalPromo";
 import { VerticalPromoPro, VPRO_DURATION } from "./VerticalPromoPro";
+import { VerticalGod, GOD_DURATION } from "./VerticalGod";
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -26,6 +27,14 @@ export const RemotionRoot: React.FC = () => {
         id="PromoVerticalPro"
         component={VerticalPromoPro}
         durationInFrames={VPRO_DURATION}
+        fps={30}
+        width={1080}
+        height={1920}
+      />
+      <Composition
+        id="PromoVerticalGod"
+        component={VerticalGod}
+        durationInFrames={GOD_DURATION}
         fps={30}
         width={1080}
         height={1920}
