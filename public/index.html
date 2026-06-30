@@ -4248,7 +4248,7 @@ async function confirmCancelSubscription() {
   const BASE_COL = 'rgba(37,99,235,0.13)';
   const HOT_COL  = 'rgba(37,99,235,0.6)';
   const RADIUS = 90;
-  let ox = 0, oy = 0, animating = false;
+  let ox = 0, oy = 0, animating = false, lpListenersAttached = false;
 
   function drawGrid(canvas, color, offX, offY) {
     if (!canvas) return;
@@ -4276,6 +4276,12 @@ async function confirmCancelSubscription() {
   }
 
   function lpAnimate() {
+    // Stop the loop when the login page isn't visible. Otherwise it keeps
+    // redrawing the full-screen canvas grid every frame behind the dashboard
+    // for the whole session, which lags the entire app. It restarts via
+    // initLoginGrid whenever the login page is shown again.
+    const pg = document.getElementById('pg-login');
+    if (!pg || !pg.classList.contains('on')) { animating = false; return; }
     ox = (ox + 0.4) % GRID;
     oy = (oy + 0.4) % GRID;
     drawGrid(document.getElementById('lpGridBase'), BASE_COL, ox, oy);
@@ -4290,6 +4296,11 @@ async function confirmCancelSubscription() {
 
     lpResize();
     if (!animating) { animating = true; lpAnimate(); }
+
+    // Attach interaction listeners once — initLoginGrid runs on every nav to
+    // the login page, so without this guard the listeners stack up each time.
+    if (lpListenersAttached) return;
+    lpListenersAttached = true;
 
     pg.addEventListener('mousemove', e => {
       const r = pg.getBoundingClientRect();
