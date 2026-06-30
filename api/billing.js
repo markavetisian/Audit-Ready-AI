@@ -20,11 +20,18 @@ const redis = new Redis({
 const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY;
 
 const PRICE_TO_MODE = {
-  // Monthly
+  // Current pricing ($500 / $1k / $2k) — monthly
+  'price_1To8FUFQiRRnlhwuSXSe3gl4': 'starter',
+  'price_1To8LOFQiRRnlhwumml3WTem': 'growth',
+  'price_1To8OiFQiRRnlhwuPbggNIXU': 'enterprise',
+  // Current pricing — annual
+  'price_1To8IqFQiRRnlhwuPXeFFKeb': 'starter',
+  'price_1To8M8FQiRRnlhwuf0VjLFdn': 'growth',
+  'price_1To8TuFQiRRnlhwuR218IfIc': 'enterprise',
+  // Legacy pricing ($250/$500/$999) — kept so any pre-existing subs still map
   'price_1ThZIZFQiRRnlhwuYRI3MfNX': 'starter',
   'price_1ThZLSFQiRRnlhwueStdff4L': 'growth',
   'price_1ThZNGFQiRRnlhwuH23alwzB': 'enterprise',
-  // Annual
   'price_1Tn4SdFQiRRnlhwuMooey0i2': 'starter',
   'price_1Tn4TsFQiRRnlhwuodI5siQL': 'growth',
   'price_1Tn4UZFQiRRnlhwuA5yXrU8O': 'enterprise',
