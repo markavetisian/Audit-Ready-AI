@@ -1390,11 +1390,11 @@ header{
         <div class="pm-cn" style="font-size:13px;font-weight:700;color:#64748b;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">Starter</div>
         <div style="display:flex;align-items:flex-end;gap:2px;margin-bottom:4px">
           <span class="pm-cur" style="font-size:20px;font-weight:700;color:#0f172a;align-self:flex-start;margin-top:10px">$</span>
-          <span class="pm-price-num" id="pm-price-starter">250</span>
+          <span class="pm-price-num" id="pm-price-starter">500</span>
           <span class="pm-per" style="font-size:14px;color:#64748b;margin-bottom:8px">/mo</span>
         </div>
         <div id="pm-annual-note-starter" style="font-size:11px;color:#16a34a;font-weight:600;min-height:16px;margin-bottom:14px"></div>
-        <div class="pm-cd" style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5">Pre-seed startups closing their first enterprise deal.</div>
+        <div class="pm-cd" style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5">Seed-stage startups closing their first enterprise deal.</div>
         <ul style="list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:8px">
           <li class="pm-check">GitHub integration (AWS coming soon)</li>
           <li class="pm-check">Full 49-control TSC mapping</li>
@@ -1411,7 +1411,7 @@ header{
         <div class="pm-cn" style="font-size:13px;font-weight:700;color:#2563eb;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">Growth</div>
         <div style="display:flex;align-items:flex-end;gap:2px;margin-bottom:4px">
           <span class="pm-cur" style="font-size:20px;font-weight:700;color:#0f172a;align-self:flex-start;margin-top:10px">$</span>
-          <span class="pm-price-num" id="pm-price-growth">500</span>
+          <span class="pm-price-num" id="pm-price-growth">1000</span>
           <span class="pm-per" style="font-size:14px;color:#64748b;margin-bottom:8px">/mo</span>
         </div>
         <div id="pm-annual-note-growth" style="font-size:11px;color:#16a34a;font-weight:600;min-height:16px;margin-bottom:14px"></div>
@@ -1432,7 +1432,7 @@ header{
         <div class="pm-cn" style="font-size:13px;font-weight:700;color:#64748b;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">Audit-Ready</div>
         <div style="display:flex;align-items:flex-end;gap:2px;margin-bottom:4px">
           <span class="pm-cur" style="font-size:20px;font-weight:700;color:#0f172a;align-self:flex-start;margin-top:10px">$</span>
-          <span class="pm-price-num" id="pm-price-enterprise">999</span>
+          <span class="pm-price-num" id="pm-price-enterprise">2000</span>
           <span class="pm-per" style="font-size:14px;color:#64748b;margin-bottom:8px">/mo</span>
         </div>
         <div id="pm-annual-note-enterprise" style="font-size:11px;color:#16a34a;font-weight:600;min-height:16px;margin-bottom:14px"></div>
@@ -3170,9 +3170,9 @@ let _pmAnnual = false;
 // Display amounts. annualMonthly = annualTotal/12 (rounded) for the "$X/mo billed
 // annually" headline; annualTotal is the real once-a-year charge shown in the pay box.
 const PM_PRICES = {
-  starter:    { monthly: 250,  annualMonthly: 208, annualTotal: 2500  },
-  growth:     { monthly: 500,  annualMonthly: 417, annualTotal: 5000  },
-  enterprise: { monthly: 999,  annualMonthly: 833, annualTotal: 10000 },
+  starter:    { monthly: 500,  annualMonthly: 417,  annualTotal: 5000  },
+  growth:     { monthly: 1000, annualMonthly: 833,  annualTotal: 10000 },
+  enterprise: { monthly: 2000, annualMonthly: 1667, annualTotal: 20000 },
 };
 // Stripe price IDs per plan × interval. The interval the user picks decides which
 // ID is sent to Stripe — annual MUST use the annual ID. (The old disabled toggle's
