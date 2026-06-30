@@ -1391,7 +1391,7 @@ header{
         <div style="display:flex;align-items:flex-end;gap:2px;margin-bottom:4px">
           <span class="pm-cur" style="font-size:20px;font-weight:700;color:#0f172a;align-self:flex-start;margin-top:10px">$</span>
           <span class="pm-price-num" id="pm-price-starter">500</span>
-          <span class="pm-per" style="font-size:14px;color:#64748b;margin-bottom:8px">/mo</span>
+          <span class="pm-per" id="pm-per-starter" style="font-size:14px;color:#64748b;margin-bottom:8px">/mo</span>
         </div>
         <div id="pm-annual-note-starter" style="font-size:11px;color:#16a34a;font-weight:600;min-height:16px;margin-bottom:14px"></div>
         <div class="pm-cd" style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5">Seed-stage startups closing their first enterprise deal.</div>
@@ -1412,7 +1412,7 @@ header{
         <div style="display:flex;align-items:flex-end;gap:2px;margin-bottom:4px">
           <span class="pm-cur" style="font-size:20px;font-weight:700;color:#0f172a;align-self:flex-start;margin-top:10px">$</span>
           <span class="pm-price-num" id="pm-price-growth">1000</span>
-          <span class="pm-per" style="font-size:14px;color:#64748b;margin-bottom:8px">/mo</span>
+          <span class="pm-per" id="pm-per-growth" style="font-size:14px;color:#64748b;margin-bottom:8px">/mo</span>
         </div>
         <div id="pm-annual-note-growth" style="font-size:11px;color:#16a34a;font-weight:600;min-height:16px;margin-bottom:14px"></div>
         <div class="pm-cd" style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5">Seed-stage teams closing multiple enterprise deals at once.</div>
@@ -1433,7 +1433,7 @@ header{
         <div style="display:flex;align-items:flex-end;gap:2px;margin-bottom:4px">
           <span class="pm-cur" style="font-size:20px;font-weight:700;color:#0f172a;align-self:flex-start;margin-top:10px">$</span>
           <span class="pm-price-num" id="pm-price-enterprise">2000</span>
-          <span class="pm-per" style="font-size:14px;color:#64748b;margin-bottom:8px">/mo</span>
+          <span class="pm-per" id="pm-per-enterprise" style="font-size:14px;color:#64748b;margin-bottom:8px">/mo</span>
         </div>
         <div id="pm-annual-note-enterprise" style="font-size:11px;color:#16a34a;font-weight:600;min-height:16px;margin-bottom:14px"></div>
         <div class="pm-cd" style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5">Series A companies undergoing an active audit right now.</div>
@@ -3205,15 +3205,20 @@ function setPmBilling(annual) {
 
   ['starter','growth','enterprise'].forEach(plan => {
     const el = document.getElementById('pm-price-' + plan);
+    const per = document.getElementById('pm-per-' + plan);
     const note = document.getElementById('pm-annual-note-' + plan);
     if (!el) return;
     el.classList.add('flip');
     setTimeout(() => {
-      const num = annual ? PM_PRICES[plan].annualMonthly : PM_PRICES[plan].monthly;
-      el.textContent = num.toLocaleString();
+      // Headline is ALWAYS the real amount charged: annual total + /yr, or
+      // monthly + /mo. Never a per-month figure for an annually-billed plan,
+      // so the displayed price always equals what hits the customer's card.
+      el.textContent = (annual ? PM_PRICES[plan].annualTotal : PM_PRICES[plan].monthly).toLocaleString();
+      if (per) per.textContent = annual ? '/yr' : '/mo';
       el.classList.remove('flip');
     }, 120);
-    if (note) note.textContent = annual ? 'billed $' + PM_PRICES[plan].annualTotal.toLocaleString() + '/yr · 2 months free' : '';
+    // Per-month equivalent demoted to clearly-secondary context, not the price.
+    if (note) note.textContent = annual ? '≈ $' + PM_PRICES[plan].annualMonthly.toLocaleString() + '/mo · 2 months free' : '';
   });
 
   // Keep an already-selected plan in sync. CRITICAL: swap the price ID too, not
