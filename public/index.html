@@ -449,9 +449,9 @@ header{
 
 /* ── Share modal ─────────────────────────── */
 .modal-overlay{
-  position:fixed;inset:0;background:rgba(15,23,42,.4);
+  position:fixed;inset:0;background:rgba(15,23,42,.5);
   display:flex;align-items:flex-start;justify-content:center;
-  z-index:200;padding:20px;backdrop-filter:blur(4px);overflow-y:auto;
+  z-index:200;padding:20px;overflow-y:auto;
 }
 .modal-box{
   background:#fff;border:1px solid var(--border);
@@ -545,7 +545,7 @@ header{
 }
 
 /* ── Pricing modal redesign ──────────────── */
-.pm-overlay{position:fixed;inset:0;background:rgba(15,23,42,.55);backdrop-filter:blur(4px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto}
+.pm-overlay{position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto}
 .pm-box{background:#fff;border-radius:20px;padding:36px 32px 28px;max-width:860px;width:100%;box-shadow:0 24px 80px rgba(15,23,42,.18);position:relative;max-height:calc(100dvh - 32px);overflow-y:auto}
 .pm-close{position:absolute;top:14px;right:14px;background:none;border:none;font-size:18px;cursor:pointer;color:#94a3b8;padding:4px 8px;border-radius:6px;line-height:1}
 .pm-close:hover{background:#f1f5f9;color:#0f172a}
@@ -4291,10 +4291,17 @@ async function confirmCancelSubscription() {
     // initLoginGrid whenever the login page is shown again.
     const pg = document.getElementById('pg-login');
     if (!pg || !pg.classList.contains('on')) { animating = false; return; }
-    ox = (ox + 0.4) % GRID;
-    oy = (oy + 0.4) % GRID;
-    drawGrid(document.getElementById('lpGridBase'), BASE_COL, ox, oy);
-    drawGrid(document.getElementById('lpGridHot'),  HOT_COL,  ox, oy);
+    // Skip the expensive canvas redraw while a modal (pricing / other overlay)
+    // is open over the login page, so the modal animates at full framerate. The
+    // loop stays alive and resumes drawing the instant the modal closes.
+    const covered = [...document.querySelectorAll('.pm-overlay, .modal-overlay')]
+      .some(el => el.style.display && el.style.display !== 'none');
+    if (!covered) {
+      ox = (ox + 0.4) % GRID;
+      oy = (oy + 0.4) % GRID;
+      drawGrid(document.getElementById('lpGridBase'), BASE_COL, ox, oy);
+      drawGrid(document.getElementById('lpGridHot'),  HOT_COL,  ox, oy);
+    }
     requestAnimationFrame(lpAnimate);
   }
 
