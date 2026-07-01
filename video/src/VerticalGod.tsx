@@ -16,22 +16,22 @@ import {
 // ===================== Timing (authored in 30fps units, rendered at 60fps) =====================
 // Scene logic uses a virtual 30fps frame (useCurrentFrame()/K); only the Series
 // boundaries and audio cue offsets are scaled by K to real 60fps frames.
-const FPS = 30; // 30fps = universally smooth playback (120fps stutters on many players)
-const K = FPS / 30; // 1
+const FPS = 60; // 60fps = smooth + universally supported (120fps stutters on many players)
+const K = FPS / 30; // 2
 // Order: attention opener -> agenda hook -> 3 problems -> "Presenting"
-// reveal -> solutions -> outro. Tightened holds (no content removed).
-const OPEN = 74;
-const AGENDA = 90;
-const P1 = 88;
-const P2 = 88;
-const P3 = 88;
-const REVEAL = 62;
-const S1 = 56;
-const S2 = 56;
-const PHONE = 128;
-const S3 = 56;
-const BRAND = 38;
-const OUT = 60;
+// reveal -> solutions (each with bullets) -> outro. (base 30fps units)
+const OPEN = 72;
+const AGENDA = 88;
+const P1 = 84;
+const P2 = 84;
+const P3 = 84;
+const REVEAL = 60;
+const S1 = 84;
+const S2 = 84;
+const PHONE = 122;
+const S3 = 84;
+const BRAND = 36;
+const OUT = 58;
 const BASE_TOTAL =
   OPEN + AGENDA + P1 + P2 + P3 + REVEAL + S1 + S2 + PHONE + S3 + BRAND + OUT;
 export const GOD_DURATION = BASE_TOTAL * K;
@@ -185,6 +185,12 @@ const IMoneyDown: React.FC<IP> = ({ s }) => (<Svg s={s}><circle cx="32" cy="32" 
 const ILock: React.FC<IP> = ({ s }) => (<Svg s={s}><rect x="13" y="27" width="38" height="27" rx="6" /><path d="M21 27v-6a11 11 0 0 1 22 0v6" /><path d="M32 38v6" /></Svg>);
 const IGauge: React.FC<IP> = ({ s }) => (<Svg s={s}><path d="M12 45a20 20 0 0 1 40 0" /><path d="M32 45l11-13" /><circle cx="32" cy="45" r="3.2" fill="currentColor" stroke="none" /></Svg>);
 const IShieldCheck: React.FC<IP> = ({ s }) => (<Svg s={s}><path d="M32 11l19 7v13c0 13-9 19-19 23-10-4-19-10-19-23V18z" /><path d="M24 32l6 6 11-12" /></Svg>);
+const ICheckCircle: React.FC<IP> = ({ s }) => (<Svg s={s}><circle cx="32" cy="32" r="21" /><path d="M22 33l7 7 13-15" /></Svg>);
+const IDoc: React.FC<IP> = ({ s }) => (<Svg s={s}><path d="M18 10h20l8 8v36H18z" /><path d="M38 10v8h8" /><path d="M25 30h14M25 38h14M25 46h9" /></Svg>);
+const ITrendUp: React.FC<IP> = ({ s }) => (<Svg s={s}><path d="M12 44l12-12 8 7 16-18" /><path d="M40 21h10v10" /></Svg>);
+const IActivity: React.FC<IP> = ({ s }) => (<Svg s={s}><path d="M9 32h10l6-17 8 34 6-17h6" /></Svg>);
+const IBell: React.FC<IP> = ({ s }) => (<Svg s={s}><path d="M20 28a12 12 0 0 1 24 0c0 12 4 15 4 15H16s4-3 4-15z" /><path d="M28 49a4 4 0 0 0 8 0" /></Svg>);
+const ISync: React.FC<IP> = ({ s }) => (<Svg s={s}><path d="M14 20a20 20 0 0 1 34-3" /><path d="M48 12v9h-9" /><path d="M50 44a20 20 0 0 1-34 3" /><path d="M16 52v-9h9" /></Svg>);
 
 // ===================== Shared bits =====================
 const Pill: React.FC<{ text: string; color: string }> = ({ text, color }) => (
@@ -375,23 +381,41 @@ const ProblemScene: React.FC<{ index: string; color: string; tint: string; icon:
   );
 };
 
-// ===================== Scene: Solution =====================
-const SolutionScene: React.FC<{ icon: React.ReactNode; bold: string; detail: string }> = ({ icon, bold, detail }) => {
+// ===================== Scene: Solution (bold statement + bullets, like problems) =====================
+const SolutionScene: React.FC<{ icon: React.ReactNode; bold: string; bullets: Bullet[] }> = ({ icon, bold, bullets }) => {
   const frame = useCurrentFrame() / K;
   const fps = 30;
   const sp = (delay: number, damping = 200) => spring({ frame: frame - delay, fps, config: { damping } });
   const head = sp(2);
   const big = sp(6, 14);
-  const title = sp(9);
-  const det = sp(15);
+  const title = sp(11);
+  const color = ROYAL;
+  const tint = "#eff6ff";
   return (
-    <AbsoluteFill style={{ alignItems: "center", justifyContent: "flex-start", padding: "380px 80px 0" }}>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 30, textAlign: "center" }}>
-        <div style={{ opacity: head }}><Pill text="AuditReady" color={ROYAL} /></div>
-        <BigIcon color={ROYAL} tint="#eff6ff" scale={big} frame={frame}>{icon}</BigIcon>
-        <div style={{ fontFamily: FONT, fontWeight: 800, fontSize: 86, color: INK, letterSpacing: -2.5, lineHeight: 1.04, opacity: title, transform: `translateY(${interpolate(title, [0, 1], [24, 0])}px)`, maxWidth: 880 }}>{bold}</div>
-        <div style={{ fontFamily: FONT, fontWeight: 500, fontSize: 36, color: SLATE, lineHeight: 1.34, maxWidth: 760, opacity: det }}>{detail}</div>
-        <div style={{ height: 9, width: interpolate(det, [0, 1], [0, 300]), borderRadius: 999, background: `linear-gradient(90deg, ${ROYAL}, ${SKY})` }} />
+    <AbsoluteFill style={{ alignItems: "center", justifyContent: "flex-start", padding: "250px 70px 0" }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 26, width: "100%" }}>
+        <div style={{ opacity: head, transform: `translateY(${interpolate(head, [0, 1], [-18, 0])}px)` }}><Pill text="AuditReady" color={color} /></div>
+        <BigIcon color={color} tint={tint} scale={big} frame={frame}>{icon}</BigIcon>
+        <div style={{ fontFamily: FONT, fontWeight: 800, fontSize: 72, color: INK, letterSpacing: -2, textAlign: "center", lineHeight: 1.05, opacity: title, transform: `translateY(${interpolate(title, [0, 1], [22, 0])}px)`, maxWidth: 880 }}>{bold}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, opacity: title }}>
+          <div style={{ height: 4, width: 70, borderRadius: 9, background: `${color}55` }} />
+          <div style={{ width: 8, height: 8, borderRadius: 9, background: color }} />
+          <div style={{ height: 4, width: 70, borderRadius: 9, background: `${color}55` }} />
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 18, width: "100%", maxWidth: 820, marginTop: 8 }}>
+          {bullets.map((b, i) => {
+            const bp = sp(15 + i * 9, 18);
+            return (
+              <div key={b.title} style={{ display: "flex", alignItems: "center", gap: 22, background: "rgba(255,255,255,0.74)", border: "1px solid rgba(37,99,235,0.12)", borderRadius: 22, padding: "22px 26px", boxShadow: "0 16px 38px rgba(37,99,235,0.08)", backdropFilter: "blur(4px)", opacity: bp, transform: `translateX(${interpolate(bp, [0, 1], [44, 0])}px)` }}>
+                <div style={{ width: 64, height: 64, borderRadius: 18, flexShrink: 0, background: tint, color, display: "flex", alignItems: "center", justifyContent: "center" }}>{b.icon}</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  <div style={{ fontFamily: FONT, fontWeight: 800, fontSize: 34, color: INK, letterSpacing: -0.5 }}>{b.title}</div>
+                  <div style={{ fontFamily: FONT, fontWeight: 500, fontSize: 27, color: SLATE, lineHeight: 1.3 }}>{b.sub}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </AbsoluteFill>
   );
@@ -642,10 +666,34 @@ export const VerticalGod: React.FC = () => {
         <Series.Sequence durationInFrames={REVEAL * K}><Scene3D dur={REVEAL} axis="y"><SceneIntro /></Scene3D></Series.Sequence>
 
         {/* SOLUTIONS + live product */}
-        <Series.Sequence durationInFrames={S1 * K}><Scene3D dur={S1} axis="y"><SolutionScene icon={<ILock />} bold="One Evidence Locker." detail="Auto-collected from GitHub, Google & Slack — always current." /></Scene3D></Series.Sequence>
-        <Series.Sequence durationInFrames={S2 * K}><Scene3D dur={S2} axis="y"><SolutionScene icon={<IGauge />} bold="A score in 10 minutes." detail="Connect your stack and see exactly where you stand." /></Scene3D></Series.Sequence>
+        <Series.Sequence durationInFrames={S1 * K}>
+          <Scene3D dur={S1} axis="y">
+            <SolutionScene icon={<ILock />} bold="One Evidence Locker." bullets={[
+              { icon: <ISync s={34} />, title: "Auto-collected", sub: "Pulled straight from GitHub, Google & Slack" },
+              { icon: <ICheckCircle s={34} />, title: "Always current", sub: "Re-synced on every login — no manual work" },
+              { icon: <IDoc s={34} />, title: "Auditor-ready", sub: "Export a complete evidence package in one click" },
+            ]} />
+          </Scene3D>
+        </Series.Sequence>
+        <Series.Sequence durationInFrames={S2 * K}>
+          <Scene3D dur={S2} axis="y">
+            <SolutionScene icon={<IActivity />} bold="Always audit-ready." bullets={[
+              { icon: <IGauge s={34} />, title: "Continuous monitoring", sub: "Every SOC 2 control tracked in real time" },
+              { icon: <ISync s={34} />, title: "Auto-rescans", sub: "Your readiness updates the moment things change" },
+              { icon: <IBell s={34} />, title: "Drift & renewal alerts", sub: "Get warned before a control slips out of compliance" },
+            ]} />
+          </Scene3D>
+        </Series.Sequence>
         <Series.Sequence durationInFrames={PHONE * K}><ScenePhone /></Series.Sequence>
-        <Series.Sequence durationInFrames={S3 * K}><Scene3D dur={S3} axis="y"><SolutionScene icon={<IShieldCheck />} bold="Share a live Trust Page." detail="Send real-time proof and close enterprise deals faster." /></Scene3D></Series.Sequence>
+        <Series.Sequence durationInFrames={S3 * K}>
+          <Scene3D dur={S3} axis="y">
+            <SolutionScene icon={<IShieldCheck />} bold="Share a live Trust Page." bullets={[
+              { icon: <ICheckCircle s={34} />, title: "Real-time proof", sub: "Buyers see your live compliance status" },
+              { icon: <IDoc s={34} />, title: "Skip the questionnaire", sub: "Answer security reviews with one link" },
+              { icon: <ITrendUp s={34} />, title: "Close faster", sub: "Turn “are you compliant?” into a signed deal" },
+            ]} />
+          </Scene3D>
+        </Series.Sequence>
         <Series.Sequence durationInFrames={BRAND * K}><Scene3D dur={BRAND} axis="y"><SceneBrand /></Scene3D></Series.Sequence>
         <Series.Sequence durationInFrames={OUT * K}><SceneOutro /></Series.Sequence>
       </Series>
