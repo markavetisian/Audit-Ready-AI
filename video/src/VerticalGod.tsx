@@ -16,22 +16,22 @@ import {
 // ===================== Timing (authored in 30fps units, rendered at 60fps) =====================
 // Scene logic uses a virtual 30fps frame (useCurrentFrame()/K); only the Series
 // boundaries and audio cue offsets are scaled by K to real 60fps frames.
-const FPS = 120;
-const K = FPS / 30; // 4
-// Order: branded context opener -> agenda hook -> 3 problems -> "Presenting"
-// reveal -> solutions -> outro
-const OPEN = 86;
-const AGENDA = 104;
-const P1 = 100;
-const P2 = 100;
-const P3 = 100;
-const REVEAL = 78;
-const S1 = 60;
-const S2 = 60;
-const PHONE = 158;
-const S3 = 60;
-const BRAND = 46;
-const OUT = 74;
+const FPS = 30; // 30fps = universally smooth playback (120fps stutters on many players)
+const K = FPS / 30; // 1
+// Order: attention opener -> agenda hook -> 3 problems -> "Presenting"
+// reveal -> solutions -> outro. Tightened holds (no content removed).
+const OPEN = 74;
+const AGENDA = 90;
+const P1 = 88;
+const P2 = 88;
+const P3 = 88;
+const REVEAL = 62;
+const S1 = 56;
+const S2 = 56;
+const PHONE = 128;
+const S3 = 56;
+const BRAND = 38;
+const OUT = 60;
 const BASE_TOTAL =
   OPEN + AGENDA + P1 + P2 + P3 + REVEAL + S1 + S2 + PHONE + S3 + BRAND + OUT;
 export const GOD_DURATION = BASE_TOTAL * K;
@@ -252,8 +252,8 @@ const SceneOpen: React.FC = () => {
   const stamp = spring({ frame, fps, config: { damping: 9, mass: 0.7, stiffness: 140 } });
   const sealScale = interpolate(stamp, [0, 1], [1.7, 1]);
   const sealRot = interpolate(stamp, [0, 1], [-16, -7]);
-  const hook = spring({ frame: frame - 14, fps, config: { damping: 200 } });
-  const sub = spring({ frame: frame - 30, fps, config: { damping: 200 } });
+  const hook = spring({ frame: frame - 12, fps, config: { damping: 200 } });
+  const sub = spring({ frame: frame - 24, fps, config: { damping: 200 } });
   return (
     <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", gap: 40, perspective: 1500, textAlign: "center", padding: "0 70px" }}>
       <div style={{ opacity: Math.min(1, stamp * 1.6) }}>
@@ -321,7 +321,7 @@ const AgendaScene: React.FC = () => {
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 20, width: "100%", maxWidth: 800 }}>
           {AGENDA_ITEMS.map((it, i) => {
-            const p = sp(16 + i * 16, 16);
+            const p = sp(12 + i * 11, 16);
             return (
               <div key={it.n} style={{ display: "flex", alignItems: "center", gap: 24, background: "rgba(255,255,255,0.8)", border: "1px solid rgba(15,23,42,0.07)", borderRadius: 24, padding: "24px 28px", boxShadow: "0 18px 40px rgba(15,23,42,0.07)", opacity: p, transform: `translateX(${interpolate(p, [0, 1], [i % 2 ? 50 : -50, 0])}px)` }}>
                 <div style={{ fontFamily: FONT, fontWeight: 800, fontSize: 40, color: `${it.color}`, opacity: 0.4, width: 58 }}>{it.n}</div>
@@ -358,7 +358,7 @@ const ProblemScene: React.FC<{ index: string; color: string; tint: string; icon:
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 18, width: "100%", maxWidth: 820, marginTop: 8 }}>
           {bullets.map((b, i) => {
-            const bp = sp(24 + i * 12, 18);
+            const bp = sp(15 + i * 9, 18);
             return (
               <div key={b.title} style={{ display: "flex", alignItems: "center", gap: 22, background: "rgba(255,255,255,0.74)", border: "1px solid rgba(15,23,42,0.07)", borderRadius: 22, padding: "22px 26px", boxShadow: "0 16px 38px rgba(15,23,42,0.07)", backdropFilter: "blur(4px)", opacity: bp, transform: `translateX(${interpolate(bp, [0, 1], [-44, 0])}px)` }}>
                 <div style={{ width: 64, height: 64, borderRadius: 18, flexShrink: 0, background: tint, color, display: "flex", alignItems: "center", justifyContent: "center" }}>{b.icon}</div>
@@ -382,8 +382,8 @@ const SolutionScene: React.FC<{ icon: React.ReactNode; bold: string; detail: str
   const sp = (delay: number, damping = 200) => spring({ frame: frame - delay, fps, config: { damping } });
   const head = sp(2);
   const big = sp(6, 14);
-  const title = sp(12);
-  const det = sp(20);
+  const title = sp(9);
+  const det = sp(15);
   return (
     <AbsoluteFill style={{ alignItems: "center", justifyContent: "flex-start", padding: "380px 80px 0" }}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 30, textAlign: "center" }}>
@@ -604,12 +604,6 @@ export const VerticalGod: React.FC = () => {
   return (
     <AbsoluteFill>
       <Background />
-      <Audio src={staticFile("audio/music.wav")} volume={0.9} />
-      {CUES.map((c, i) => (
-        <Sequence key={i} from={Math.round(c.from * K)}>
-          <Audio src={staticFile(c.src)} volume={c.volume} />
-        </Sequence>
-      ))}
 
       <Series>
         {/* BRANDED CONTEXT OPENER — what this is */}
