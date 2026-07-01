@@ -22,14 +22,14 @@ const K = FPS / 30; // 2
 // reveal -> solutions (each with bullets) -> outro. (base 30fps units)
 const OPEN = 72;
 const AGENDA = 88;
-const P1 = 84;
-const P2 = 84;
-const P3 = 84;
+const P1 = 94;
+const P2 = 94;
+const P3 = 94;
 const REVEAL = 60;
-const S1 = 84;
-const S2 = 84;
+const S1 = 94;
+const S2 = 94;
 const PHONE = 122;
-const S3 = 84;
+const S3 = 94;
 const BRAND = 36;
 const OUT = 58;
 const BASE_TOTAL =
@@ -344,16 +344,17 @@ const AgendaScene: React.FC = () => {
 
 // ===================== Scene: Problem (with bullets) =====================
 type Bullet = { icon: React.ReactNode; title: string; sub: string };
-const ProblemScene: React.FC<{ index: string; color: string; tint: string; icon: React.ReactNode; bold: string; bullets: Bullet[] }> = ({ index, color, tint, icon, bold, bullets }) => {
+const ProblemScene: React.FC<{ index: string; color: string; tint: string; icon: React.ReactNode; bold: string; bullets: Bullet[]; footer: { icon: React.ReactNode; text: string } }> = ({ index, color, tint, icon, bold, bullets, footer }) => {
   const frame = useCurrentFrame() / K;
   const fps = 30;
   const sp = (delay: number, damping = 200) => spring({ frame: frame - delay, fps, config: { damping } });
   const head = sp(2);
   const big = sp(8, 14);
   const title = sp(14);
+  const fp = sp(15 + bullets.length * 9 + 4, 18);
   return (
-    <AbsoluteFill style={{ alignItems: "center", justifyContent: "flex-start", padding: "250px 70px 0" }}>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 26, width: "100%" }}>
+    <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", padding: "0 70px" }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 24, width: "100%" }}>
         <div style={{ opacity: head, transform: `translateY(${interpolate(head, [0, 1], [-18, 0])}px)` }}><Pill text={index} color={color} /></div>
         <BigIcon color={color} tint={tint} scale={big} frame={frame}>{icon}</BigIcon>
         <div style={{ fontFamily: FONT, fontWeight: 800, fontSize: 72, color: INK, letterSpacing: -2, textAlign: "center", lineHeight: 1.05, opacity: title, transform: `translateY(${interpolate(title, [0, 1], [22, 0])}px)`, maxWidth: 880 }}>{bold}</div>
@@ -376,24 +377,30 @@ const ProblemScene: React.FC<{ index: string; color: string; tint: string; icon:
             );
           })}
         </div>
+        {/* footer takeaway — fills the lower space with a punchy line */}
+        <div style={{ display: "flex", alignItems: "center", gap: 18, width: "100%", maxWidth: 820, marginTop: 6, background: `${color}12`, border: `1.5px solid ${color}33`, borderRadius: 22, padding: "20px 26px", opacity: fp, transform: `translateY(${interpolate(fp, [0, 1], [26, 0])}px)` }}>
+          <div style={{ width: 52, height: 52, borderRadius: 15, flexShrink: 0, background: color, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>{footer.icon}</div>
+          <div style={{ fontFamily: FONT, fontWeight: 700, fontSize: 30, color: INK, lineHeight: 1.25 }}>{footer.text}</div>
+        </div>
       </div>
     </AbsoluteFill>
   );
 };
 
 // ===================== Scene: Solution (bold statement + bullets, like problems) =====================
-const SolutionScene: React.FC<{ icon: React.ReactNode; bold: string; bullets: Bullet[] }> = ({ icon, bold, bullets }) => {
+const SolutionScene: React.FC<{ icon: React.ReactNode; bold: string; bullets: Bullet[]; footer: { icon: React.ReactNode; text: string } }> = ({ icon, bold, bullets, footer }) => {
   const frame = useCurrentFrame() / K;
   const fps = 30;
   const sp = (delay: number, damping = 200) => spring({ frame: frame - delay, fps, config: { damping } });
   const head = sp(2);
   const big = sp(6, 14);
   const title = sp(11);
+  const fp = sp(15 + bullets.length * 9 + 4, 18);
   const color = ROYAL;
   const tint = "#eff6ff";
   return (
-    <AbsoluteFill style={{ alignItems: "center", justifyContent: "flex-start", padding: "250px 70px 0" }}>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 26, width: "100%" }}>
+    <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", padding: "0 70px" }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 24, width: "100%" }}>
         <div style={{ opacity: head, transform: `translateY(${interpolate(head, [0, 1], [-18, 0])}px)` }}><Pill text="AuditReady" color={color} /></div>
         <BigIcon color={color} tint={tint} scale={big} frame={frame}>{icon}</BigIcon>
         <div style={{ fontFamily: FONT, fontWeight: 800, fontSize: 72, color: INK, letterSpacing: -2, textAlign: "center", lineHeight: 1.05, opacity: title, transform: `translateY(${interpolate(title, [0, 1], [22, 0])}px)`, maxWidth: 880 }}>{bold}</div>
@@ -415,6 +422,11 @@ const SolutionScene: React.FC<{ icon: React.ReactNode; bold: string; bullets: Bu
               </div>
             );
           })}
+        </div>
+        {/* footer takeaway — fills the lower space with the payoff */}
+        <div style={{ display: "flex", alignItems: "center", gap: 18, width: "100%", maxWidth: 820, marginTop: 6, background: `${color}12`, border: `1.5px solid ${color}33`, borderRadius: 22, padding: "20px 26px", opacity: fp, transform: `translateY(${interpolate(fp, [0, 1], [26, 0])}px)` }}>
+          <div style={{ width: 52, height: 52, borderRadius: 15, flexShrink: 0, background: color, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>{footer.icon}</div>
+          <div style={{ fontFamily: FONT, fontWeight: 700, fontSize: 30, color: INK, lineHeight: 1.25 }}>{footer.text}</div>
         </div>
       </div>
     </AbsoluteFill>
@@ -640,7 +652,7 @@ export const VerticalGod: React.FC = () => {
               { icon: <IScatter s={34} />, title: "Scattered files", sub: "Screenshots & spreadsheets across 12+ tools" },
               { icon: <IRefresh s={34} />, title: "Endless re-work", sub: "Re-collected by hand before every audit" },
               { icon: <IXCircle s={34} />, title: "No source of truth", sub: "Nobody knows what's actually covered" },
-            ]} />
+            ]} footer={{ icon: <IAlert s={26} />, text: "The result: audit prep turns into a scavenger hunt." }} />
           </Scene3D>
         </Series.Sequence>
         <Series.Sequence durationInFrames={P2 * K}>
@@ -649,7 +661,7 @@ export const VerticalGod: React.FC = () => {
               { icon: <IHourglass s={34} />, title: "Manual mapping", sub: "Hand-mapping every SOC 2 control" },
               { icon: <IChartDown s={34} />, title: "Stalled progress", sub: "Weeks lost before real work starts" },
               { icon: <IAlert s={34} />, title: "Team burnout", sub: "Engineers pulled off the roadmap" },
-            ]} />
+            ]} footer={{ icon: <IClock s={26} />, text: "The result: your launch and deals wait on the audit." }} />
           </Scene3D>
         </Series.Sequence>
         <Series.Sequence durationInFrames={P3 * K}>
@@ -658,7 +670,7 @@ export const VerticalGod: React.FC = () => {
               { icon: <IClock s={34} />, title: "Slow buyers", sub: "Enterprise security reviews drag for weeks" },
               { icon: <IShieldQ s={34} />, title: "Trust gap", sub: "No proof you're actually compliant" },
               { icon: <IMoneyDown s={34} />, title: "Lost revenue", sub: "Deals slip to next quarter" },
-            ]} />
+            ]} footer={{ icon: <IMoneyDown s={26} />, text: "The result: revenue slips to next quarter." }} />
           </Scene3D>
         </Series.Sequence>
 
@@ -672,7 +684,7 @@ export const VerticalGod: React.FC = () => {
               { icon: <ISync s={34} />, title: "Auto-collected", sub: "Pulled straight from GitHub, Google & Slack" },
               { icon: <ICheckCircle s={34} />, title: "Always current", sub: "Re-synced on every login — no manual work" },
               { icon: <IDoc s={34} />, title: "Auditor-ready", sub: "Export a complete evidence package in one click" },
-            ]} />
+            ]} footer={{ icon: <ICheckCircle s={26} />, text: "Evidence stays complete — with zero busywork." }} />
           </Scene3D>
         </Series.Sequence>
         <Series.Sequence durationInFrames={S2 * K}>
@@ -681,7 +693,7 @@ export const VerticalGod: React.FC = () => {
               { icon: <IGauge s={34} />, title: "Continuous monitoring", sub: "Every SOC 2 control tracked in real time" },
               { icon: <ISync s={34} />, title: "Auto-rescans", sub: "Your readiness updates the moment things change" },
               { icon: <IBell s={34} />, title: "Drift & renewal alerts", sub: "Get warned before a control slips out of compliance" },
-            ]} />
+            ]} footer={{ icon: <IShieldCheck s={26} />, text: "You're always ready — not just on audit day." }} />
           </Scene3D>
         </Series.Sequence>
         <Series.Sequence durationInFrames={PHONE * K}><ScenePhone /></Series.Sequence>
@@ -691,7 +703,7 @@ export const VerticalGod: React.FC = () => {
               { icon: <ICheckCircle s={34} />, title: "Real-time proof", sub: "Buyers see your live compliance status" },
               { icon: <IDoc s={34} />, title: "Skip the questionnaire", sub: "Answer security reviews with one link" },
               { icon: <ITrendUp s={34} />, title: "Close faster", sub: "Turn “are you compliant?” into a signed deal" },
-            ]} />
+            ]} footer={{ icon: <ITrendUp s={26} />, text: "Prove trust instantly — and win the deal." }} />
           </Scene3D>
         </Series.Sequence>
         <Series.Sequence durationInFrames={BRAND * K}><Scene3D dur={BRAND} axis="y"><SceneBrand /></Scene3D></Series.Sequence>
