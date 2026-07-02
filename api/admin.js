@@ -135,7 +135,7 @@ export default async function handler(req, res) {
       users.sort((a, b) => (b.lastActivity || 0) - (a.lastActivity || 0));
 
       // Subscription breakdown
-      const modeCounts = { sandbox: 0, starter: 0, growth: 0, enterprise: 0 };
+      const modeCounts = { sandbox: 0, monitoring: 0, starter: 0, growth: 0, enterprise: 0 };
       users.forEach(u => { modeCounts[u.mode || 'sandbox'] = (modeCounts[u.mode || 'sandbox'] || 0) + 1; });
 
       // Auth logs
@@ -184,7 +184,7 @@ export default async function handler(req, res) {
         await redis.del(`blocked:${userId}`); await redis.del(`banned:${userId}`);
 
       } else if (type === 'set_mode') {
-        if (!['sandbox', 'starter', 'growth', 'enterprise'].includes(mode)) {
+        if (!['sandbox', 'monitoring', 'starter', 'growth', 'enterprise'].includes(mode)) {
           return res.status(400).json({ error: 'Invalid mode' });
         }
         user.mode = mode;

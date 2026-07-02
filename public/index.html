@@ -499,6 +499,12 @@ header{
 .spinner{display:inline-block;width:13px;height:13px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
 .fade-in{animation:fadeIn .2s ease}
 
+/* ── Skeleton loading ────────────────────── */
+@keyframes skel-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skel{display:block;flex-shrink:0;border-radius:6px;background:linear-gradient(90deg,#edf1f6 25%,#dde4ee 37%,#edf1f6 63%);background-size:200% 100%;animation:skel-shimmer 1.4s ease infinite}
+.skel-circle{border-radius:50%}
+@media(prefers-reduced-motion:reduce){.skel{animation:none}}
+
 /* ── Report card ─────────────────────────── */
 .report-card{
   background:#fff;border:1px solid var(--border);
@@ -527,14 +533,15 @@ header{
 
 /* ── Share modal ─────────────────────────── */
 .modal-overlay{
-  position:fixed;inset:0;background:rgba(15,23,42,.4);
-  display:flex;align-items:center;justify-content:center;
-  z-index:200;padding:20px;backdrop-filter:blur(4px);
+  position:fixed;inset:0;background:rgba(15,23,42,.5);
+  display:flex;align-items:flex-start;justify-content:center;
+  z-index:200;padding:20px;overflow-y:auto;
 }
 .modal-box{
   background:#fff;border:1px solid var(--border);
   border-radius:12px;padding:24px;max-width:440px;width:100%;
   box-shadow:0 20px 60px rgba(15,23,42,.15);
+  margin:auto;position:relative;
 }
 .modal-box h3{font-size:16px;font-weight:600;margin-bottom:6px;letter-spacing:-.02em}
 .modal-box p{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px}
@@ -622,7 +629,7 @@ header{
 }
 
 /* ── Pricing modal redesign ──────────────── */
-.pm-overlay{position:fixed;inset:0;background:rgba(15,23,42,.55);backdrop-filter:blur(4px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto}
+.pm-overlay{position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto}
 .pm-box{background:#fff;border-radius:20px;padding:36px 32px 28px;max-width:860px;width:100%;box-shadow:0 24px 80px rgba(15,23,42,.18);position:relative;max-height:calc(100dvh - 32px);overflow-y:auto}
 .pm-close{position:absolute;top:14px;right:14px;background:none;border:none;font-size:18px;cursor:pointer;color:#94a3b8;padding:4px 8px;border-radius:6px;line-height:1}
 .pm-close:hover{background:#f1f5f9;color:#0f172a}
@@ -675,12 +682,34 @@ header{
 .pm-later:hover{border-color:#94a3b8}
 .pm-free-note{text-align:center;font-size:11px;color:#94a3b8;margin-top:8px}
 @media(max-width:680px){
-  .pm-box{padding:20px 14px 18px;border-radius:16px}
-  .pm-cards{grid-template-columns:1fr;gap:10px}
-  .pm-card-side{transform:none;opacity:1}
-  .pm-card-center{transform:none;box-shadow:0 4px 20px rgba(37,99,235,.12)}
-  .pm-title{font-size:20px}
-  .pm-price-num{font-size:36px}
+  .pm-overlay{padding:8px}
+  .pm-box{padding:18px 9px 14px;border-radius:16px}
+  .pm-title{font-size:19px}
+  /* Keep all three plans side-by-side on mobile WITH the desktop spring/pop
+     animation, instead of stacking them in a long scroll. Content is scaled
+     down so the trio fits across a phone screen. */
+  .pm-cards{grid-template-columns:repeat(3,1fr);gap:6px;align-items:center;margin-bottom:16px}
+  .pm-card{padding:16px 7px 12px;border-radius:12px}
+  .pm-card-side{transform:scale(.92) translateY(8px);opacity:.92}
+  .pm-card-center{transform:translateY(-8px) scale(1.02);box-shadow:0 8px 26px rgba(37,99,235,.16)}
+  .pm-popular{font-size:6.5px;padding:3px 6px 3px 7px;border-radius:0 12px 0 8px;gap:2px;white-space:nowrap}
+  .pm-cn{font-size:9px !important;letter-spacing:.03em !important;margin-bottom:6px !important;text-align:center}
+  .pm-price-row{gap:1px}
+  .pm-cur{font-size:10px !important;margin-top:4px !important}
+  .pm-price-num{font-size:23px}
+  .pm-per{font-size:8.5px !important;margin-bottom:4px !important}
+  .pm-cd{font-size:9px !important;margin-bottom:10px !important;line-height:1.4 !important;min-height:50px}
+  .pm-card ul{margin:0 0 12px !important;gap:5px !important}
+  .pm-check{font-size:8.5px;gap:4px;line-height:1.35}
+  .pm-cta{font-size:10px;padding:8px 0}
+  [id^="pm-annual-note-"]{min-height:0 !important;margin-bottom:8px !important}
+}
+@media(max-width:400px){
+  .pm-card{padding:14px 5px 10px}
+  .pm-cn{font-size:8px !important}
+  .pm-price-num{font-size:19px}
+  .pm-check{font-size:8px;gap:3px}
+  .pm-cd{font-size:8.5px !important}
 }
 .upgrade-btn{width:100%;padding:9px 16px;border-radius:var(--r);background:linear-gradient(135deg,var(--accent),#1d4ed8);color:#fff;font-size:12px;font-weight:600;border:none;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .15s}
 .upgrade-btn:hover{opacity:.9}
@@ -841,6 +870,7 @@ header{
 .admin-log-row:last-child{border-bottom:none}
 .plan-badge{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;font-family:var(--mono);letter-spacing:.04em}
 .plan-sandbox{background:#f1f5f9;color:#64748b}
+.plan-monitoring{background:#fffbeb;color:#b45309}
 .plan-starter{background:#eff6ff;color:#2563eb}
 .plan-growth{background:#f0fdf4;color:#059669}
 .plan-enterprise{background:#fdf4ff;color:#9333ea}
@@ -943,17 +973,18 @@ header{
     <button class="lp-nav-signin" onclick="location.href='/api/auth?provider=github'">Sign in</button>
   </nav>
 
-  <!-- badge -->
-  <div class="lp-badge">
-    <span class="lp-badge-dot"></span>
-    SOC 2 readiness score in under 10 minutes
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-  </div>
-
   <!-- hero -->
   <div class="lp-hero">
     <h1>Close enterprise deals.<br/><em>Stop losing them</em> to compliance.</h1>
-    <p>Connect your tools, get your SOC 2 readiness score instantly, and walk into every enterprise conversation audit-ready.</p>
+    <p>When a prospect asks "are you SOC 2?", have the answer ready. Connect your tools, get your readiness score and a live Trust Page, and walk into every enterprise deal with proof in hand.</p>
+    <div class="lp-ts-wrap">
+      <button class="lp-estimate-cta" onclick="openTrustSample()">
+        <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V6l7-4z"/><path d="M9.2 12l1.9 1.9 3.7-3.9"/></svg></span>
+        See what your customers will see
+        <span class="ar">→</span>
+      </button>
+    </div>
+    <div style="font-size:11.5px;color:#94a3b8;margin:2px 0 14px">Preview a live Trust Page — the proof you send buyers — or connect your stack below to create yours.</div>
     <div class="lp-btns">
       <button class="lp-btn-gh" onclick="location.href='/api/auth?provider=github'">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12"/></svg>
@@ -962,10 +993,6 @@ header{
       <button class="lp-btn-gg" onclick="location.href='/api/auth?provider=google'">
         <svg width="15" height="15" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
         Continue with Google
-      </button>
-      <button class="lp-btn-sl" onclick="location.href='/api/auth?provider=slack'">
-        <svg width="15" height="15" viewBox="0 0 54 54"><path fill="#E01E5A" d="M19.712 0a5.355 5.355 0 0 0-5.354 5.354 5.355 5.355 0 0 0 5.354 5.355h5.355V5.354A5.355 5.355 0 0 0 19.712 0m0 14.28H5.355A5.355 5.355 0 0 0 0 19.637a5.355 5.355 0 0 0 5.355 5.355h14.357a5.355 5.355 0 0 0 5.355-5.355 5.355 5.355 0 0 0-5.355-5.356"/><path fill="#36C5F0" d="M54 19.637a5.355 5.355 0 0 0-5.355-5.357 5.355 5.355 0 0 0-5.354 5.357v5.355h5.354A5.355 5.355 0 0 0 54 19.637m-14.28 0V5.354A5.355 5.355 0 0 0 34.365 0a5.355 5.355 0 0 0-5.356 5.354v14.283a5.355 5.355 0 0 0 5.356 5.355 5.355 5.355 0 0 0 5.355-5.355"/><path fill="#2EB67D" d="M34.365 54a5.355 5.355 0 0 0 5.355-5.355 5.355 5.355 0 0 0-5.355-5.354h-5.356v5.354A5.355 5.355 0 0 0 34.365 54m0-14.28h14.28A5.355 5.355 0 0 0 54 34.364a5.355 5.355 0 0 0-5.355-5.355H34.365a5.355 5.355 0 0 0-5.356 5.355 5.355 5.355 0 0 0 5.356 5.356"/><path fill="#ECB22E" d="M0 34.364a5.355 5.355 0 0 0 5.355 5.356 5.355 5.355 0 0 0 5.354-5.356v-5.355H5.355A5.355 5.355 0 0 0 0 34.364m14.28 0v14.28A5.355 5.355 0 0 0 19.712 54a5.355 5.355 0 0 0 5.355-5.355V34.364a5.355 5.355 0 0 0-5.355-5.355 5.355 5.355 0 0 0-5.431 5.355"/></svg>
-        Continue with Slack
       </button>
     </div>
     <p style="font-size:11px;color:#94a3b8;margin-top:14px">GitHub required for automated compliance scanning</p>
@@ -1185,7 +1212,7 @@ header{
           </div>
           <div class="lp-vs-row">
             <div class="lp-vs-icon-yes">✓</div>
-            <div class="lp-vs-text-yes">From $250/mo — cancel anytime, no sales call required</div>
+            <div class="lp-vs-text-yes">A fraction of the deal it unlocks — no setup fees, no sales call</div>
           </div>
           <div class="lp-vs-row">
             <div class="lp-vs-icon-yes">✓</div>
@@ -1221,17 +1248,17 @@ header{
   <section class="lp-section lp-cta-section" id="lpCta">
     <div class="lp-cta-inner reveal">
       <div class="lp-cta-glow"></div>
-      <div class="lp-eyebrow" style="color:rgba(255,255,255,.6)">Get Started Free</div>
+      <div class="lp-eyebrow" style="color:rgba(255,255,255,.6)">Get Audit-Ready</div>
       <h2 style="font-size:clamp(24px,4vw,42px);font-weight:700;letter-spacing:-.04em;margin:10px 0 12px;color:#fff;line-height:1.1">Your next audit starts today</h2>
       <p style="font-size:14px;color:rgba(255,255,255,.65);margin-bottom:28px;line-height:1.7;max-width:380px;margin-left:auto;margin-right:auto">Connect your tools, get your score in under 10 minutes, and start your audit prep with a clear, prioritized action list.</p>
       <div class="lp-btns">
         <button class="lp-btn-cta" onclick="location.href='/api/auth?provider=github'">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12"/></svg>
-          Get your score free →
+          Get your readiness score →
         </button>
       </div>
-      <p style="font-size:11px;color:rgba(255,255,255,.4);margin-top:14px">No credit card · Setup in 10 minutes · Cancel anytime</p>
-      <p style="font-size:10.5px;color:rgba(255,255,255,.35);margin-top:6px">By clicking "Get your score free", you agree to our <a href="/terms.html" target="_blank" style="color:rgba(255,255,255,.55);text-decoration:underline">Terms of Service</a> and <a href="/privacy.html" target="_blank" style="color:rgba(255,255,255,.55);text-decoration:underline">Privacy Policy</a>.</p>
+      <p style="font-size:11px;color:rgba(255,255,255,.4);margin-top:14px">Live in under 10 minutes · Built for startups closing enterprise deals</p>
+      <p style="font-size:10.5px;color:rgba(255,255,255,.35);margin-top:6px">By clicking "Get your readiness score", you agree to our <a href="/terms.html" target="_blank" style="color:rgba(255,255,255,.55);text-decoration:underline">Terms of Service</a> and <a href="/privacy.html" target="_blank" style="color:rgba(255,255,255,.55);text-decoration:underline">Privacy Policy</a>.</p>
     </div>
   </section>
 
@@ -1248,7 +1275,7 @@ header{
         <span style="color:#cbd5e1;font-size:12px">·</span>
         <a href="/privacy.html" style="font-size:12.5px;color:#64748b;text-decoration:none;padding:0 14px;transition:color .15s" onmouseover="this.style.color='#1e293b'" onmouseout="this.style.color='#64748b'">Privacy Policy</a>
         <span style="color:#cbd5e1;font-size:12px">·</span>
-        <a href="mailto:support.generalmail@gmail.com" style="font-size:12.5px;color:#64748b;text-decoration:none;padding:0 14px;transition:color .15s" onmouseover="this.style.color='#1e293b'" onmouseout="this.style.color='#64748b'">Contact</a>
+        <a href="mailto:vlad@auditready.space" style="font-size:12.5px;color:#64748b;text-decoration:none;padding:0 14px;transition:color .15s" onmouseover="this.style.color='#1e293b'" onmouseout="this.style.color='#64748b'">Contact</a>
       </div>
       <p style="font-size:11.5px;color:#94a3b8;line-height:1.7;max-width:460px;margin:0 auto 18px">AuditReady AI provides self-reported SOC 2 readiness tracking and is not a certified auditing firm. Scores reflect documented controls and do not constitute an official SOC 2 report.</p>
       <p style="font-size:11px;color:#94a3b8;letter-spacing:.02em">© 2026 AuditReady AI. All rights reserved.</p>
@@ -1308,8 +1335,9 @@ header{
               </div>
               <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
                 <button class="btn btn-primary btn-sm" onclick="openPricingModal('growth')">⚡ Unlock my fix plan →</button>
-                <span style="font-size:11px;color:#94a3b8">From $250/mo · cancel anytime</span>
+                <span style="font-size:11px;color:#94a3b8">Less than one lost enterprise deal</span>
               </div>
+              <div style="font-size:12px;color:#64748b;margin-top:12px">Any questions or concerns? <a href="mailto:vlad@auditready.space" style="color:#2563eb;text-decoration:none;font-weight:600">vlad@auditready.space</a></div>
             </div>
           </div>
         </div>
@@ -1345,7 +1373,7 @@ header{
         <!-- Category breakdown -->
         <div class="card" style="margin-bottom:16px">
           <div class="section-heading">CATEGORY BREAKDOWN</div>
-          <div id="categoryBars"><div style="color:var(--muted);font-size:12px;padding:8px 0">Loading...</div></div>
+          <div id="categoryBars"><div class="cat-bar"><div class="cat-label"><span class="skel" style="width:62%;height:10px"></span></div><div class="cat-track"><span class="skel" style="width:100%;height:4px;border-radius:2px"></span></div><div class="cat-score"><span class="skel" style="width:24px;height:10px"></span></div></div><div class="cat-bar"><div class="cat-label"><span class="skel" style="width:78%;height:10px"></span></div><div class="cat-track"><span class="skel" style="width:100%;height:4px;border-radius:2px"></span></div><div class="cat-score"><span class="skel" style="width:24px;height:10px"></span></div></div><div class="cat-bar"><div class="cat-label"><span class="skel" style="width:54%;height:10px"></span></div><div class="cat-track"><span class="skel" style="width:100%;height:4px;border-radius:2px"></span></div><div class="cat-score"><span class="skel" style="width:24px;height:10px"></span></div></div></div>
         </div>
         <!-- Next Steps -->
         <div id="nextStepsCard" class="card" style="display:none;margin-bottom:16px">
@@ -1355,7 +1383,7 @@ header{
         <!-- Top gaps -->
         <div class="card" style="margin-bottom:16px">
           <div class="section-heading">TOP GAPS TO FIX</div>
-          <div id="topGapsList"><div style="color:var(--muted);font-size:12px;padding:8px 0">Loading...</div></div>
+          <div id="topGapsList"><div class="gap-item" style="cursor:default"><div class="gap-id"><span class="skel" style="width:30px;height:9px"></span></div><div class="gap-title"><span class="skel" style="width:70%;height:11px"></span></div><span class="skel" style="width:86px;height:24px;border-radius:6px"></span></div><div class="gap-item" style="cursor:default"><div class="gap-id"><span class="skel" style="width:30px;height:9px"></span></div><div class="gap-title"><span class="skel" style="width:55%;height:11px"></span></div><span class="skel" style="width:86px;height:24px;border-radius:6px"></span></div><div class="gap-item" style="cursor:default"><div class="gap-id"><span class="skel" style="width:30px;height:9px"></span></div><div class="gap-title"><span class="skel" style="width:64%;height:11px"></span></div><span class="skel" style="width:86px;height:24px;border-radius:6px"></span></div></div>
         </div>
         <!-- Latest report -->
         <div id="latestReportSection" style="display:none">
@@ -1396,7 +1424,7 @@ header{
       <div class="filter-pill" data-filter="EVIDENCE_UPLOADED" onclick="filterControls('EVIDENCE_UPLOADED',this)">Evidence Added</div>
       <div class="filter-pill" data-filter="CONNECTED_AUTO" onclick="filterControls('CONNECTED_AUTO',this)">Auto-Detected</div>
     </div>
-    <div id="controlsList"><div style="color:var(--muted);font-size:12px;text-align:center;padding:32px 0"><span class="spinner"></span> Loading controls...</div></div>
+    <div id="controlsList"><div class="control-group"><div class="control-group-header" style="cursor:default"><span class="skel" style="width:170px;height:12px"></span><span class="skel" style="width:30px;height:11px;margin-left:auto"></span></div><div class="control-row" style="cursor:default"><div><span class="skel" style="width:58%;height:12px"></span></div><span class="skel" style="width:22px;height:10px"></span><span class="skel" style="width:92px;height:18px;border-radius:20px"></span></div><div class="control-row" style="cursor:default"><div><span class="skel" style="width:46%;height:12px"></span></div><span class="skel" style="width:22px;height:10px"></span><span class="skel" style="width:92px;height:18px;border-radius:20px"></span></div><div class="control-row" style="cursor:default"><div><span class="skel" style="width:64%;height:12px"></span></div><span class="skel" style="width:22px;height:10px"></span><span class="skel" style="width:92px;height:18px;border-radius:20px"></span></div></div></div>
   </div>
 </div>
 
@@ -1407,13 +1435,14 @@ header{
       <h1 style="font-size:20px;font-weight:600;letter-spacing:-.03em">Connected Tools</h1>
       <p style="font-size:13px;color:var(--muted);margin-top:2px">Connect your tools to auto-detect compliance controls</p>
     </div>
-    <div id="integrationsList"><div style="color:var(--muted);font-size:12px;text-align:center;padding:32px 0"><span class="spinner"></span> Loading...</div></div>
+    <div id="integrationsList"><div class="int-tile"><span class="skel" style="width:40px;height:40px;border-radius:8px"></span><div class="int-info"><span class="skel" style="width:120px;height:12px;margin-bottom:7px"></span><span class="skel" style="width:75%;height:9px"></span></div><span class="skel" style="width:88px;height:30px;border-radius:6px"></span></div><div class="int-tile"><span class="skel" style="width:40px;height:40px;border-radius:8px"></span><div class="int-info"><span class="skel" style="width:120px;height:12px;margin-bottom:7px"></span><span class="skel" style="width:75%;height:9px"></span></div><span class="skel" style="width:88px;height:30px;border-radius:6px"></span></div></div>
   </div>
 </div>
 
 <!-- ── Share Modal ───────────────────────────────────────────── -->
 <div id="shareModal" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeShareModal()">
   <div class="modal-box">
+    <button onclick="closeShareModal()" aria-label="Close" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:20px;line-height:1;color:#94a3b8;cursor:pointer;z-index:2">✕</button>
     <h3>Share with Auditor</h3>
     <p>Generate a read-only link to share your compliance score and report with an external auditor. Link expires in 30 days.</p>
     <div id="shareUrlBox" style="display:none">
@@ -1437,20 +1466,23 @@ header{
     <div style="text-align:center;margin-bottom:24px">
       <div style="font-size:22px;font-weight:800;color:#0f172a;margin-bottom:4px">Simple, transparent pricing</div>
       <div style="font-size:14px;color:#64748b">From first readiness check to live audit — pick your stage.</div>
-      <!-- Annual billing toggle hidden until annual Stripe prices exist (was charging the monthly price). -->
+      <div style="display:inline-flex;align-items:center;background:#f1f5f9;border-radius:50px;padding:4px;margin-top:16px;gap:2px">
+        <span id="pmLabelMonthly" onclick="pmToggleBilling(false)" style="font-size:13px;font-weight:600;padding:5px 14px;border-radius:50px;color:#64748b;cursor:pointer">Monthly</span>
+        <span id="pmLabelAnnual" onclick="pmToggleBilling(true)" style="font-size:13px;font-weight:600;padding:5px 14px;border-radius:50px;color:#64748b;cursor:pointer">Annual <span style="background:#dcfce7;color:#15803d;font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px;margin-left:2px">2 months free</span></span>
+      </div>
     </div>
 
     <div class="pm-cards">
       <!-- Starter -->
-      <div class="pm-card pm-card-side" id="pm-starter" onclick="selectPlan('starter','price_1ThZIZFQiRRnlhwuYRI3MfNX',250)">
-        <div style="font-size:13px;font-weight:700;color:#64748b;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">Starter</div>
+      <div class="pm-card pm-card-side" id="pm-starter" onclick="selectPlan('starter')">
+        <div class="pm-cn" style="font-size:13px;font-weight:700;color:#64748b;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">Starter</div>
         <div style="display:flex;align-items:flex-end;gap:2px;margin-bottom:4px">
-          <span style="font-size:20px;font-weight:700;color:#0f172a;align-self:flex-start;margin-top:10px">$</span>
-          <span class="pm-price-num" id="pm-price-starter">250</span>
-          <span style="font-size:14px;color:#64748b;margin-bottom:8px">/mo</span>
+          <span class="pm-cur" style="font-size:20px;font-weight:700;color:#0f172a;align-self:flex-start;margin-top:10px">$</span>
+          <span class="pm-price-num" id="pm-price-starter">500</span>
+          <span class="pm-per" id="pm-per-starter" style="font-size:14px;color:#64748b;margin-bottom:8px">/mo</span>
         </div>
         <div id="pm-annual-note-starter" style="font-size:11px;color:#16a34a;font-weight:600;min-height:16px;margin-bottom:14px"></div>
-        <div style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5">Pre-seed startups closing their first enterprise deal.</div>
+        <div class="pm-cd" style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5">Seed-stage startups closing their first enterprise deal.</div>
         <ul style="list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:8px">
           <li class="pm-check">GitHub integration (AWS coming soon)</li>
           <li class="pm-check">Full 49-control TSC mapping</li>
@@ -1462,16 +1494,16 @@ header{
       </div>
 
       <!-- Growth — center / popular -->
-      <div class="pm-card pm-card-center" id="pm-growth" onclick="selectPlan('growth','price_1ThZLSFQiRRnlhwueStdff4L',500)">
+      <div class="pm-card pm-card-center" id="pm-growth" onclick="selectPlan('growth')">
         <div class="pm-popular">⭐ Most Popular</div>
-        <div style="font-size:13px;font-weight:700;color:#2563eb;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">Growth</div>
+        <div class="pm-cn" style="font-size:13px;font-weight:700;color:#2563eb;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">Growth</div>
         <div style="display:flex;align-items:flex-end;gap:2px;margin-bottom:4px">
-          <span style="font-size:20px;font-weight:700;color:#0f172a;align-self:flex-start;margin-top:10px">$</span>
-          <span class="pm-price-num" id="pm-price-growth">500</span>
-          <span style="font-size:14px;color:#64748b;margin-bottom:8px">/mo</span>
+          <span class="pm-cur" style="font-size:20px;font-weight:700;color:#0f172a;align-self:flex-start;margin-top:10px">$</span>
+          <span class="pm-price-num" id="pm-price-growth">1000</span>
+          <span class="pm-per" id="pm-per-growth" style="font-size:14px;color:#64748b;margin-bottom:8px">/mo</span>
         </div>
         <div id="pm-annual-note-growth" style="font-size:11px;color:#16a34a;font-weight:600;min-height:16px;margin-bottom:14px"></div>
-        <div style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5">Seed-stage teams closing multiple enterprise deals at once.</div>
+        <div class="pm-cd" style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5">Seed-stage teams closing multiple enterprise deals at once.</div>
         <ul style="list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:8px">
           <li class="pm-check">GitHub integration (AWS, GCP coming soon)</li>
           <li class="pm-check">Scan on demand, anytime</li>
@@ -1484,15 +1516,15 @@ header{
       </div>
 
       <!-- Audit-Ready -->
-      <div class="pm-card pm-card-side" id="pm-enterprise" onclick="selectPlan('enterprise','price_1ThZNGFQiRRnlhwuH23alwzB',1000)">
-        <div style="font-size:13px;font-weight:700;color:#64748b;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">Audit-Ready</div>
+      <div class="pm-card pm-card-side" id="pm-enterprise" onclick="selectPlan('enterprise')">
+        <div class="pm-cn" style="font-size:13px;font-weight:700;color:#64748b;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">Audit-Ready</div>
         <div style="display:flex;align-items:flex-end;gap:2px;margin-bottom:4px">
-          <span style="font-size:20px;font-weight:700;color:#0f172a;align-self:flex-start;margin-top:10px">$</span>
-          <span class="pm-price-num" id="pm-price-enterprise">1,000</span>
-          <span style="font-size:14px;color:#64748b;margin-bottom:8px">/mo</span>
+          <span class="pm-cur" style="font-size:20px;font-weight:700;color:#0f172a;align-self:flex-start;margin-top:10px">$</span>
+          <span class="pm-price-num" id="pm-price-enterprise">2000</span>
+          <span class="pm-per" id="pm-per-enterprise" style="font-size:14px;color:#64748b;margin-bottom:8px">/mo</span>
         </div>
         <div id="pm-annual-note-enterprise" style="font-size:11px;color:#16a34a;font-weight:600;min-height:16px;margin-bottom:14px"></div>
-        <div style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5">Series A companies undergoing an active audit right now.</div>
+        <div class="pm-cd" style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5">Series A companies undergoing an active audit right now.</div>
         <ul style="list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:8px">
           <li class="pm-check">Everything in Growth</li>
           <li class="pm-check">Priority support — direct line to the founder (email)</li>
@@ -1516,19 +1548,99 @@ header{
       <div id="stripeCardEl" style="background:#fff;border:1.5px solid #e2e8f0;border-radius:8px;padding:13px;margin-bottom:10px;min-height:46px"></div>
       <div id="payError" style="font-size:12px;color:#ef4444;margin-bottom:8px;min-height:16px"></div>
       <div id="payRenewalNote" style="font-size:11px;color:#64748b;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:8px 10px;margin-bottom:10px;line-height:1.5"></div>
-      <button class="pay-btn" id="paySubmitBtn" onclick="submitPricingPayment()">
+      <label style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:#334155;margin-bottom:12px;cursor:pointer;line-height:1.5">
+        <input type="checkbox" id="payTermsCheck" onchange="document.getElementById('paySubmitBtn').disabled=!this.checked" style="margin-top:1px;width:16px;height:16px;flex-shrink:0;cursor:pointer;-webkit-appearance:checkbox;appearance:checkbox;accent-color:#2563eb">
+        <span>I've read and agree to the <a href="/terms.html" target="_blank" style="color:#2563eb">Terms of Service</a>, including that fees are non-refundable.</span>
+      </label>
+      <button class="pay-btn" id="paySubmitBtn" onclick="submitPricingPayment()" disabled>
         <span id="payBtnText">🔒 Pay & Activate</span>
       </button>
       <div class="pay-secure">🔒 Secured by Stripe · 256-bit encryption · Cancel anytime</div>
-      <div style="font-size:10px;color:#94a3b8;text-align:center;margin-top:8px;line-height:1.5">Subscriptions auto-renew monthly until cancelled. Fees are non-refundable except where required by law. By clicking "Pay & Activate", you agree to our <a href="/terms.html" target="_blank" style="color:#2563eb">Terms of Service</a> and <a href="/privacy.html" target="_blank" style="color:#2563eb">Privacy Policy</a>.</div>
+      <div style="font-size:10px;color:#94a3b8;text-align:center;margin-top:8px;line-height:1.5">Subscriptions automatically renew at the end of each billing period at the then-current rate until cancelled. Fees are non-refundable except where required by law. By clicking "Pay & Activate", you agree to our <a href="/terms.html" target="_blank" style="color:#2563eb">Terms of Service</a> and <a href="/privacy.html" target="_blank" style="color:#2563eb">Privacy Policy</a>.</div>
     </div>
 
     <div class="pm-free-note">Free sandbox: manual tracking, score dashboard, up to 3 scans/hour. No credit card required.</div>
+    <div style="text-align:center;font-size:12px;color:#64748b;margin-top:12px">Any questions or concerns? <a href="mailto:vlad@auditready.space" style="color:#2563eb;text-decoration:none;font-weight:600">vlad@auditready.space</a></div>
+  </div>
+</div>
+<!-- ── Sample Trust Page (no-login proof demo) ─────────────────── -->
+<style>
+  .lp-ts-wrap{display:flex;justify-content:center;margin:-18px 0 14px}
+  .lp-estimate-cta{position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;border:none;border-radius:11px;padding:10px 20px;font-size:13.5px;font-weight:700;letter-spacing:-.01em;cursor:pointer;box-shadow:0 8px 20px rgba(37,99,235,.3),inset 0 1px 0 rgba(255,255,255,.28);transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s}
+  .lp-estimate-cta:hover{transform:translateY(-3px);box-shadow:0 18px 46px rgba(37,99,235,.5),inset 0 1px 0 rgba(255,255,255,.34)}
+  .lp-estimate-cta:active{transform:translateY(-1px)}
+  .lp-estimate-cta::after{content:"";position:absolute;top:0;left:0;width:45%;height:100%;background:linear-gradient(120deg,transparent,rgba(255,255,255,.5),transparent);transform:translateX(-250%) skewX(-20deg);pointer-events:none;animation:lp-shine 3.6s ease-in-out infinite}
+  @keyframes lp-shine{0%{transform:translateX(-250%) skewX(-20deg)}60%,100%{transform:translateX(420%) skewX(-20deg)}}
+  .lp-estimate-cta .ic{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:6px;background:rgba(255,255,255,.18);flex-shrink:0}
+  .lp-estimate-cta .ic svg{width:13px;height:13px}
+  .lp-estimate-cta .ar{font-size:15px;transition:transform .2s}
+  .lp-estimate-cta:hover .ar{transform:translateX(5px)}
+  .ts-ribbon{background:#0f172a;color:#cbd5e1;font-size:11px;font-weight:600;text-align:center;padding:8px 12px;letter-spacing:.03em}
+  .ts-head{display:flex;align-items:center;gap:13px}
+  .ts-logo{width:46px;height:46px;border-radius:11px;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .ts-company{font-size:18px;font-weight:800;color:#0f172a;letter-spacing:-.01em}
+  .ts-live{font-size:12px;color:#16a34a;font-weight:600;display:flex;align-items:center;gap:6px;margin-top:2px}
+  .ts-dot{width:8px;height:8px;border-radius:50%;background:#16a34a;animation:tsPulse 2s infinite}
+  @keyframes tsPulse{0%{box-shadow:0 0 0 0 rgba(22,163,74,.5)}70%{box-shadow:0 0 0 7px rgba(22,163,74,0)}100%{box-shadow:0 0 0 0 rgba(22,163,74,0)}}
+  .ts-score{margin-left:auto;text-align:right}
+  .ts-score-num{font-size:34px;font-weight:800;color:#16a34a;font-family:var(--mono,monospace);line-height:1}
+  .ts-score-num span{font-size:18px}
+  .ts-score-lbl{font-size:10.5px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+  .ts-verify{margin:14px 0;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:9px;padding:9px 12px;font-size:12px;color:#15803d;line-height:1.5}
+  .ts-sec{font-size:11px;font-weight:700;color:#0f172a;text-transform:uppercase;letter-spacing:.05em;margin:14px 0 10px}
+  .ts-cat{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .ts-cat-lbl{font-size:12px;color:#334155;width:168px;flex-shrink:0}
+  .ts-track{flex:1;height:7px;background:#eef2f7;border-radius:5px;overflow:hidden}
+  .ts-fill{height:100%;border-radius:5px}
+  .ts-pct{font-size:11px;font-weight:700;color:#475569;width:32px;text-align:right}
+  .ts-checks{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0 4px}
+  .ts-chk{font-size:11.5px;color:#15803d;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:20px;padding:4px 10px;font-weight:600}
+  .ts-badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:7px 12px;margin-top:12px}
+  .ts-disc{font-size:10.5px;color:#94a3b8;margin-top:10px;line-height:1.5}
+  .ts-cta{background:linear-gradient(135deg,#eff6ff,#f8fafc);border-top:1px solid #e2e8f0;padding:18px 24px}
+  .ts-cta-h{font-size:15px;font-weight:800;color:#0f172a;margin-bottom:5px;letter-spacing:-.01em}
+  .ts-cta-p{font-size:12.5px;color:#475569;line-height:1.55;margin-bottom:13px}
+</style>
+<div id="trustSampleModal" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeTrustSample()">
+  <div class="modal-box" style="max-width:600px;position:relative;padding:0;overflow:hidden">
+    <button onclick="closeTrustSample()" style="position:absolute;top:9px;right:11px;background:rgba(255,255,255,.15);border:none;font-size:14px;cursor:pointer;color:#fff;line-height:1;width:24px;height:24px;border-radius:50%;z-index:3">✕</button>
+    <div class="ts-ribbon">SAMPLE — this is the live page your customers would see</div>
+    <div style="padding:22px 24px 8px">
+      <div class="ts-head">
+        <div class="ts-logo">NL</div>
+        <div>
+          <div class="ts-company">Northwind Labs</div>
+          <div class="ts-live"><span class="ts-dot"></span> Live · updated 2 hours ago</div>
+        </div>
+        <div class="ts-score">
+          <div class="ts-score-num">94<span>%</span></div>
+          <div class="ts-score-lbl">SOC 2 Ready</div>
+        </div>
+      </div>
+      <div class="ts-verify">🔄 <strong>Continuously verified.</strong> This page updates on its own as Northwind stays compliant — never a stale PDF, never out of date.</div>
+      <div class="ts-sec">Controls verified</div>
+      <div class="ts-cat"><div class="ts-cat-lbl">Control Environment</div><div class="ts-track"><div class="ts-fill" style="width:96%;background:#16a34a"></div></div><div class="ts-pct">96%</div></div>
+      <div class="ts-cat"><div class="ts-cat-lbl">Logical &amp; Physical Access</div><div class="ts-track"><div class="ts-fill" style="width:92%;background:#16a34a"></div></div><div class="ts-pct">92%</div></div>
+      <div class="ts-cat"><div class="ts-cat-lbl">Change Management</div><div class="ts-track"><div class="ts-fill" style="width:98%;background:#16a34a"></div></div><div class="ts-pct">98%</div></div>
+      <div class="ts-cat"><div class="ts-cat-lbl">System Operations</div><div class="ts-track"><div class="ts-fill" style="width:90%;background:#22c55e"></div></div><div class="ts-pct">90%</div></div>
+      <div class="ts-cat"><div class="ts-cat-lbl">Risk Mitigation</div><div class="ts-track"><div class="ts-fill" style="width:88%;background:#22c55e"></div></div><div class="ts-pct">88%</div></div>
+      <div class="ts-checks">
+        <span class="ts-chk">✓ MFA enforced</span><span class="ts-chk">✓ Encryption at rest &amp; transit</span><span class="ts-chk">✓ Access reviews</span><span class="ts-chk">✓ Incident response plan</span><span class="ts-chk">✓ Continuous monitoring</span>
+      </div>
+      <div class="ts-badge">🛡 Powered by&nbsp;<strong>AuditReady AI</strong></div>
+      <div class="ts-disc">Self-reported readiness — not a certified SOC 2 audit. Reflects documented controls.</div>
+    </div>
+    <div class="ts-cta">
+      <div class="ts-cta-h">Every prospect who opens this is one click from wanting their own.</div>
+      <div class="ts-cta-p">Your Trust Page is a living asset — always current, sent to every customer who asks "are you SOC 2?", and it carries your name to every company that opens it. Stop filling out security questionnaires by hand and start closing.</div>
+      <button class="btn btn-primary btn-full" onclick="location.href='/api/auth?provider=google'">Create your Trust Page — connect your stack →</button>
+    </div>
   </div>
 </div>
 <!-- SOC 2 Education Modal -->
 <div id="soc2Modal" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeSoc2Modal()">
   <div class="modal-box" style="max-width:560px">
+    <button onclick="closeSoc2Modal()" aria-label="Close" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:20px;line-height:1;color:#94a3b8;cursor:pointer;z-index:2">✕</button>
     <h3 style="margin-bottom:12px">Understanding SOC 2</h3>
     <div style="font-size:13px;color:var(--muted);line-height:1.8">
       <p style="margin-bottom:12px"><strong style="color:var(--text)">What is SOC 2?</strong><br/>
@@ -1583,7 +1695,7 @@ header{
       </div>
     </div>
     <div id="lockerStats" style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap"></div>
-    <div id="lockerContent"><div style="color:var(--muted);font-size:12px;text-align:center;padding:48px 0"><span class="spinner"></span> Loading evidence...</div></div>
+    <div id="lockerContent"><div style="margin-bottom:16px"><span class="skel" style="width:58px;height:10px;display:block;margin-bottom:8px"></span><div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 11px;display:flex;align-items:center;gap:10px;margin-bottom:6px"><span class="skel" style="width:18px;height:18px;border-radius:4px"></span><div style="flex:1"><span class="skel" style="width:65%;height:11px"></span></div><span class="skel" style="width:40px;height:11px"></span></div><div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 11px;display:flex;align-items:center;gap:10px"><span class="skel" style="width:18px;height:18px;border-radius:4px"></span><div style="flex:1"><span class="skel" style="width:52%;height:11px"></span></div><span class="skel" style="width:40px;height:11px"></span></div></div></div>
   </div>
 </div>
 
@@ -1661,7 +1773,7 @@ header{
         <div class="section-heading" style="margin-bottom:0">UPCOMING RENEWALS & EXPIRIES</div>
         <button class="btn btn-secondary btn-sm" onclick="loadReminders()">↺ Refresh</button>
       </div>
-      <div id="remindersList"><div style="color:var(--muted);font-size:12px;text-align:center;padding:24px 0"><span class="spinner"></span> Loading...</div></div>
+      <div id="remindersList"><div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 11px;display:flex;align-items:center;gap:10px;margin-bottom:6px"><span class="skel" style="width:18px;height:18px;border-radius:4px"></span><div style="flex:1"><span class="skel" style="width:65%;height:11px"></span></div><span class="skel" style="width:40px;height:11px"></span></div><div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 11px;display:flex;align-items:center;gap:10px"><span class="skel" style="width:18px;height:18px;border-radius:4px"></span><div style="flex:1"><span class="skel" style="width:52%;height:11px"></span></div><span class="skel" style="width:40px;height:11px"></span></div></div>
     </div>
 
     <!-- Vendor tracker -->
@@ -1670,7 +1782,7 @@ header{
         <div class="section-heading" style="margin-bottom:0">VENDOR RISK TRACKER</div>
         <button class="btn btn-primary btn-sm" onclick="openAddVendor()">+ Add Vendor</button>
       </div>
-      <div id="vendorsList"><div style="color:var(--muted);font-size:12px;text-align:center;padding:24px 0"><span class="spinner"></span> Loading vendors...</div></div>
+      <div id="vendorsList"><div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 11px;display:flex;align-items:center;gap:10px;margin-bottom:6px"><span class="skel" style="width:18px;height:18px;border-radius:4px"></span><div style="flex:1"><span class="skel" style="width:60%;height:11px"></span></div><span class="skel" style="width:40px;height:11px"></span></div><div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 11px;display:flex;align-items:center;gap:10px"><span class="skel" style="width:18px;height:18px;border-radius:4px"></span><div style="flex:1"><span class="skel" style="width:48%;height:11px"></span></div><span class="skel" style="width:40px;height:11px"></span></div></div>
     </div>
   </div>
 </div>
@@ -1678,6 +1790,7 @@ header{
 <!-- ── Add Vendor Modal ───────────────────────────────────────── -->
 <div id="addVendorModal" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeAddVendor()">
   <div class="modal-box" style="max-width:480px">
+    <button onclick="closeAddVendor()" aria-label="Close" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:20px;line-height:1;color:#94a3b8;cursor:pointer;z-index:2">✕</button>
     <h3 style="margin-bottom:14px">Add Vendor</h3>
     <div style="display:flex;flex-direction:column;gap:10px">
       <div>
@@ -1735,14 +1848,26 @@ header{
 
 <!-- ── Cancel Subscription Modal ─────────────────────────────── -->
 <div id="cancelSubModal" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeCancelModal()">
-  <div class="modal-box" style="max-width:400px">
-    <h3 style="margin-bottom:8px">Cancel Subscription</h3>
-    <p>Your subscription will cancel at the end of the current billing period. You keep full access until then.</p>
-    <div style="background:#fef2f2;border:1px solid rgba(220,38,38,.2);border-radius:6px;padding:10px 12px;font-size:12px;color:var(--red);margin-bottom:16px">
-      After cancellation your account returns to the free sandbox tier with limited features.
+  <div class="modal-box" style="max-width:440px">
+    <button onclick="closeCancelModal()" aria-label="Close" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:20px;line-height:1;color:#94a3b8;cursor:pointer;z-index:2">✕</button>
+    <h3 style="margin-bottom:8px">Before you cancel…</h3>
+    <div style="background:#fef2f2;border:1px solid rgba(220,38,38,.2);border-radius:6px;padding:10px 12px;font-size:12px;color:var(--red);margin-bottom:14px">
+      Cancelling takes your <strong>Trust Page offline</strong>, stops your <strong>renewal &amp; expiry alerts</strong>, and drops you to the free sandbox — prospects who check your Trust Page will see nothing.
     </div>
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-danger" style="flex:1" onclick="confirmCancelSubscription()" id="cancelSubBtn">Cancel My Subscription</button>
+    <!-- Save offer: downgrade to the $99 Monitoring floor instead of leaving -->
+    <div id="downgradeOffer" style="display:none;border:1.5px solid #2563eb;background:linear-gradient(135deg,#eff6ff,#f8fafc);border-radius:10px;padding:14px;margin-bottom:16px">
+      <div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:4px">Stay protected for $99/mo</div>
+      <div style="font-size:12px;color:#475569;margin-bottom:10px;line-height:1.5">Drop to the Monitoring plan instead of cancelling — keep what's working:</div>
+      <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px">
+        <div style="font-size:12px;color:#0f172a"><span style="color:#16a34a;font-weight:700">✓</span> Your Trust Page stays live</div>
+        <div style="font-size:12px;color:#0f172a"><span style="color:#16a34a;font-weight:700">✓</span> Evidence Locker + expiry reminders</div>
+        <div style="font-size:12px;color:#0f172a"><span style="color:#16a34a;font-weight:700">✓</span> Renewal &amp; due-date alerts keep running</div>
+      </div>
+      <button class="btn btn-primary" style="width:100%" id="downgradeBtn" onclick="confirmDowngradeToMonitoring()">Switch to Monitoring — $99/mo</button>
+    </div>
+    <p style="font-size:13px;color:var(--muted)">Still want to cancel? Your subscription ends at the close of the current billing period — you keep full access until then, then return to the free sandbox.</p>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-danger" style="flex:1" onclick="confirmCancelSubscription()" id="cancelSubBtn">Cancel completely</button>
       <button class="btn btn-secondary" onclick="closeCancelModal()">Keep Plan</button>
     </div>
   </div>
@@ -1783,7 +1908,7 @@ header{
             </tr>
           </thead>
           <tbody id="adminUserRows">
-            <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)"><span class="spinner"></span></td></tr>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 12px"><span class="skel" style="width:70%;height:11px"></span></td><td style="padding:10px 12px"><span class="skel" style="width:50%;height:11px"></span></td><td style="padding:10px 12px"><span class="skel" style="width:50%;height:11px"></span></td><td style="padding:10px 12px"><span class="skel" style="width:50%;height:11px"></span></td><td style="padding:10px 12px"><span class="skel" style="width:50%;height:11px"></span></td><td style="padding:10px 12px"><span class="skel" style="width:50%;height:11px"></span></td><td style="padding:10px 12px"><span class="skel" style="width:50%;height:11px"></span></td></tr>
           </tbody>
         </table>
       </div>
@@ -1960,6 +2085,30 @@ function handleCallback() {
   if (share) { loadPublicShare(share); return; }
 }
 
+// ── Ad / sitelink deep-links ──────────────────────────────────
+// Lets Google Ads sitelinks use clean paths (e.g. /pricing opens the pricing
+// modal, /soc2 opens the SOC 2 guide). The catch-all rewrite in vercel.json
+// already serves index.html for these paths, so they never 404. These open
+// only PUBLIC modals — no auth, no account data — so they're safe for a
+// logged-out ad visitor. After acting we normalize the address bar back to
+// "/" while preserving gclid/utm_* so Google Ads conversion attribution still
+// works and the SPA's own routing/login state isn't affected.
+function applyDeepLink() {
+  try {
+    const path = location.pathname.replace(/\/+$/, '').toLowerCase();
+    const open = {
+      '/pricing':      () => { if (typeof openPricingModal === 'function') openPricingModal(); },
+      '/soc2':         () => { if (typeof openSoc2Modal === 'function') openSoc2Modal(); },
+      '/how-it-works': () => { if (typeof openSoc2Modal === 'function') openSoc2Modal(); },
+      '/sample':       () => { if (typeof openTrustSample === 'function') openTrustSample(); },
+      '/get-started':  () => {},  // lands on the hero CTA, no modal
+    }[path];
+    if (!open) return;
+    history.replaceState({}, '', '/' + location.search);  // keep gclid/utm
+    setTimeout(open, 150);
+  } catch {}
+}
+
 // ── Navigation ────────────────────────────────────────────────
 
 function nav(page) {
@@ -2063,7 +2212,113 @@ function renderScoreTrend(history) {
     arrow + ' ' + (diff > 0 ? '+' : '') + diff + '% over last ' + entries.length + ' scans</span>';
 }
 
+// ── Skeleton loaders ──────────────────────────────────────────
+// Grey placeholder "figures" shown while data is being fetched, instead of
+// a spinning circle. Each builder reuses the real layout classes so the
+// skeleton lines up exactly with the content that replaces it.
+function skel(w, h, extra) {
+  return '<span class="skel" style="width:' + w + ';height:' + h + ';' + (extra || '') + '"></span>';
+}
+
+function skelCategoryBars(n) {
+  const widths = ['62%', '78%', '54%', '70%', '48%', '66%', '58%', '74%', '50%'];
+  let html = '';
+  for (let i = 0; i < (n || 9); i++) {
+    html += '<div class="cat-bar">' +
+      '<div class="cat-label">' + skel(widths[i % widths.length], '10px') + '</div>' +
+      '<div class="cat-track">' + skel('100%', '4px', 'border-radius:2px') + '</div>' +
+      '<div class="cat-score">' + skel('24px', '10px') + '</div>' +
+      '</div>';
+  }
+  return html;
+}
+
+function skelTopGaps(n) {
+  let html = '';
+  for (let i = 0; i < (n || 4); i++) {
+    html += '<div class="gap-item" style="cursor:default">' +
+      '<div class="gap-id">' + skel('30px', '9px') + '</div>' +
+      '<div class="gap-title">' + skel(['70%', '55%', '64%', '48%'][i % 4], '11px') + '</div>' +
+      skel('86px', '24px', 'border-radius:6px') +
+      '</div>';
+  }
+  return html;
+}
+
+function skelControls(groups, rowsPer) {
+  let html = '';
+  for (let g = 0; g < (groups || 3); g++) {
+    html += '<div class="control-group">' +
+      '<div class="control-group-header" style="cursor:default">' +
+        skel('170px', '12px') + skel('30px', '11px', 'margin-left:auto') +
+      '</div>';
+    for (let i = 0; i < (rowsPer || 3); i++) {
+      html += '<div class="control-row" style="cursor:default">' +
+        '<div>' + skel(['58%', '46%', '64%'][i % 3], '12px') + '</div>' +
+        skel('22px', '10px') +
+        skel('92px', '18px', 'border-radius:20px') +
+        '</div>';
+    }
+    html += '</div>';
+  }
+  return html;
+}
+
+function skelIntegrations(n) {
+  let html = '';
+  for (let i = 0; i < (n || 3); i++) {
+    html += '<div class="int-tile">' +
+      skel('40px', '40px', 'border-radius:8px') +
+      '<div class="int-info">' +
+        skel('120px', '12px', 'margin-bottom:7px') +
+        skel('75%', '9px') +
+      '</div>' +
+      skel('88px', '30px', 'border-radius:6px') +
+      '</div>';
+  }
+  return html;
+}
+
+function skelStackRows(n, padTop) {
+  let html = '';
+  for (let i = 0; i < (n || 4); i++) {
+    html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:' + (padTop || '9px') + ' 11px;display:flex;align-items:center;gap:10px;margin-bottom:6px">' +
+      skel('18px', '18px', 'border-radius:4px') +
+      '<div style="flex:1;min-width:0">' + skel(['65%', '52%', '70%', '46%'][i % 4], '11px') + '</div>' +
+      skel('40px', '11px') +
+      '</div>';
+  }
+  return html;
+}
+
+function skelLocker(groups) {
+  let html = '';
+  for (let g = 0; g < (groups || 2); g++) {
+    html += '<div style="margin-bottom:16px">' +
+      skel('58px', '10px', 'margin-bottom:8px') +
+      skelStackRows(g === 0 ? 3 : 2) +
+      '</div>';
+  }
+  return html;
+}
+
+function skelTableRows(cols, n) {
+  let html = '';
+  for (let i = 0; i < (n || 5); i++) {
+    let cells = '';
+    for (let c = 0; c < cols; c++) {
+      cells += '<td style="padding:10px 12px">' + skel(c === 0 ? '70%' : '50%', '11px') + '</td>';
+    }
+    html += '<tr style="border-bottom:1px solid var(--border)">' + cells + '</tr>';
+  }
+  return html;
+}
+
 async function loadScore() {
+  const catEl = document.getElementById('categoryBars');
+  if (catEl) catEl.innerHTML = skelCategoryBars(9);
+  const gapsEl = document.getElementById('topGapsList');
+  if (gapsEl) gapsEl.innerHTML = skelTopGaps(4);
   try {
     const r = await fetch('/api/score', { headers: authHeaders() });
     if (!r.ok) { showScoreError(); return null; }
@@ -2435,7 +2690,7 @@ async function generateReport() {
 async function loadControls() {
   if (!ST.user) return;
   const el = document.getElementById('controlsList');
-  el.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:32px 0"><span class="spinner"></span></div>';
+  el.innerHTML = skelControls(3, 3);
   try {
     const r = await fetch('/api/controls?grouped=true', { headers: authHeaders() });
     if (!r.ok) throw new Error('Failed to load controls');
@@ -2699,6 +2954,7 @@ function updateScoreQuick(score) {
 async function loadIntegrations() {
   if (!ST.user) return;
   const el = document.getElementById('integrationsList');
+  el.innerHTML = skelIntegrations(3);
   try {
     const r = await fetch('/api/integrations', { headers: authHeaders() });
     if (!r.ok) throw new Error('Failed to load integrations');
@@ -3012,55 +3268,94 @@ function initStripe() {
 }
 
 let _pmAnnual = false;
+// Display amounts. annualMonthly = annualTotal/12 (rounded) for the "$X/mo billed
+// annually" headline; annualTotal is the real once-a-year charge shown in the pay box.
 const PM_PRICES = {
-  starter:    { monthly: 250,   annual: 208  },
-  growth:     { monthly: 500,   annual: 416  },
-  enterprise: { monthly: 1000,  annual: 833  },
+  starter:    { monthly: 500,  annualMonthly: 417,  annualTotal: 5000  },
+  growth:     { monthly: 1000, annualMonthly: 833,  annualTotal: 10000 },
+  enterprise: { monthly: 2000, annualMonthly: 1667, annualTotal: 20000 },
 };
+// Stripe price IDs per plan × interval. The interval the user picks decides which
+// ID is sent to Stripe — annual MUST use the annual ID. (The old disabled toggle's
+// bug was charging the monthly price while showing the annual amount.)
+const PRICE_IDS = {
+  starter:    { monthly: 'price_1To8FUFQiRRnlhwuSXSe3gl4', annual: 'price_1To8IqFQiRRnlhwuPXeFFKeb' },
+  growth:     { monthly: 'price_1To8LOFQiRRnlhwumml3WTem', annual: 'price_1To8M8FQiRRnlhwuf0VjLFdn' },
+  enterprise: { monthly: 'price_1To8OiFQiRRnlhwuPbggNIXU', annual: 'price_1To8TuFQiRRnlhwuR218IfIc' },
+};
+// Pay-box labels — always reflect the real Stripe charge for the chosen interval.
+function pmPayLabel(name, annual) {
+  return annual ? '$' + PM_PRICES[name].annualTotal.toLocaleString() + '/yr'
+                : '$' + PM_PRICES[name].monthly.toLocaleString() + '/mo';
+}
+function pmRenewalNote(name, annual) {
+  const base = ' until canceled. Cancel anytime online via Account → Cancel Subscription — no phone call or email required.';
+  return annual
+    ? 'Your subscription automatically renews annually at $' + PM_PRICES[name].annualTotal.toLocaleString() + '/yr (2 months free vs monthly)' + base
+    : 'Your subscription automatically renews monthly at $' + PM_PRICES[name].monthly.toLocaleString() + '/mo' + base;
+}
 
 function setPmBilling(annual) {
-  // Annual billing is disabled until annual Stripe prices exist — force monthly.
-  annual = false;
-  _pmAnnual = false;
+  _pmAnnual = !!annual;
+  const active   = 'font-size:13px;font-weight:600;padding:5px 14px;border-radius:50px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.12);color:#0f172a;cursor:pointer';
+  const inactive = 'font-size:13px;font-weight:600;padding:5px 14px;border-radius:50px;color:#64748b;cursor:pointer';
   const lm = document.getElementById('pmLabelMonthly');
   const la = document.getElementById('pmLabelAnnual');
-  if (lm) lm.style.cssText = 'font-size:13px;font-weight:600;padding:4px 14px;border-radius:50px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.1);color:#0f172a;cursor:pointer';
-  if (la) la.style.cssText = 'font-size:13px;font-weight:600;padding:4px 14px;border-radius:50px;color:#64748b;cursor:pointer';
+  if (lm) lm.style.cssText = annual ? inactive : active;
+  if (la) la.style.cssText = annual ? active : inactive;
 
   ['starter','growth','enterprise'].forEach(plan => {
     const el = document.getElementById('pm-price-' + plan);
+    const per = document.getElementById('pm-per-' + plan);
     const note = document.getElementById('pm-annual-note-' + plan);
     if (!el) return;
     el.classList.add('flip');
     setTimeout(() => {
-      const price = annual ? PM_PRICES[plan].annual : PM_PRICES[plan].monthly;
-      el.textContent = price.toLocaleString();
+      // Headline is ALWAYS the real amount charged: annual total + /yr, or
+      // monthly + /mo. Never a per-month figure for an annually-billed plan,
+      // so the displayed price always equals what hits the customer's card.
+      el.textContent = (annual ? PM_PRICES[plan].annualTotal : PM_PRICES[plan].monthly).toLocaleString();
+      if (per) per.textContent = annual ? '/yr' : '/mo';
       el.classList.remove('flip');
     }, 120);
-    if (note) note.textContent = annual ? 'Billed $' + (PM_PRICES[plan].annual * 12).toLocaleString() + '/yr' : '';
+    // Per-month equivalent demoted to clearly-secondary context, not the price.
+    if (note) note.textContent = annual ? '≈ $' + PM_PRICES[plan].annualMonthly.toLocaleString() + '/mo · 2 months free' : '';
   });
 
-  if (annual && typeof confetti === 'function') {
-    confetti({ particleCount: 80, spread: 60, origin: { y: 0.4 }, colors: ['#2563eb','#16a34a','#f59e0b'] });
-  }
-
-  // Update pay section if plan already selected
+  // Keep an already-selected plan in sync. CRITICAL: swap the price ID too, not
+  // just the displayed amount — otherwise the charge won't match what's shown.
   if (_selectedPlan) {
-    const price = annual ? PM_PRICES[_selectedPlan.name].annual : PM_PRICES[_selectedPlan.name].monthly;
-    _selectedPlan.amount = price;
-    document.getElementById('payPlanPrice').textContent = '$' + price + '/mo';
+    _selectedPlan.priceId = PRICE_IDS[_selectedPlan.name][annual ? 'annual' : 'monthly'];
+    _selectedPlan.amount  = annual ? PM_PRICES[_selectedPlan.name].annualTotal : PM_PRICES[_selectedPlan.name].monthly;
+    document.getElementById('payPlanPrice').textContent = pmPayLabel(_selectedPlan.name, annual);
     document.getElementById('payBillingNote').textContent = annual
-      ? 'Billed annually · Cancel anytime'
+      ? 'Billed annually · 2 months free · Cancel anytime'
       : 'Billed monthly · Cancel anytime';
     const noteEl = document.getElementById('payRenewalNote');
-    if (noteEl) noteEl.textContent = 'Your subscription automatically renews ' + (annual ? 'annually' : 'monthly') + ' at $' + price + (annual ? '/mo (billed yearly)' : '/mo') + ' until canceled. Cancel anytime online via Account → Cancel Subscription — no phone call or email required.';
+    if (noteEl) noteEl.textContent = pmRenewalNote(_selectedPlan.name, annual);
   }
 }
 
+function pmToggleBilling(annual) {
+  setPmBilling(annual);
+  if (annual && typeof confetti === 'function') {
+    confetti({ particleCount: 80, spread: 60, origin: { y: 0.4 }, colors: ['#2563eb','#16a34a','#f59e0b'] });
+  }
+}
+
+// ── Sample Trust Page (no-login proof demo) ───────────────────
+// Cold visitors land here from ads/email. Instead of asking them to do a
+// quiz, we SHOW them the actual end-product: a polished, living, public
+// Trust Page — the proof artifact they'd send a customer who asked "are you
+// SOC 2?". No email gate, no friction. The whole frame is platform, not
+// tool: it's continuously updated, shared with every prospect, and carries
+// the AuditReady badge to every company that opens it (the viral loop).
+function openTrustSample() { document.getElementById('trustSampleModal').style.display = 'flex'; }
+function closeTrustSample() { document.getElementById('trustSampleModal').style.display = 'none'; }
+
 function openPricingModal(preselect) {
   initStripe();
-  _pmAnnual = false;
-  setPmBilling(false);
+  setPmBilling(true);   // annual-first: default the toggle to the annual plan
   document.getElementById('pricingModal').style.display = 'flex';
   document.getElementById('paySection').style.display = 'none';
   document.getElementById('payError').textContent = '';
@@ -3078,9 +3373,10 @@ function closePricingModal() {
   if (_stripeCard) { try { _stripeCard.destroy(); } catch(e){} _stripeCard = null; }
 }
 
-function selectPlan(name, priceId, amount) {
-  const price = _pmAnnual ? PM_PRICES[name].annual : PM_PRICES[name].monthly;
-  _selectedPlan = { name, priceId, amount: price };
+function selectPlan(name) {
+  const priceId = PRICE_IDS[name][_pmAnnual ? 'annual' : 'monthly'];
+  const amount  = _pmAnnual ? PM_PRICES[name].annualTotal : PM_PRICES[name].monthly;
+  _selectedPlan = { name, priceId, amount };
   document.querySelectorAll('.pm-card').forEach(c => c.classList.remove('pm-selected'));
   const card = document.getElementById('pm-' + name);
   if (card) card.classList.add('pm-selected');
@@ -3088,12 +3384,17 @@ function selectPlan(name, priceId, amount) {
   const paySection = document.getElementById('paySection');
   paySection.style.display = 'block';
   document.getElementById('payPlanName').textContent = name.charAt(0).toUpperCase() + name.slice(1) + ' Plan';
-  document.getElementById('payPlanPrice').textContent = '$' + price + '/mo';
+  document.getElementById('payPlanPrice').textContent = pmPayLabel(name, _pmAnnual);
   document.getElementById('payBillingNote').textContent = _pmAnnual
-    ? 'Billed annually · Cancel anytime'
+    ? 'Billed annually · 2 months free · Cancel anytime'
     : 'Billed monthly · Cancel anytime';
   document.getElementById('payError').textContent = '';
-  document.getElementById('payRenewalNote').textContent = 'Your subscription automatically renews ' + (_pmAnnual ? 'annually' : 'monthly') + ' at $' + price + (_pmAnnual ? '/mo (billed yearly)' : '/mo') + ' until canceled. Cancel anytime online via Account → Cancel Subscription — no phone call or email required.';
+  document.getElementById('payRenewalNote').textContent = pmRenewalNote(name, _pmAnnual);
+  // Require a fresh, explicit acknowledgment for every plan selection, not just
+  // the first, so switching plans mid-checkout can't carry over a stale check.
+  const termsCheck = document.getElementById('payTermsCheck');
+  if (termsCheck) termsCheck.checked = false;
+  document.getElementById('paySubmitBtn').disabled = true;
 
   if (_stripeCard) { try { _stripeCard.destroy(); } catch(e){} }
   if (!_stripe) { initStripe(); }
@@ -3206,7 +3507,7 @@ let _lockerAllItems = [];
 async function loadLocker() {
   if (!ST.user) return;
   const el = document.getElementById('lockerContent');
-  el.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:48px 0"><span class="spinner"></span></div>';
+  el.innerHTML = skelLocker(2);
 
   try {
     // Fetch ALL evidence across controls (manual items have no expiry date, so
@@ -3496,6 +3797,7 @@ function closeMobileNav() {
 async function loadReminders() {
   const el = document.getElementById('remindersList');
   if (!el) return;
+  el.innerHTML = skelStackRows(3);
   try {
     const r = await fetch('/api/platform?type=reminders', { headers: authHeaders() });
     if (!r.ok) throw new Error('Failed');
@@ -3547,6 +3849,7 @@ function renderReminders(reminders, urgentCount) {
 async function loadVendors() {
   const el = document.getElementById('vendorsList');
   if (!el) return;
+  el.innerHTML = skelStackRows(3);
   try {
     const r = await fetch('/api/platform?type=vendors', { headers: authHeaders() });
     if (!r.ok) throw new Error('Failed');
@@ -3695,7 +3998,7 @@ async function loadAdmin() {
   if (!ST.user) return;
   const statsEl = document.getElementById('adminStats');
   const rowsEl = document.getElementById('adminUserRows');
-  if (rowsEl) rowsEl.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)"><span class="spinner"></span></td></tr>';
+  if (rowsEl) rowsEl.innerHTML = skelTableRows(7, 6);
 
   try {
     const r = await fetch('/api/admin', { headers: adminHeaders() });
@@ -3726,6 +4029,7 @@ function renderAdminStats(stats) {
 
 const PLAN_BADGES = {
   sandbox: '<span class="plan-badge plan-sandbox">SANDBOX</span>',
+  monitoring: '<span class="plan-badge plan-monitoring">MONITORING</span>',
   starter: '<span class="plan-badge plan-starter">STARTER</span>',
   growth: '<span class="plan-badge plan-growth">GROWTH</span>',
   enterprise: '<span class="plan-badge plan-enterprise">ENTERPRISE</span>',
@@ -3968,11 +4272,34 @@ function renderUpgradeCTA() {
 function openCancelModal() {
   document.getElementById('userDD')?.classList.remove('open');
   if (ST.mode === 'sandbox') { toast('No active subscription to cancel', 'error'); return; }
+  // Offer the Monitoring downgrade only to full paid tiers — someone already on
+  // Monitoring has nothing lower to drop to, so just show the cancel path.
+  const offer = document.getElementById('downgradeOffer');
+  if (offer) offer.style.display = ['starter','growth','enterprise'].includes(ST.mode) ? 'block' : 'none';
   document.getElementById('cancelSubModal').style.display = 'flex';
 }
 
 function closeCancelModal() {
   document.getElementById('cancelSubModal').style.display = 'none';
+}
+
+async function confirmDowngradeToMonitoring() {
+  const btn = document.getElementById('downgradeBtn');
+  btn.disabled = true; btn.textContent = 'Switching…';
+  try {
+    const r = await fetch('/api/billing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ action: 'downgrade' }),
+    });
+    const d = await r.json();
+    if (!r.ok || !d.ok) throw new Error(d.error || 'Could not switch plan');
+    ST.mode = d.mode || 'monitoring';
+    applyPaywall();
+    closeCancelModal();
+    toast('Switched to Monitoring — your Trust Page stays live for $99/mo', 'success');
+  } catch (err) { toast(err.message, 'error'); }
+  btn.disabled = false; btn.textContent = 'Switch to Monitoring — $99/mo';
 }
 
 async function confirmCancelSubscription() {
@@ -4025,7 +4352,7 @@ async function confirmCancelSubscription() {
   const BASE_COL = 'rgba(37,99,235,0.13)';
   const HOT_COL  = 'rgba(37,99,235,0.6)';
   const RADIUS = 90;
-  let ox = 0, oy = 0, animating = false;
+  let ox = 0, oy = 0, animating = false, lpListenersAttached = false;
 
   function drawGrid(canvas, color, offX, offY) {
     if (!canvas) return;
@@ -4053,10 +4380,23 @@ async function confirmCancelSubscription() {
   }
 
   function lpAnimate() {
-    ox = (ox + 0.4) % GRID;
-    oy = (oy + 0.4) % GRID;
-    drawGrid(document.getElementById('lpGridBase'), BASE_COL, ox, oy);
-    drawGrid(document.getElementById('lpGridHot'),  HOT_COL,  ox, oy);
+    // Stop the loop when the login page isn't visible. Otherwise it keeps
+    // redrawing the full-screen canvas grid every frame behind the dashboard
+    // for the whole session, which lags the entire app. It restarts via
+    // initLoginGrid whenever the login page is shown again.
+    const pg = document.getElementById('pg-login');
+    if (!pg || !pg.classList.contains('on')) { animating = false; return; }
+    // Skip the expensive canvas redraw while a modal (pricing / other overlay)
+    // is open over the login page, so the modal animates at full framerate. The
+    // loop stays alive and resumes drawing the instant the modal closes.
+    const covered = [...document.querySelectorAll('.pm-overlay, .modal-overlay')]
+      .some(el => el.style.display && el.style.display !== 'none');
+    if (!covered) {
+      ox = (ox + 0.4) % GRID;
+      oy = (oy + 0.4) % GRID;
+      drawGrid(document.getElementById('lpGridBase'), BASE_COL, ox, oy);
+      drawGrid(document.getElementById('lpGridHot'),  HOT_COL,  ox, oy);
+    }
     requestAnimationFrame(lpAnimate);
   }
 
@@ -4067,6 +4407,11 @@ async function confirmCancelSubscription() {
 
     lpResize();
     if (!animating) { animating = true; lpAnimate(); }
+
+    // Attach interaction listeners once — initLoginGrid runs on every nav to
+    // the login page, so without this guard the listeners stack up each time.
+    if (lpListenersAttached) return;
+    lpListenersAttached = true;
 
     pg.addEventListener('mousemove', e => {
       const r = pg.getBoundingClientRect();
@@ -4097,6 +4442,28 @@ async function confirmCancelSubscription() {
   });
 })();
 
+// ── Lock background scroll while any popup is open ────────────
+// Fixes the page behind a modal scrolling when you scroll the modal.
+// Watches every overlay's inline display and toggles body scroll — this
+// covers ALL popups (current and future) without editing each open/close fn.
+(function modalScrollLock() {
+  const SEL = '.modal-overlay, .pm-overlay';
+  const isOpen = el => el.style.display && el.style.display !== 'none';
+  const anyOpen = () => [...document.querySelectorAll(SEL)].some(isOpen);
+  const sync = () => { document.body.style.overflow = anyOpen() ? 'hidden' : ''; };
+  function attach() {
+    document.querySelectorAll(SEL).forEach(el => {
+      if (el._scrollObs) return;
+      el._scrollObs = new MutationObserver(sync);
+      el._scrollObs.observe(el, { attributes: true, attributeFilter: ['style'] });
+    });
+    sync();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attach);
+  else attach();
+  window.addEventListener('load', attach);
+})();
+
 // ── Init ──────────────────────────────────────────────────────
 
 loadUser();
@@ -4117,6 +4484,7 @@ if (ST.user) {
     });
   }, 50);
 }
+applyDeepLink();
 </script>
 </body>
 </html>

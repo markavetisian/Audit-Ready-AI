@@ -13,7 +13,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { Redis } from '@upstash/redis';
-import { verifySession, getUserMode, isPaidMode } from './_telemetry.js';
+import { verifySession, getUserMode, isPaidMode, canPublishTrustPage } from './_telemetry.js';
 import { createHash, randomBytes } from 'crypto';
 
 const redis = new Redis({
@@ -250,8 +250,9 @@ export default async function handler(req, res) {
     const userId = await getUserId(req.headers.authorization);
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    // Public Trust Pages are a paid feature — enforce server-side.
-    if (!isPaidMode(await getUserMode(userId))) {
+    // Public Trust Pages are available to paid plans and the Monitoring tier
+    // (keeping a live Trust Page is the whole point of the stay-ready floor).
+    if (!canPublishTrustPage(await getUserMode(userId))) {
       return res.status(402).json({ error: 'Public Trust Pages require a paid plan.' });
     }
 
