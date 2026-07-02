@@ -1481,14 +1481,15 @@ header{
 </div>
 <!-- ── Sample Trust Page (no-login proof demo) ─────────────────── -->
 <style>
-  .lp-ts-wrap{display:flex;justify-content:center;margin:-6px 0 14px}
-  .lp-estimate-cta{position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:11px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;border:none;border-radius:14px;padding:16px 30px;font-size:15.5px;font-weight:700;letter-spacing:-.01em;cursor:pointer;box-shadow:0 12px 30px rgba(37,99,235,.35),inset 0 1px 0 rgba(255,255,255,.28);transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s}
+  .lp-ts-wrap{display:flex;justify-content:center;margin:-18px 0 14px}
+  .lp-estimate-cta{position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;border:none;border-radius:11px;padding:10px 20px;font-size:13.5px;font-weight:700;letter-spacing:-.01em;cursor:pointer;box-shadow:0 8px 20px rgba(37,99,235,.3),inset 0 1px 0 rgba(255,255,255,.28);transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s}
   .lp-estimate-cta:hover{transform:translateY(-3px);box-shadow:0 18px 46px rgba(37,99,235,.5),inset 0 1px 0 rgba(255,255,255,.34)}
   .lp-estimate-cta:active{transform:translateY(-1px)}
   .lp-estimate-cta::after{content:"";position:absolute;top:0;left:0;width:45%;height:100%;background:linear-gradient(120deg,transparent,rgba(255,255,255,.5),transparent);transform:translateX(-250%) skewX(-20deg);pointer-events:none;animation:lp-shine 3.6s ease-in-out infinite}
   @keyframes lp-shine{0%{transform:translateX(-250%) skewX(-20deg)}60%,100%{transform:translateX(420%) skewX(-20deg)}}
-  .lp-estimate-cta .ic{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:rgba(255,255,255,.18);flex-shrink:0}
-  .lp-estimate-cta .ar{font-size:18px;transition:transform .2s}
+  .lp-estimate-cta .ic{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:6px;background:rgba(255,255,255,.18);flex-shrink:0}
+  .lp-estimate-cta .ic svg{width:13px;height:13px}
+  .lp-estimate-cta .ar{font-size:15px;transition:transform .2s}
   .lp-estimate-cta:hover .ar{transform:translateX(5px)}
   .ts-ribbon{background:#0f172a;color:#cbd5e1;font-size:11px;font-weight:600;text-align:center;padding:8px 12px;letter-spacing:.03em}
   .ts-head{display:flex;align-items:center;gap:13px}
