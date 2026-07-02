@@ -1,0 +1,39 @@
+# AuditReady AI
+
+> AuditReady AI is a SOC 2 compliance automation platform for startups. Connect your tools (starting with GitHub), get an instant SOC 2 readiness score in under 10 minutes, close compliance gaps with AI-guided fixes, and walk into enterprise deals audit-ready — without hiring consultants or spending weeks on manual evidence collection.
+
+AuditReady AI helps engineering-led teams *prepare* for a SOC 2 audit. It tracks evidence, identifies control gaps, and generates AI-assisted readiness reports and policy documents. It does not replace an official attestation by a licensed CPA firm — it gets you ready for one, faster and cheaper.
+
+## Core Capabilities
+
+- Instant SOC 2 readiness score: connect GitHub and get a scored assessment in under 10 minutes
+- Full 49-control Trust Services Criteria (TSC) mapping with automated gap detection
+- AI policy document generator for framework-aligned documentation
+- Evidence Locker: centralized evidence collection with renewal and expiry due-date tracking
+- Vendor Risk Tracker for third-party risk management
+- Exportable Audit Readiness reports, ready to hand to your auditor
+- Live public Trust Page with a shareable link to prove readiness to prospects
+- On-demand rescans that keep your score current as your stack changes
+- AI that stays aligned with framework changes automatically
+
+## Who It's For
+
+- Pre-seed and seed-stage startups closing their first enterprise deals
+- Series A companies undergoing an active SOC 2 audit
+- Engineering-led teams that want compliance readiness without dedicated GRC headcount
+
+## Pricing
+
+- Starter — $250/mo: GitHub integration, full 49-control TSC mapping, AI policy generator, exportable readiness report, score dashboard and gap tracker
+- Growth — $500/mo: everything in Starter plus on-demand scans, live Trust Page with share link, AI audit report generation, Evidence Locker, Vendor Risk Tracker, renewal tracking
+- Audit-Ready — $1,000/mo: everything in Growth plus priority founder-level support, early access to new integrations, custom control mapping, hands-on onboarding
+
+## Primary Links
+
+- [AuditReady AI — Home](https://auditready.space/): Product overview, SOC 2 readiness scoring, how it works, and pricing
+- [Privacy Policy](https://auditready.space/privacy.html): How AuditReady AI handles user data
+- [Terms of Service](https://auditready.space/terms.html): Terms governing use of the platform
+
+## Contact
+
+- Support: support.generalmail@gmail.com
