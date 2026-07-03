@@ -20,12 +20,12 @@ const FPS = 60; // 60fps = smooth + universally supported (120fps stutters on ma
 const K = FPS / 30; // 2
 // Order: attention opener -> agenda hook -> 3 problems -> "Presenting"
 // reveal -> solutions (each with bullets) -> outro. (base 30fps units)
-const OPEN = 72;
+const OPEN = 84;
 const AGENDA = 96;
 const P1 = 94;
 const P2 = 94;
 const P3 = 94;
-const REVEAL = 60;
+const REVEAL = 74;
 const S1 = 94;
 const S2 = 94;
 const PHONE = 122;
@@ -206,6 +206,8 @@ const BigIcon: React.FC<{ color: string; tint: string; children: React.ReactNode
     <div style={{ position: "relative", transform: `translateY(${float}px) scale(${scale})` }}>
       {/* glow */}
       <div style={{ position: "absolute", inset: -40, borderRadius: "50%", background: `radial-gradient(circle, ${color}44, ${color}00 68%)`, filter: "blur(14px)", opacity: pulse }} />
+      {/* rotating dashed halo */}
+      <div style={{ position: "absolute", inset: -22, borderRadius: "50%", border: `2.5px dashed ${color}55`, transform: `rotate(${frame * 0.9}deg)` }} />
       <div style={{ position: "relative", width: 140, height: 140, borderRadius: 36, background: tint, color, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 26px 60px ${color}33, inset 0 1px 0 rgba(255,255,255,0.8)` }}>
         {children}
       </div>
@@ -233,14 +235,16 @@ const Logo: React.FC<{ size: number }> = ({ size }) => {
 };
 
 // ===================== Scene: Opener — attention hook (SOC 2 audit seal slams in) =====================
-const AuditSeal: React.FC<{ scale: number; rot: number }> = ({ scale, rot }) => (
+const AuditSeal: React.FC<{ scale: number; rot: number; ringRot: number }> = ({ scale, rot, ringRot }) => (
   <div style={{ width: 300, height: 300, position: "relative", transform: `rotate(${rot}deg) scale(${scale})` }}>
     <div style={{ position: "absolute", inset: 0, borderRadius: "50%", background: `linear-gradient(145deg, ${SKY} 0%, ${ROYAL} 55%, ${ROYAL_DK} 100%)`, boxShadow: "0 28px 70px rgba(37,99,235,0.45)" }} />
     <div style={{ position: "absolute", inset: 14, borderRadius: "50%", border: "3px solid rgba(255,255,255,0.55)" }} />
-    {/* notched seal ring */}
-    {Array.from({ length: 40 }).map((_, i) => (
-      <div key={i} style={{ position: "absolute", left: "50%", top: "50%", width: 4, height: 12, background: "rgba(255,255,255,0.5)", borderRadius: 2, transform: `translate(-50%,-50%) rotate(${i * 9}deg) translateY(-135px)` }} />
-    ))}
+    {/* notched seal ring — slowly rotates for a live, minted feel */}
+    <div style={{ position: "absolute", inset: 0, transform: `rotate(${ringRot}deg)` }}>
+      {Array.from({ length: 40 }).map((_, i) => (
+        <div key={i} style={{ position: "absolute", left: "50%", top: "50%", width: 4, height: 12, background: "rgba(255,255,255,0.5)", borderRadius: 2, transform: `translate(-50%,-50%) rotate(${i * 9}deg) translateY(-135px)` }} />
+      ))}
+    </div>
     <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#fff", fontFamily: FONT }}>
       <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: 6 }}>AUDIT</div>
       <div style={{ fontSize: 78, fontWeight: 900, letterSpacing: -2, lineHeight: 0.95 }}>SOC&nbsp;2</div>
@@ -260,16 +264,34 @@ const SceneOpen: React.FC = () => {
   const sealRot = interpolate(stamp, [0, 1], [-16, -7]);
   const hook = spring({ frame: frame - 12, fps, config: { damping: 200 } });
   const sub = spring({ frame: frame - 24, fps, config: { damping: 200 } });
+  const stats: { n: number; suffix: string; label: string }[] = [
+    { n: 63, suffix: "", label: "controls tracked" },
+    { n: 9, suffix: "", label: "TSC categories" },
+    { n: 92, suffix: "%", label: "readiness score" },
+  ];
   return (
-    <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", gap: 40, perspective: 1500, textAlign: "center", padding: "0 70px" }}>
+    <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", gap: 36, perspective: 1500, textAlign: "center", padding: "0 70px" }}>
       <div style={{ opacity: Math.min(1, stamp * 1.6) }}>
-        <AuditSeal scale={sealScale} rot={sealRot} />
+        <AuditSeal scale={sealScale} rot={sealRot} ringRot={frame * 0.6} />
       </div>
       <div style={{ fontFamily: FONT, fontWeight: 800, fontSize: 78, color: INK, letterSpacing: -2.5, lineHeight: 1.04, opacity: hook, transform: `translateY(${interpolate(hook, [0, 1], [24, 0])}px)`, maxWidth: 900 }}>
         Losing enterprise deals<br />over <span style={{ color: ROYAL }}>SOC 2?</span>
       </div>
       <div style={{ fontFamily: FONT, fontWeight: 500, fontSize: 36, color: SLATE, lineHeight: 1.35, maxWidth: 820, opacity: sub }}>
         Get audit-ready in days — not months.
+      </div>
+      {/* live data strip — real platform numbers, counting up */}
+      <div style={{ display: "flex", gap: 18, marginTop: 4 }}>
+        {stats.map((s, i) => {
+          const sp2 = spring({ frame: frame - 30 - i * 6, fps, config: { damping: 200 }, durationInFrames: 26 });
+          const val = Math.round(interpolate(sp2, [0, 1], [0, s.n]));
+          return (
+            <div key={s.label} style={{ opacity: Math.min(1, sp2 * 2), transform: `translateY(${(1 - sp2) * 20}px)`, background: "rgba(255,255,255,0.8)", border: "1.5px solid rgba(37,99,235,0.18)", borderRadius: 20, padding: "18px 26px", boxShadow: "0 14px 34px rgba(37,99,235,0.08)", display: "flex", flexDirection: "column", gap: 2, minWidth: 200 }}>
+              <span style={{ fontFamily: FONT, fontWeight: 800, fontSize: 46, color: ROYAL, letterSpacing: -1, fontVariantNumeric: "tabular-nums" }}>{val}{s.suffix}</span>
+              <span style={{ fontFamily: FONT, fontWeight: 600, fontSize: 22, color: SLATE }}>{s.label}</span>
+            </div>
+          );
+        })}
       </div>
     </AbsoluteFill>
   );
@@ -289,9 +311,11 @@ const SceneIntro: React.FC = () => {
     <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", gap: 44, perspective: 1500 }}>
       <div style={{ fontFamily: FONT, fontWeight: 700, fontSize: 30, color: SLATE, letterSpacing: interpolate(kick, [0, 1], [2, 14]), textTransform: "uppercase", opacity: kick, transform: `translateY(${interpolate(kick, [0, 1], [16, 0])}px)` }}>Presenting</div>
       <div style={{ transform: `rotateY(${spin}deg) scale(${interpolate(pop, [0, 1], [0.4, 1])})`, transformStyle: "preserve-3d", position: "relative" }}>
-        {/* orbiting ring */}
+        {/* orbiting rings — two, counter-rotating */}
         <div style={{ position: "absolute", inset: -54, borderRadius: "50%", border: `4px solid ${SKY}55`, transform: `rotateX(72deg) rotateZ(${frame * 3}deg)` }} />
         <div style={{ position: "absolute", inset: -54, borderRadius: "50%", borderTop: `5px solid ${ROYAL}`, borderRight: "5px solid transparent", borderBottom: "5px solid transparent", borderLeft: "5px solid transparent", transform: `rotateX(72deg) rotateZ(${frame * 3}deg)` }} />
+        <div style={{ position: "absolute", inset: -86, borderRadius: "50%", border: `3px solid ${VIOLET}33`, transform: `rotateX(72deg) rotateZ(${-frame * 2}deg)` }} />
+        <div style={{ position: "absolute", inset: -86, borderRadius: "50%", borderBottom: `4px solid ${VIOLET}88`, borderTop: "4px solid transparent", borderRight: "4px solid transparent", borderLeft: "4px solid transparent", transform: `rotateX(72deg) rotateZ(${-frame * 2}deg)` }} />
         <Logo size={300} />
         {/* gloss sweep, clipped to the badge so it reads as a shine (no band) */}
         <div style={{ position: "absolute", inset: 0, borderRadius: 72, overflow: "hidden", pointerEvents: "none" }}>
@@ -302,6 +326,21 @@ const SceneIntro: React.FC = () => {
         AuditReady<span style={{ color: ROYAL }}> AI</span>
       </div>
       <div style={{ fontFamily: FONT, fontWeight: 600, fontSize: 30, color: SLATE, letterSpacing: 6, textTransform: "uppercase", opacity: tag }}>SOC 2, on autopilot</div>
+      {/* feature preview chips — what's coming next */}
+      <div style={{ display: "flex", gap: 14, marginTop: 6 }}>
+        {[
+          { icon: <ILock s={24} />, label: "Evidence Locker" },
+          { icon: <IActivity s={24} />, label: "Auto-scans" },
+          { icon: <IShieldCheck s={24} />, label: "Trust Page" },
+        ].map((c, i) => {
+          const cp = spring({ frame: frame - 44 - i * 6, fps, config: { damping: 16 } });
+          return (
+            <div key={c.label} style={{ opacity: cp, transform: `translateY(${(1 - cp) * 22}px) scale(${0.9 + cp * 0.1})`, display: "flex", alignItems: "center", gap: 10, background: "rgba(255,255,255,0.85)", border: `1.5px solid ${ROYAL}26`, borderRadius: 999, padding: "13px 24px", boxShadow: "0 12px 30px rgba(37,99,235,0.10)", color: ROYAL, fontFamily: FONT, fontWeight: 700, fontSize: 25 }}>
+              {c.icon}{c.label}
+            </div>
+          );
+        })}
+      </div>
     </AbsoluteFill>
   );
 };
@@ -519,6 +558,23 @@ const ScenePhone: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* floating data chips — live numbers orbiting the product (kept clear of the phone) */}
+      {[
+        { icon: <ICheckCircle s={24} />, text: "92% Audit Ready", accent: "#16a34a", left: 20 as number | undefined, right: undefined as number | undefined, top: 560, delay: 22, rot: -4 },
+        { icon: <IGauge s={24} />, text: "63 controls tracked", accent: ROYAL, left: undefined, right: 20, top: 860, delay: 30, rot: 3 },
+        { icon: <ISync s={24} />, text: "Evidence auto-synced", accent: VIOLET, left: 24, right: undefined, top: 1240, delay: 38, rot: -3 },
+      ].map((c) => {
+        const cp = spring({ frame: f - c.delay, fps, config: { damping: 15, mass: 0.8 } });
+        const cOp = cp * (1 - exit);
+        const cFloat = Math.sin(f * 0.06 + c.top) * 7;
+        return (
+          <div key={c.text} style={{ position: "absolute", left: c.left, right: c.right, top: c.top + cFloat, opacity: cOp, transform: `translateY(${(1 - cp) * 40}px) rotate(${c.rot}deg) scale(${0.85 + cp * 0.15})`, display: "flex", alignItems: "center", gap: 12, background: "rgba(255,255,255,0.92)", border: `1.5px solid ${c.accent}33`, borderRadius: 18, padding: "16px 20px", boxShadow: `0 18px 44px ${c.accent}22`, zIndex: 5 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 13, flexShrink: 0, background: `${c.accent}14`, color: c.accent, display: "flex", alignItems: "center", justifyContent: "center" }}>{c.icon}</div>
+            <span style={{ fontFamily: FONT, fontWeight: 800, fontSize: 26, color: INK, letterSpacing: -0.5, whiteSpace: "nowrap" }}>{c.text}</span>
+          </div>
+        );
+      })}
     </AbsoluteFill>
   );
 };
@@ -562,7 +618,12 @@ const ProgressBar: React.FC = () => {
   const frame = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
   const w = interpolate(frame, [0, durationInFrames - 1], [0, 100], { extrapolateRight: "clamp" });
-  return <div style={{ position: "absolute", bottom: 0, left: 0, height: 6, width: `${w}%`, background: `linear-gradient(90deg, ${ROYAL}, ${SKY})` }} />;
+  return (
+    <>
+      <div style={{ position: "absolute", bottom: 0, left: 0, height: 6, width: `${w}%`, background: `linear-gradient(90deg, ${ROYAL}, ${SKY})` }} />
+      <div style={{ position: "absolute", bottom: -5, left: `calc(${w}% - 8px)`, width: 16, height: 16, borderRadius: "50%", background: SKY, filter: "blur(6px)", opacity: 0.8 }} />
+    </>
+  );
 };
 
 // ===================== Grain (dithers gradients, kills banding) =====================
