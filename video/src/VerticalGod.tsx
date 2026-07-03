@@ -21,7 +21,7 @@ const K = FPS / 30; // 2
 // Order: attention opener -> agenda hook -> 3 problems -> "Presenting"
 // reveal -> solutions (each with bullets) -> outro. (base 30fps units)
 const OPEN = 72;
-const AGENDA = 88;
+const AGENDA = 96;
 const P1 = 94;
 const P2 = 94;
 const P3 = 94;
@@ -318,8 +318,9 @@ const AgendaScene: React.FC = () => {
   const sp = (delay: number, damping = 200) => spring({ frame: frame - delay, fps, config: { damping } });
   const k = sp(2);
   const h = sp(10);
+  const fp = sp(12 + AGENDA_ITEMS.length * 11 + 4, 18);
   return (
-    <AbsoluteFill style={{ alignItems: "center", justifyContent: "flex-start", padding: "210px 80px 0" }}>
+    <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", padding: "0 80px" }}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 18, width: "100%" }}>
         <div style={{ opacity: k, transform: `translateY(${interpolate(k, [0, 1], [-16, 0])}px)` }}><Pill text="Sound familiar?" color={ROYAL} /></div>
         <div style={{ fontFamily: FONT, fontWeight: 800, fontSize: 70, color: INK, letterSpacing: -2.5, textAlign: "center", lineHeight: 1.06, opacity: h, transform: `translateY(${interpolate(h, [0, 1], [22, 0])}px)`, marginBottom: 20 }}>
@@ -336,6 +337,11 @@ const AgendaScene: React.FC = () => {
               </div>
             );
           })}
+        </div>
+        {/* conversion bridge — plant the promise early */}
+        <div style={{ display: "flex", alignItems: "center", gap: 18, width: "100%", maxWidth: 800, marginTop: 12, background: `${ROYAL}12`, border: `1.5px solid ${ROYAL}33`, borderRadius: 22, padding: "20px 26px", opacity: fp, transform: `translateY(${interpolate(fp, [0, 1], [26, 0])}px)` }}>
+          <div style={{ width: 52, height: 52, borderRadius: 15, flexShrink: 0, background: ROYAL, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}><IShieldCheck s={26} /></div>
+          <div style={{ fontFamily: FONT, fontWeight: 700, fontSize: 30, color: INK, lineHeight: 1.25 }}>One platform fixes all three.</div>
         </div>
       </div>
     </AbsoluteFill>
@@ -487,7 +493,7 @@ const ScenePhone: React.FC = () => {
     <AbsoluteFill style={{ alignItems: "center", perspective: 2000 }}>
       <div style={{ position: "absolute", top: 122, left: 80, right: 80, textAlign: "center", opacity: headOp, transform: `translateY(${interpolate(head, [0, 1], [24, 0])}px)`, display: "flex", flexDirection: "column", alignItems: "center", gap: 20 }}>
         <Pill text="The real platform" color={ROYAL} />
-        <div style={{ fontFamily: FONT, fontWeight: 800, fontSize: 64, color: INK, letterSpacing: -2, lineHeight: 1.06 }}>See your score<br /><span style={{ color: ROYAL }}>come to life.</span></div>
+        <div style={{ fontFamily: FONT, fontWeight: 800, fontSize: 64, color: INK, letterSpacing: -2, lineHeight: 1.06 }}>Your compliance,<br /><span style={{ color: ROYAL }}>live.</span></div>
       </div>
 
       <div style={{ position: "absolute", top: 392, transformStyle: "preserve-3d" }}>
