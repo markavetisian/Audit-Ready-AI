@@ -1,6 +1,5 @@
 // ─────────────────────────────────────────────────────────────
-// api/integrations.js
-// ACTION: NEW (slot 10)
+// api/integrations.js — connected tools
 //
 //   GET    /api/integrations  → list connected integrations + status
 //   POST   /api/integrations  → connect an integration (save token)

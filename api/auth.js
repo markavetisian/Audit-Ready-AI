@@ -1,6 +1,5 @@
 // ─────────────────────────────────────────────────────────────
-// api/auth.js
-// ACTION: MERGED from github-auth.js + google-auth.js + slack-auth.js
+// api/auth.js — OAuth sign-in for all providers
 //
 //   GET /api/auth?provider=github    → redirect to GitHub consent
 //   GET /api/github-callback         → GitHub OAuth callback (via vercel.json rewrite)

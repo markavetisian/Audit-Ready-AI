@@ -1,17 +1,12 @@
 // ─────────────────────────────────────────────────────────────
-// api/controls.js
-// ACTION: REFACTORED from api/agents.js
+// api/controls.js — SOC 2 control checklist
 //
-//   GET   /api/controls                   → return all 49 controls + statuses
-//   GET   /api/controls?category=CC6      → filter by category
+//   GET   /api/controls                    → return all 49 controls + statuses
+//   GET   /api/controls?category=CC6       → filter by category
 //   GET   /api/controls?status=NOT_STARTED → filter by status
-//   PATCH /api/controls                   → update control status / not-applicable toggle
+//   PATCH /api/controls                    → update control status / not-applicable toggle
 //
-// KEPT:    Redis client, auth middleware, CORS headers
-// REMOVED: Agent CRUD, GitHub repo deletion, agent upsert logic
-// ADDED:   49-control SOC 2 seed on first access, status filter,
-//          not-applicable toggle, category grouping,
-//          evidenceGuidance field per control for actionable guidance
+// Controls are seeded per user on first access.
 // ─────────────────────────────────────────────────────────────
 
 import { Redis } from '@upstash/redis';

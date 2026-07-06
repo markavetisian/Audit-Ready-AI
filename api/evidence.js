@@ -1,12 +1,11 @@
 // ─────────────────────────────────────────────────────────────
-// api/evidence.js
-// ACTION: NEW (slot 9)
+// api/evidence.js — evidence items attached to controls
 //
 //   POST   /api/evidence              → add evidence item to a control
 //   GET    /api/evidence?controlId=X  → get all evidence for a control
 //   DELETE /api/evidence?id=X         → remove evidence item
 //
-// No binary file storage — metadata/links only (per Section H constraints).
+// No binary file storage — metadata/links only.
 // Evidence types: LINK | FILE_NAME | AUTO_DETECTED | SCREENSHOT
 // Auto-detected evidence is not deletable.
 // Score is recomputed after evidence add/remove.

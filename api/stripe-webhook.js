@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────
-// api/stripe-webhook.js
-// ACTION: KEPT AS-IS — NEVER MODIFIED
+// api/stripe-webhook.js — Stripe subscription lifecycle webhook;
+// verifies signatures and activates/deactivates plans.
 // ─────────────────────────────────────────────────────────────
 
 import { Redis } from '@upstash/redis';

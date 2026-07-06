@@ -1,17 +1,8 @@
 // ─────────────────────────────────────────────────────────────
-// api/telemetry.js
-// ACTION: MERGED from analytics.js + log.js + track.js
-//
-//   POST /api/telemetry?type=analytics → usage analytics (was analytics.js)
-//   POST /api/telemetry?type=log       → event logging (was log.js)
-//   POST /api/telemetry?type=track     → user event tracking (was track.js)
-//   GET  /api/telemetry                → analytics data fetch
-//
-// REMOVED: agent-specific stats (agent deploys, agent convos, agent leads)
-//          GitHub repo scanning (moved to scan.js)
-//          agentStats, topQuestions per-agent, recentMessages per-agent
-// KEPT:    Redis client, CORS, all passive data write patterns
-//          trackUser, isBlocked, checkRateLimit, logError (exported for scan.js/controls.js)
+// api/_telemetry.js — shared helpers for the api/ functions:
+// sessions, one-time auth codes, distributed locks, per-tier rate
+// limits, user tracking, account blocking, and error logging.
+// The underscore prefix keeps Vercel from deploying it as a route.
 // ─────────────────────────────────────────────────────────────
 
 import { Redis } from '@upstash/redis';

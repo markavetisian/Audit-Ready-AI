@@ -1,12 +1,10 @@
 // ─────────────────────────────────────────────────────────────
-// api/billing.js
-// ACTION: MERGED from stripe-checkout.js + stripe-cancel.js
+// api/billing.js — Stripe subscription management
 //
-//   POST   /api/billing → create subscription checkout (was stripe-checkout.js)
-//   DELETE /api/billing → cancel subscription at period end (was stripe-cancel.js)
+//   POST   /api/billing → create subscription checkout
+//   DELETE /api/billing → cancel subscription at period end
 //
-// Logic: identical to originals. Method router only change.
-// api/stripe-webhook.js: UNTOUCHED — never modified.
+// Plan activation happens in api/stripe-webhook.js.
 // ─────────────────────────────────────────────────────────────
 
 import { Redis } from '@upstash/redis';

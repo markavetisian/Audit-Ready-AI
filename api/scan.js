@@ -1,18 +1,8 @@
 // ─────────────────────────────────────────────────────────────
-// api/scan.js
-// ACTION: REFACTORED from api/analyze.js
+// api/scan.js — compliance signal scanning
 //
 //   POST /api/scan → trigger GitHub + Google Drive compliance scan
 //   GET  /api/scan → get last scan status + results for user
-//
-// KEPT:    Groq client init pattern, Redis client, CORS, error handling
-//          isBlocked, checkRateLimit from telemetry.js
-// REMOVED: Agent analysis prompt, website fetching, chat mode
-//          SHA-256 anti-spam logic (repurposed as rate limiter via checkRateLimit)
-// ADDED:   GitHub org/repo scanning logic mapped to SOC 2 controls
-//          Google Drive folder scanning for evidence keywords
-//          Control status updater, scannedAt timestamp writer
-//          Detection details object for transparency
 // ─────────────────────────────────────────────────────────────
 
 import { Redis } from '@upstash/redis';
@@ -284,7 +274,7 @@ async function scanGoogleDrive(googleToken, folderId) {
 
 // ── Update controls in Redis with scan results ────────────────
 
-async function applyGitHubScanResults(userId, scanResults, detectionDetails) {
+async function applyScanResults(userId, scanResults, detectionDetails, source) {
   const now = new Date().toISOString();
   for (const [controlId, status] of Object.entries(scanResults)) {
     const key = `control:${userId}:${controlId}`;
@@ -300,43 +290,18 @@ async function applyGitHubScanResults(userId, scanResults, detectionDetails) {
         if (newRank > currentRank) {
           control.status = status;
           control.lastUpdated = now;
-          control.autoSource = 'github';
-          // Add descriptive note about what was detected
-          if (detectionDetails && detectionDetails[controlId]) {
+          control.autoSource = source;
+          if (source === 'google_drive') {
+            // Drive keyword matches always require human confirmation
+            control.autoNote = 'Google Drive: Document keyword match — please verify this document meets the control requirement';
+          } else if (detectionDetails && detectionDetails[controlId]) {
             control.autoNote = 'GitHub: ' + detectionDetails[controlId];
           }
           await redis.set(key, JSON.stringify(control));
         }
       });
     } catch (err) {
-      await logError('scan_apply_github_error', { msg: err.message, userId, controlId });
-    }
-  }
-}
-
-async function applyDriveScanResults(userId, scanResults, detectionDetails) {
-  const now = new Date().toISOString();
-  for (const [controlId, status] of Object.entries(scanResults)) {
-    const key = `control:${userId}:${controlId}`;
-    try {
-      await withLock(`control:${userId}:${controlId}`, async () => {
-        let control = {};
-        const raw = await redis.get(key);
-        if (raw) control = typeof raw === 'object' ? raw : JSON.parse(raw);
-        const statusRank = { NOT_STARTED: 0, IN_PROGRESS: 1, EVIDENCE_UPLOADED: 2, CONNECTED_AUTO: 3, NOT_APPLICABLE: -1 };
-        const currentRank = statusRank[control.status] ?? 0;
-        const newRank = statusRank[status] ?? 0;
-        if (newRank > currentRank) {
-          control.status = status;
-          control.lastUpdated = now;
-          control.autoSource = 'google_drive';
-          // Add note that Google Drive matches require human confirmation
-          control.autoNote = 'Google Drive: Document keyword match — please verify this document meets the control requirement';
-          await redis.set(key, JSON.stringify(control));
-        }
-      });
-    } catch (err) {
-      await logError('scan_apply_drive_error', { msg: err.message, userId, controlId });
+      await logError(source === 'google_drive' ? 'scan_apply_drive_error' : 'scan_apply_github_error', { msg: err.message, userId, controlId });
     }
   }
 }
@@ -391,7 +356,7 @@ export default async function handler(req, res) {
         Object.assign(scanResults, ghResults);
         Object.assign(allDetectionDetails, ghDetails);
         scanSummary.github = ghResults;
-        await applyGitHubScanResults(userId, ghResults, ghDetails);
+        await applyScanResults(userId, ghResults, ghDetails, 'github');
       }
 
       // Google Drive scan
@@ -400,7 +365,7 @@ export default async function handler(req, res) {
         Object.assign(scanResults, driveResults);
         Object.assign(allDetectionDetails, driveDetails);
         scanSummary.googleDrive = driveResults;
-        await applyDriveScanResults(userId, driveResults, driveDetails);
+        await applyScanResults(userId, driveResults, driveDetails, 'google_drive');
       }
 
       const controlsAutoFilled = Object.keys(scanResults).length;

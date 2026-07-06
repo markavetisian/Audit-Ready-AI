@@ -1,10 +1,9 @@
 // ─────────────────────────────────────────────────────────────
-// api/share.js
-// ACTION: NEW (slot 12)
+// api/share.js — read-only share links for auditors
 //
-//   POST /api/share                  → create shareable auditor token
-//   GET  /api/share?token=X          → public report (NO AUTH required)
-//   GET  /api/share?list=true        → list user's active share links (auth required)
+//   POST /api/share         → create shareable auditor token
+//   GET  /api/share?token=X → public report (NO AUTH required)
+//   GET  /api/share?list=true → list user's active share links (auth required)
 //
 // Token TTL: 30 days (configurable via body)
 // Public view: score, category breakdown, report if generated

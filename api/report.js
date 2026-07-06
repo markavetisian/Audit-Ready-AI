@@ -1,19 +1,10 @@
 // ─────────────────────────────────────────────────────────────
-// api/report.js
-// ACTION: REFACTORED from api/deploy-bot.js
+// api/report.js — AI readiness reports and policy generation
 //
-//   POST /api/report     → generate Groq audit readiness report
-//   GET  /api/report     → list saved reports for user
-//   GET  /api/report?id= → get single report by ID
-//
-// KEPT:    Groq API call pattern (verbatim from analyze.js), Redis client,
-//          auth middleware, CORS headers, error handling
-// REMOVED: GitHub repo creation, file uploads to GitHub, Pages enabling,
-//          agent tier HTML generation, deploy tracking
-// ADDED:   SOC 2 audit report prompt (Section I), report save to Redis,
-//          report retrieval by ID, structured JSON output,
-//          disclaimer + evidenceSuggestions fields, company context,
-//          aiGenerated transparency fields
+//   POST /api/report                        → generate audit readiness report
+//   GET  /api/report                        → list saved reports for user
+//   GET  /api/report?id=                    → get single report by ID
+//   GET  /api/report?type=policy&controlId= → generate policy document (paid)
 // ─────────────────────────────────────────────────────────────
 
 import { Redis } from '@upstash/redis';
@@ -41,7 +32,7 @@ async function getUserId(authHeader) {
   } catch { return null; }
 }
 
-// ── Groq API call (verbatim pattern from analyze.js) ─────────
+// ── Groq API call ────────────────────────────────────────────
 
 function safeJsonParse(text) {
   try {
