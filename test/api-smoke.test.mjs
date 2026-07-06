@@ -28,3 +28,28 @@ test('scan.js exports recomputeScore and scanGitHub', async () => {
   assert.strictEqual(typeof scan.recomputeScore, 'function');
   assert.strictEqual(typeof scan.scanGitHub, 'function');
 });
+
+test('lead.js validates input and method', async () => {
+  const { default: handler } = await import('../api/lead.js');
+  const mkRes = () => {
+    const res = { statusCode: 0, body: null, headers: {} };
+    res.setHeader = (k, v) => { res.headers[k] = v; };
+    res.status = c => { res.statusCode = c; return res; };
+    res.json = b => { res.body = b; return res; };
+    res.end = () => res;
+    return res;
+  };
+  const post = { method: 'POST', headers: {} };
+
+  let res = mkRes();
+  await handler({ ...post, body: { email: 'not-an-email', company: 'X' } }, res);
+  assert.strictEqual(res.statusCode, 400);
+
+  res = mkRes();
+  await handler({ ...post, body: { email: 'a@b.com', company: '' } }, res);
+  assert.strictEqual(res.statusCode, 400);
+
+  res = mkRes();
+  await handler({ method: 'GET', headers: {} }, res);
+  assert.strictEqual(res.statusCode, 405);
+});

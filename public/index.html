@@ -14,14 +14,6 @@
 <meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="AuditReady AI — SOC 2 Readiness Platform for B2B SaaS"/>
 <meta name="twitter:description" content="Assess your controls against the SOC 2 framework, quantify your audit readiness, and close the gaps before your next enterprise deal reaches security review."/>
-<script type="application/ld+json">
-{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
-{"@type":"Question","name":"Is this a real SOC 2 audit?","acceptedAnswer":{"@type":"Answer","text":"No. A SOC 2 report can only be issued by a licensed CPA firm. AuditReady AI gets you ready for that audit: it scores your controls, finds gaps, drafts policies, and packages evidence so the audit itself is faster and cheaper."}},
-{"@type":"Question","name":"What access does AuditReady AI get to my systems?","acceptedAnswer":{"@type":"Answer","text":"Read-only. The GitHub scan reads repo and org metadata such as branch protection settings and security features, never your source code contents. Google Drive access is limited to the single folder you pick. Access can be revoked anytime."}},
-{"@type":"Question","name":"Can we evaluate the platform before purchasing?","acceptedAnswer":{"@type":"Answer","text":"Yes. The evaluation tier includes the full 49-control checklist, GitHub scanning, your readiness score, and evidence tracking, so your team can assess the platform against your real environment before subscribing. Subscriptions add AI policy generation, the exportable readiness report, a shareable Trust Page, and expanded scan capacity."}},
-{"@type":"Question","name":"How is this different from Vanta or Drata?","acceptedAnswer":{"@type":"Answer","text":"Those platforms serve companies with dedicated GRC teams, with annual contracts typically starting at $7,500–$25,000 per year plus onboarding. AuditReady AI is purpose-built for B2B SaaS companies facing enterprise security review: it deploys the day you sign in, with transparent published pricing and no negotiation cycle."}}
-]}
-</script>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=3"/>
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=3"/>
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=3"/>
@@ -328,7 +320,10 @@ header{
 .lp-grid-spot{position:absolute;inset:0;z-index:1;opacity:0;transition:opacity .18s;pointer-events:none;
   -webkit-mask-image:radial-gradient(90px circle at 50% 50%,black,transparent);
   mask-image:radial-gradient(90px circle at 50% 50%,black,transparent)}
-.lp-grid-base canvas,.lp-grid-spot canvas{position:absolute;inset:0;width:100%;height:100%}
+/* Canvases keep their intrinsic pixel size (drawn once, GPU-drifted via
+   transform) — never stretched to the full page height. */
+.lp-grid-base canvas,.lp-grid-spot canvas{position:absolute;top:0;left:0;animation:lpDrift 1.7s linear infinite;will-change:transform}
+@keyframes lpDrift{from{transform:translate3d(-40px,-40px,0)}to{transform:translate3d(0,0,0)}}
 /* blobs */
 .lp-blob{position:absolute;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0}
 .lp-blob-1{width:500px;height:300px;background:rgba(147,197,253,0.45);top:-80px;right:-100px;border-radius:40%}
@@ -742,6 +737,71 @@ header{
   background:radial-gradient(ellipse at 50% 0%,rgba(147,197,253,.25) 0%,transparent 70%);
   pointer-events:none;
 }
+
+/* ── Readiness quiz ──────────────────────────────────────────── */
+.quiz-card{
+  position:relative;margin-top:28px;background:#fff;border:1px solid #e2e8f0;
+  border-radius:18px;padding:26px 26px 22px;
+  box-shadow:0 12px 40px rgba(15,23,42,.07),0 2px 8px rgba(15,23,42,.04);
+  min-height:340px;overflow:hidden;
+}
+@media(max-width:520px){.quiz-card{padding:20px 18px 18px;min-height:auto}}
+.quiz-top{margin-bottom:20px}
+.quiz-prog-track{height:5px;background:#eef2f7;border-radius:3px;overflow:hidden}
+.quiz-prog-fill{height:100%;width:0;border-radius:3px;background:linear-gradient(90deg,#2563eb,#3b82f6);transition:width .45s cubic-bezier(.4,0,.2,1)}
+.quiz-step-label{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;margin-top:8px}
+/* slide transitions */
+.quiz-slide{animation:quizIn .34s cubic-bezier(.16,1,.3,1) both}
+.quiz-slide.out{animation:quizOut .22s ease forwards}
+@keyframes quizIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
+@keyframes quizOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(-20px)}}
+.quiz-q{font-size:19px;font-weight:700;color:#0f172a;letter-spacing:-.02em;line-height:1.3;margin-bottom:4px}
+.quiz-q-sub{font-size:12.5px;color:#94a3b8;margin-bottom:16px}
+.quiz-opts{display:flex;flex-direction:column;gap:9px}
+.quiz-opt{
+  display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+  padding:14px 15px;border-radius:12px;border:1.5px solid #e5e9f0;background:#fff;
+  font-size:14px;font-weight:500;color:#1e293b;cursor:pointer;
+  transition:border-color .16s,background .16s,transform .12s,box-shadow .16s;
+}
+.quiz-opt:hover{border-color:#93b4f7;background:#f7faff;transform:translateY(-1px);box-shadow:0 4px 14px rgba(37,99,235,.08)}
+.quiz-opt:active{transform:translateY(0) scale(.99)}
+.quiz-opt.chosen{border-color:#2563eb;background:#eff5ff;box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.quiz-opt-key{
+  flex-shrink:0;width:26px;height:26px;border-radius:7px;background:#f1f5f9;color:#64748b;
+  display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:600;
+  transition:background .16s,color .16s;
+}
+.quiz-opt:hover .quiz-opt-key{background:#dbe8ff;color:#2563eb}
+.quiz-opt.chosen .quiz-opt-key{background:#2563eb;color:#fff}
+.quiz-opt-emoji{flex-shrink:0;font-size:18px;width:22px;text-align:center}
+.quiz-field{
+  width:100%;padding:14px 15px;border-radius:12px;border:1.5px solid #e5e9f0;background:#fff;
+  font-size:15px;color:#0f172a;transition:border-color .16s,box-shadow .16s;margin-bottom:12px;
+}
+.quiz-field:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.quiz-submit{
+  width:100%;padding:15px;border-radius:12px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;font-size:15px;font-weight:600;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:opacity .16s,transform .12s,box-shadow .16s;box-shadow:0 6px 20px rgba(37,99,235,.28);
+}
+.quiz-submit:hover{transform:translateY(-1px);box-shadow:0 10px 28px rgba(37,99,235,.36)}
+.quiz-submit:active{transform:translateY(0) scale(.99)}
+.quiz-submit:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:none}
+.quiz-back{margin-top:16px;font-size:12.5px;color:#94a3b8;cursor:pointer;display:inline-block;transition:color .15s}
+.quiz-back:hover{color:#2563eb}
+.quiz-legal{font-size:11px;color:#b6c0cf;line-height:1.5;margin-top:12px;text-align:center}
+/* success */
+.quiz-done{text-align:center;padding:16px 4px;animation:quizIn .4s cubic-bezier(.16,1,.3,1) both}
+.quiz-done-check{
+  width:66px;height:66px;border-radius:50%;margin:0 auto 18px;
+  background:linear-gradient(135deg,#059669,#10b981);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 8px 26px rgba(16,185,129,.3);animation:quizPop .5s cubic-bezier(.2,1.3,.4,1) both;
+}
+@keyframes quizPop{0%{transform:scale(0)}60%{transform:scale(1.12)}100%{transform:scale(1)}}
+.quiz-done-check svg{width:34px;height:34px;stroke:#fff;stroke-width:3;fill:none}
 .lp-btn-cta{
   height:50px;padding:0 32px;border-radius:25px;
   background:#fff;color:#1d4ed8;font-size:15px;font-weight:600;
@@ -871,7 +931,7 @@ header{
     <div class="lp-nav-links">
       <div class="lp-nav-link" onclick="document.getElementById('lpHow').scrollIntoView({behavior:'smooth'})">How it works</div>
       <div class="lp-nav-link" onclick="openPricingModal()">Pricing</div>
-      <div class="lp-nav-link" onclick="document.getElementById('lpFaq').scrollIntoView({behavior:'smooth'})">FAQ</div>
+      <div class="lp-nav-link" onclick="document.getElementById('lpFaq').scrollIntoView({behavior:'smooth'})">Readiness check</div>
       <div class="lp-nav-link" onclick="openSoc2Modal()">SOC 2 Guide</div>
     </div>
     <button class="lp-nav-signin" onclick="location.href='/api/auth?provider=github'">Sign in</button>
@@ -1163,20 +1223,25 @@ header{
     </div>
   </section>
 
-  <!-- ── FAQ ──────────────────────────────────────────────────── -->
-  <section class="lp-section" id="lpFaq" style="padding:24px 24px 72px">
-    <div class="lp-section-inner" style="max-width:680px;margin:0 auto">
+  <!-- ── READINESS QUIZ ───────────────────────────────────────── -->
+  <section class="lp-section" id="lpFaq" style="padding:24px 24px 80px">
+    <div class="lp-section-inner" style="max-width:600px;margin:0 auto">
       <div style="text-align:center">
-        <div class="lp-eyebrow reveal">Straight Answers</div>
-        <h2 class="lp-section-title reveal">Frequently asked<br/><em>questions</em></h2>
+        <div class="lp-eyebrow reveal">60-Second Readiness Check</div>
+        <h2 class="lp-section-title reveal">Where does your company<br/><em>actually stand?</em></h2>
+        <p class="lp-section-sub reveal">Six quick taps. We'll send a tailored readout on where you are and what to fix first — no call, no obligation.</p>
       </div>
-      <div class="reveal" style="margin-top:28px;display:flex;flex-direction:column;gap:8px">
-        <details style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 18px"><summary style="font-size:14px;font-weight:600;color:#0f172a;cursor:pointer">Is this a real SOC 2 audit?</summary><p style="font-size:13px;color:#64748b;line-height:1.7;margin-top:8px">No — and anyone who tells you software alone gets you SOC 2 is lying. A SOC 2 report can only be issued by a licensed CPA firm. AuditReady gets you <em>ready</em> for that audit: it scores your controls, finds the gaps, drafts your policies, and packages your evidence so the audit itself is faster and cheaper. When your score is strong, we point you to independent audit firms.</p></details>
-        <details style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 18px"><summary style="font-size:14px;font-weight:600;color:#0f172a;cursor:pointer">What access do you get to my systems?</summary><p style="font-size:13px;color:#64748b;line-height:1.7;margin-top:8px">Read-only. The GitHub scan reads repo and org metadata — branch protection settings, workflow names, security features — never your source code contents. Google Drive access is limited to the single folder you explicitly pick. You can revoke access from your GitHub or Google settings at any time.</p></details>
-        <details style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 18px"><summary style="font-size:14px;font-weight:600;color:#0f172a;cursor:pointer">Can we evaluate the platform before purchasing?</summary><p style="font-size:13px;color:#64748b;line-height:1.7;margin-top:8px">Yes. The evaluation tier includes the full 49-control checklist, GitHub scanning, your readiness score, category breakdown, and evidence tracking — so your team can assess the platform against your real environment before subscribing. Subscriptions add AI-generated policy documents, the exportable readiness report, the shareable Trust Page, expanded scan capacity, and evidence renewal tracking.</p></details>
-        <details style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 18px"><summary style="font-size:14px;font-weight:600;color:#0f172a;cursor:pointer">How is this different from Vanta or Drata?</summary><p style="font-size:13px;color:#64748b;line-height:1.7;margin-top:8px">Those platforms are built for companies with dedicated GRC teams and budgets to match — annual contracts typically starting at $7,500–$25,000/yr plus onboarding. AuditReady is purpose-built for the stage before that: B2B SaaS companies facing enterprise security review, where speed to audit-readiness decides the deal. It deploys the day you sign in, with transparent published pricing and no negotiation cycle.</p></details>
-        <details style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 18px"><summary style="font-size:14px;font-weight:600;color:#0f172a;cursor:pointer">Will my auditor accept AI-generated policies?</summary><p style="font-size:13px;color:#64748b;line-height:1.7;margin-top:8px">Auditors accept policies that are accurate, adopted, and followed — regardless of who drafted them. Our AI drafts give you a professional starting point mapped to the control; you review, adapt them to how your company actually operates, and formally adopt them. That review step is on you, and we say so in the product.</p></details>
-        <details style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 18px"><summary style="font-size:14px;font-weight:600;color:#0f172a;cursor:pointer">What are the commercial terms?</summary><p style="font-size:13px;color:#64748b;line-height:1.7;margin-top:8px">Published pricing, billed monthly by card through Stripe. Subscriptions are managed entirely from your account — including termination — with no negotiation cycle or procurement overhead on either side. Billing stops at the end of the current paid period.</p></details>
+
+      <div class="reveal quiz-card" id="quizCard">
+        <!-- Progress -->
+        <div class="quiz-top" id="quizTop">
+          <div class="quiz-prog-track"><div class="quiz-prog-fill" id="quizProgFill"></div></div>
+          <div class="quiz-step-label" id="quizStepLabel">Question 1 of 7</div>
+        </div>
+        <!-- Slides get injected here -->
+        <div id="quizStage"></div>
+        <!-- Back link -->
+        <div class="quiz-back" id="quizBack" onclick="quizPrev()" style="display:none">← Back</div>
       </div>
     </div>
   </section>
@@ -4001,64 +4066,66 @@ async function confirmCancelSubscription() {
 })();
 
 // ── Login page grid animation ─────────────────────────────────
+// The grid is drawn ONCE per resize onto viewport-capped canvases and
+// drifted with a GPU-composited CSS transform — no per-frame JS, no
+// full-page rasterization. (The old version redrew two page-height
+// canvases on every animation frame, forever.)
 
 (function() {
   const GRID = 40;
   const BASE_COL = 'rgba(37,99,235,0.13)';
   const HOT_COL  = 'rgba(37,99,235,0.6)';
   const RADIUS = 90;
-  let ox = 0, oy = 0, animating = false;
+  let inited = false;
 
-  function drawGrid(canvas, color, offX, offY) {
-    if (!canvas) return;
+  function drawGrid(canvas, color) {
     const ctx = canvas.getContext('2d');
     const W = canvas.width, H = canvas.height;
     ctx.clearRect(0, 0, W, H);
     ctx.strokeStyle = color;
     ctx.lineWidth = 0.8;
-    const sx = (offX % GRID) - GRID;
-    const sy = (offY % GRID) - GRID;
     ctx.beginPath();
-    for (let x = sx; x < W + GRID; x += GRID) { ctx.moveTo(x, 0); ctx.lineTo(x, H); }
-    for (let y = sy; y < H + GRID; y += GRID) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
+    for (let x = 0; x <= W; x += GRID) { ctx.moveTo(x, 0); ctx.lineTo(x, H); }
+    for (let y = 0; y <= H; y += GRID) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
     ctx.stroke();
   }
 
   function lpResize() {
     const pg = document.getElementById('pg-login');
     if (!pg) return;
-    const W = pg.offsetWidth, H = pg.offsetHeight;
-    ['lpGridBase','lpGridHot'].forEach(id => {
+    // Every section below the hero has an opaque background, so the grid
+    // is only ever visible near the top — cap the canvas there.
+    const W = pg.offsetWidth + GRID;
+    const H = Math.min(pg.offsetHeight, window.innerHeight * 1.5) + GRID;
+    [['lpGridBase', BASE_COL], ['lpGridHot', HOT_COL]].forEach(([id, color]) => {
       const c = document.getElementById(id);
-      if (c) { c.width = W; c.height = H; }
+      if (c) { c.width = W; c.height = H; drawGrid(c, color); }
     });
-  }
-
-  function lpAnimate() {
-    ox = (ox + 0.4) % GRID;
-    oy = (oy + 0.4) % GRID;
-    drawGrid(document.getElementById('lpGridBase'), BASE_COL, ox, oy);
-    drawGrid(document.getElementById('lpGridHot'),  HOT_COL,  ox, oy);
-    requestAnimationFrame(lpAnimate);
   }
 
   function initLoginGrid() {
     const pg = document.getElementById('pg-login');
     const spot = document.getElementById('lpGridSpot');
     if (!pg || !spot) return;
-
     lpResize();
-    if (!animating) { animating = true; lpAnimate(); }
+    if (inited) return;
+    inited = true;
 
+    // Spotlight mask updates are rAF-throttled: at most one mask
+    // recompute per frame no matter how fast the mouse moves.
+    let raf = 0, mx = 0, my = 0;
     pg.addEventListener('mousemove', e => {
-      const r = pg.getBoundingClientRect();
-      const x = e.clientX - r.left;
-      const y = e.clientY - r.top;
-      const mask = `radial-gradient(${RADIUS}px circle at ${x}px ${y}px, black 0%, transparent 100%)`;
-      spot.style.webkitMaskImage = mask;
-      spot.style.maskImage = mask;
-      spot.style.opacity = '1';
-    });
+      mx = e.clientX; my = e.clientY;
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        const r = pg.getBoundingClientRect();
+        const mask = `radial-gradient(${RADIUS}px circle at ${mx - r.left}px ${my - r.top}px, black 0%, transparent 100%)`;
+        spot.style.webkitMaskImage = mask;
+        spot.style.maskImage = mask;
+        spot.style.opacity = '1';
+      });
+    }, { passive: true });
 
     pg.addEventListener('mouseleave', () => { spot.style.opacity = '0'; });
     window.addEventListener('resize', lpResize);
@@ -4079,6 +4146,194 @@ async function confirmCancelSubscription() {
   });
 })();
 
+// ── Readiness quiz ────────────────────────────────────────────
+
+const QUIZ = [
+  { id: 'stage', q: 'Where are you with SOC 2 today?', sub: 'Be honest — there is no wrong answer.',
+    opts: [
+      { e:'🌱', t:"Haven't started — just hearing about it" },
+      { e:'🧭', t:'Researching what it takes' },
+      { e:'🛠️', t:'Actively preparing / collecting evidence' },
+      { e:'📋', t:'In an audit right now' },
+      { e:'✅', t:'Already have a report, keeping it current' },
+    ] },
+  { id: 'trigger', q: "What's pushing SOC 2 up the list?", sub: 'The reason it matters right now.',
+    opts: [
+      { e:'🤝', t:'An enterprise deal is blocked on it' },
+      { e:'📝', t:'Security questionnaires keep coming in' },
+      { e:'💰', t:'Investors or a board asked for it' },
+      { e:'🏢', t:'Moving upmarket to bigger customers' },
+      { e:'🔮', t:'Getting ahead of it before we need it' },
+    ] },
+  { id: 'size', q: 'How big is your team?', sub: 'Rough headcount is fine.',
+    opts: [
+      { e:'🚀', t:'Just founders (1–5)' },
+      { e:'👥', t:'Small team (6–20)' },
+      { e:'📈', t:'Scaling (21–50)' },
+      { e:'🏗️', t:'Established (51–200)' },
+      { e:'🏛️', t:'200+' },
+    ] },
+  { id: 'timeline', q: 'When do you need to be audit-ready?', sub: 'Your target, not a promise.',
+    opts: [
+      { e:'🔥', t:'Yesterday — a deal is waiting' },
+      { e:'⏱️', t:'Within 30 days' },
+      { e:'📆', t:'1–3 months' },
+      { e:'🗓️', t:'3–6 months' },
+      { e:'🧊', t:'No hard deadline yet' },
+    ] },
+  { id: 'tooling', q: 'How are you handling compliance now?', sub: 'Whatever it looks like today.',
+    opts: [
+      { e:'🤷', t:'Nothing formal yet' },
+      { e:'📄', t:'Spreadsheets & shared docs' },
+      { e:'🧑‍💼', t:'A consultant / vCISO' },
+      { e:'🧰', t:'A platform like Vanta or Drata' },
+      { e:'🔗', t:'A mix of the above' },
+    ] },
+  { id: 'role', q: "What's your role?", sub: 'So we address the readout to the right person.',
+    opts: [
+      { e:'👑', t:'Founder / CEO' },
+      { e:'💻', t:'CTO / Engineering lead' },
+      { e:'🛡️', t:'Security / Compliance' },
+      { e:'⚙️', t:'Operations / Finance' },
+      { e:'🙋', t:'Something else' },
+    ] },
+];
+
+let _qi = 0;
+const _qAnswers = {};
+let _qLead = { email: '', company: '' };
+const _qTotal = QUIZ.length + 1; // + contact slide
+
+function quizRender() {
+  const stage = document.getElementById('quizStage');
+  const fill = document.getElementById('quizProgFill');
+  const label = document.getElementById('quizStepLabel');
+  const back = document.getElementById('quizBack');
+  const top = document.getElementById('quizTop');
+  if (!stage) return;
+
+  fill.style.width = ((_qi) / _qTotal * 100) + '%';
+  back.style.display = _qi > 0 ? 'inline-block' : 'none';
+  top.style.display = 'block';
+
+  if (_qi < QUIZ.length) {
+    const item = QUIZ[_qi];
+    label.textContent = 'Question ' + (_qi + 1) + ' of ' + _qTotal;
+    stage.innerHTML =
+      '<div class="quiz-slide">' +
+      '<div class="quiz-q">' + item.q + '</div>' +
+      '<div class="quiz-q-sub">' + item.sub + '</div>' +
+      '<div class="quiz-opts">' +
+      item.opts.map((o, idx) =>
+        '<button class="quiz-opt' + (_qAnswers[item.id] === o.t ? ' chosen' : '') + '" onclick="quizPick(\'' +
+        item.id + '\',' + idx + ')">' +
+        '<span class="quiz-opt-emoji">' + o.e + '</span>' +
+        '<span style="flex:1">' + o.t + '</span>' +
+        '<span class="quiz-opt-key">' + String.fromCharCode(65 + idx) + '</span>' +
+        '</button>'
+      ).join('') +
+      '</div></div>';
+  } else {
+    // contact slide
+    label.textContent = 'Last step — where do we send it?';
+    stage.innerHTML =
+      '<div class="quiz-slide">' +
+      '<div class="quiz-q">Get your personalized readout</div>' +
+      '<div class="quiz-q-sub">We\'ll email a tailored summary of where you stand and what to fix first.</div>' +
+      '<input class="quiz-field" id="qEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@company.com" value="' + esc(_qLead.email) + '"/>' +
+      '<input class="quiz-field" id="qCompany" type="text" autocomplete="organization" placeholder="Company name" value="' + esc(_qLead.company) + '"/>' +
+      '<button class="quiz-submit" id="qSubmit" onclick="quizSubmit()"><span id="qSubmitTxt">Send my readout →</span></button>' +
+      '<div class="quiz-legal">By submitting, you agree to be contacted about your SOC 2 readiness. No spam, unsubscribe anytime.</div>' +
+      '</div>';
+    setTimeout(() => { const el = document.getElementById('qEmail'); if (el) el.focus(); }, 360);
+  }
+}
+
+function quizAdvance() {
+  const cur = document.querySelector('.quiz-slide');
+  if (cur) {
+    cur.classList.add('out');
+    setTimeout(quizRender, 200);
+  } else {
+    quizRender();
+  }
+}
+
+function quizPick(id, idx) {
+  const item = QUIZ.find(q => q.id === id);
+  _qAnswers[id] = item.opts[idx].t;
+  // brief chosen-state flash, then advance
+  const stage = document.getElementById('quizStage');
+  const btns = stage.querySelectorAll('.quiz-opt');
+  btns.forEach(b => b.classList.remove('chosen'));
+  if (btns[idx]) btns[idx].classList.add('chosen');
+  _qi++;
+  setTimeout(quizAdvance, 180);
+}
+
+function quizPrev() {
+  if (_qi === 0) return;
+  // preserve any typed contact info before leaving the contact slide
+  if (_qi >= QUIZ.length) {
+    _qLead.email = (document.getElementById('qEmail')?.value || '').trim();
+    _qLead.company = (document.getElementById('qCompany')?.value || '').trim();
+  }
+  _qi--;
+  quizAdvance();
+}
+
+async function quizSubmit() {
+  const email = (document.getElementById('qEmail')?.value || '').trim();
+  const company = (document.getElementById('qCompany')?.value || '').trim();
+  _qLead = { email, company };
+  const btn = document.getElementById('qSubmit');
+  const txt = document.getElementById('qSubmitTxt');
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { toast('Enter a valid work email', 'error'); return; }
+  if (!company) { toast('Add your company name', 'error'); return; }
+
+  btn.disabled = true;
+  txt.innerHTML = '<span class="spinner" style="border-top-color:#fff;border-color:rgba(255,255,255,.4)"></span> Sending…';
+
+  // Build a readable answer map for the email.
+  const answers = QUIZ.map(q => ({ question: q.q, answer: _qAnswers[q.id] || '(skipped)' }));
+
+  try {
+    const r = await fetch('/api/lead', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, company, answers, source: 'readiness-quiz', ts: new Date().toISOString() }),
+    });
+    if (!r.ok) throw new Error('bad status ' + r.status);
+    quizDone();
+  } catch (err) {
+    btn.disabled = false;
+    txt.textContent = 'Send my readout →';
+    toast('Something went wrong — please try again.', 'error');
+  }
+}
+
+function quizDone() {
+  document.getElementById('quizTop').style.display = 'none';
+  document.getElementById('quizBack').style.display = 'none';
+  document.getElementById('quizProgFill').style.width = '100%';
+  const stage = document.getElementById('quizStage');
+  stage.innerHTML =
+    '<div class="quiz-done">' +
+    '<div class="quiz-done-check"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg></div>' +
+    '<div class="quiz-q" style="margin-bottom:6px">You\'re on your way</div>' +
+    '<p style="font-size:13.5px;color:#64748b;line-height:1.7;max-width:360px;margin:0 auto 20px">' +
+    'Your readout is on its way to <strong style="color:#0f172a">' + esc(_qLead.email) + '</strong>. ' +
+    'Want your live SOC 2 score now? Connect your stack and see it in minutes.</p>' +
+    '<button class="lp-btn-cta" style="margin:0 auto" onclick="location.href=\'/api/auth?provider=github\'">' +
+    'Start your assessment →</button>' +
+    '</div>';
+  if (typeof confetti === 'function') {
+    confetti({ particleCount: 90, spread: 65, origin: { y: 0.5 }, colors: ['#2563eb','#16a34a','#3b82f6'] });
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => { if (document.getElementById('quizStage')) quizRender(); });
+
 // ── Init ──────────────────────────────────────────────────────
 
 loadUser();
@@ -4088,16 +4343,6 @@ if (ST.user) {
   nav('dashboard');
 } else {
   nav('login');
-  setTimeout(() => {
-    const pg = document.getElementById('pg-login');
-    const spot = document.getElementById('lpGridSpot');
-    if (!pg || !spot) return;
-    const W = pg.offsetWidth, H = pg.offsetHeight;
-    ['lpGridBase','lpGridHot'].forEach(id => {
-      const c = document.getElementById(id);
-      if (c) { c.width = W; c.height = H; }
-    });
-  }, 50);
 }
 </script>
 </body>
