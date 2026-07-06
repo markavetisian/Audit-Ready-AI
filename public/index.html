@@ -4,7 +4,24 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="theme-color" content="#f8fafc"/>
-<title>AuditReady AI — SOC 2 Compliance Automation</title>
+<title>AuditReady AI — Free SOC 2 Readiness Score for Startups</title>
+<meta name="description" content="Connect GitHub and get your SOC 2 readiness score free in under 10 minutes. See exactly which controls you'd pass today, fix the gaps with AI-generated policies, and walk into enterprise deals audit-ready. From $250/mo, cancel anytime."/>
+<link rel="canonical" href="https://auditready.space/"/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://auditready.space/"/>
+<meta property="og:title" content="AuditReady AI — Free SOC 2 Readiness Score for Startups"/>
+<meta property="og:description" content="Connect GitHub, get your SOC 2 readiness score free in under 10 minutes, and fix the gaps before your next enterprise deal stalls."/>
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="AuditReady AI — Free SOC 2 Readiness Score for Startups"/>
+<meta name="twitter:description" content="Connect GitHub, get your SOC 2 readiness score free in under 10 minutes, and fix the gaps before your next enterprise deal stalls."/>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+{"@type":"Question","name":"Is this a real SOC 2 audit?","acceptedAnswer":{"@type":"Answer","text":"No. A SOC 2 report can only be issued by a licensed CPA firm. AuditReady AI gets you ready for that audit: it scores your controls, finds gaps, drafts policies, and packages evidence so the audit itself is faster and cheaper."}},
+{"@type":"Question","name":"What access does AuditReady AI get to my systems?","acceptedAnswer":{"@type":"Answer","text":"Read-only. The GitHub scan reads repo and org metadata such as branch protection settings and security features, never your source code contents. Google Drive access is limited to the single folder you pick. Access can be revoked anytime."}},
+{"@type":"Question","name":"What's free?","acceptedAnswer":{"@type":"Answer","text":"The full 49-control checklist, GitHub scans (up to 3 per hour), your readiness score, category breakdown, and manual evidence tracking — no credit card required. Paid plans add AI policy generation, the exportable readiness report, a shareable Trust Page, and higher scan limits."}},
+{"@type":"Question","name":"How is this different from Vanta or Drata?","acceptedAnswer":{"@type":"Answer","text":"Those platforms serve companies with dedicated security teams, with annual contracts typically starting at $7,500–$25,000 per year. AuditReady AI is the stage before that: a self-serve SOC 2 readiness scanner and policy generator for startups facing their first security questionnaire, starting free with month-to-month billing."}}
+]}
+</script>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=3"/>
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=3"/>
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=3"/>
@@ -852,8 +869,9 @@ header{
       <div class="lp-logo-name"><span>Audit</span>Ready AI</div>
     </div>
     <div class="lp-nav-links">
-      <div class="lp-nav-link" onclick="openSoc2Modal()">How it works</div>
+      <div class="lp-nav-link" onclick="document.getElementById('lpHow').scrollIntoView({behavior:'smooth'})">How it works</div>
       <div class="lp-nav-link" onclick="openPricingModal()">Pricing</div>
+      <div class="lp-nav-link" onclick="document.getElementById('lpFaq').scrollIntoView({behavior:'smooth'})">FAQ</div>
       <div class="lp-nav-link" onclick="openSoc2Modal()">SOC 2 Guide</div>
     </div>
     <button class="lp-nav-signin" onclick="location.href='/api/auth?provider=github'">Sign in</button>
@@ -869,7 +887,7 @@ header{
   <!-- hero -->
   <div class="lp-hero">
     <h1>Close enterprise deals.<br/><em>Stop losing them</em> to compliance.</h1>
-    <p>Connect your tools, get your SOC 2 readiness score instantly, and walk into every enterprise conversation audit-ready.</p>
+    <p>Connect GitHub and get your SOC 2 readiness score free in under 10 minutes — see exactly which controls you'd pass today, and fix the gaps before the deal stalls in security review.</p>
     <div class="lp-btns">
       <button class="lp-btn-gh" onclick="location.href='/api/auth?provider=github'">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12"/></svg>
@@ -933,35 +951,35 @@ header{
   <section class="lp-section lp-pain" id="lpPain">
     <div class="lp-section-inner">
       <div class="lp-eyebrow reveal">The Reality</div>
-      <h2 class="lp-section-title reveal">Audit season shouldn't mean<br/><em>fire drills</em></h2>
-      <p class="lp-section-sub reveal">If you manage compliance, you know the drill — scattered evidence, last-minute requests, and the nagging fear that one missing document derails the whole review.</p>
+      <h2 class="lp-section-title reveal">"Do you have SOC 2?" shouldn't<br/><em>kill the deal</em></h2>
+      <p class="lp-section-sub reveal">You finally get the enterprise prospect on the hook — then procurement sends the security questionnaire. Suddenly the deal is waiting on you, and you don't even know how far from ready you are.</p>
       <div class="lp-pain-grid">
         <div class="lp-pain-card reveal" style="--d:.05s">
           <div class="lp-pain-num">01</div>
           <div class="lp-pain-body">
-            <div class="lp-pain-title">Weeks of manual prep</div>
-            <div class="lp-pain-desc">Collecting evidence, formatting reports, and chasing owners across teams eats entire sprints before every review.</div>
+            <div class="lp-pain-title">You don't know where you stand</div>
+            <div class="lp-pain-desc">SOC 2 has dozens of controls across policies, access, and infrastructure. Without a baseline, "how long until we're ready?" is a guess — and buyers can tell.</div>
           </div>
         </div>
         <div class="lp-pain-card reveal" style="--d:.1s">
           <div class="lp-pain-num">02</div>
           <div class="lp-pain-body">
             <div class="lp-pain-title">Evidence everywhere</div>
-            <div class="lp-pain-desc">Policies, tickets, and screenshots live in inboxes, drives, and spreadsheets. Knowing what's complete is its own job.</div>
+            <div class="lp-pain-desc">Policies, screenshots, and configs live in inboxes, drives, and spreadsheets. Knowing what's complete — and what an auditor will actually accept — is its own job.</div>
           </div>
         </div>
         <div class="lp-pain-card reveal" style="--d:.15s">
           <div class="lp-pain-num">03</div>
           <div class="lp-pain-body">
-            <div class="lp-pain-title">Expensive outside help</div>
-            <div class="lp-pain-desc">Consultants close the gap, but the bill scales fast — painful for a lean GRC team under pressure.</div>
+            <div class="lp-pain-title">The tooling assumes you're big</div>
+            <div class="lp-pain-desc">Compliance platforms want an annual contract, a sales call, and $7,500+/yr before you've seen your own data. Consultants cost even more.</div>
           </div>
         </div>
         <div class="lp-pain-card reveal" style="--d:.2s">
           <div class="lp-pain-num">04</div>
           <div class="lp-pain-body">
-            <div class="lp-pain-title">Audit-day anxiety</div>
-            <div class="lp-pain-desc">Without a clear view of readiness, every audit starts with uncertainty — exactly when you need confidence.</div>
+            <div class="lp-pain-title">Meanwhile, the deal waits</div>
+            <div class="lp-pain-desc">Every week you spend figuring out compliance is a week your champion has to keep defending you to their security team.</div>
           </div>
         </div>
       </div>
@@ -1009,9 +1027,9 @@ header{
   <!-- ── WHY SECTION ──────────────────────────────────────────── -->
   <section class="lp-section lp-why" id="lpWhy">
     <div class="lp-section-inner">
-      <div class="lp-eyebrow reveal" style="color:#2563eb">Why GRC Teams Choose It</div>
+      <div class="lp-eyebrow reveal" style="color:#2563eb">Why Founders Choose It</div>
       <h2 class="lp-section-title reveal">Confidence, built in</h2>
-      <p class="lp-section-sub reveal">Less manual busywork, more control — so audits become routine, not emergencies.</p>
+      <p class="lp-section-sub reveal">Know exactly where you stand, fix the gaps in priority order, and prove it — without hiring a compliance team.</p>
       <div class="lp-why-grid">
         <div class="lp-why-card reveal" style="--d:.04s">
           <div class="lp-why-icon" style="background:#eff6ff">
@@ -1038,8 +1056,8 @@ header{
           <div class="lp-why-icon" style="background:#fdf4ff">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9333ea" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           </div>
-          <div class="lp-why-title">Stay aligned</div>
-          <div class="lp-why-desc">Keep pace with framework changes through AI that stays current.</div>
+          <div class="lp-why-title">Prove it to buyers</div>
+          <div class="lp-why-desc">Share a live Trust Page with your score and controls — answer security questionnaires before they're asked.</div>
         </div>
       </div>
     </div>
@@ -1048,9 +1066,9 @@ header{
   <!-- ── COMPARISON ───────────────────────────────────────────── -->
   <section class="lp-section lp-vs" id="lpVs">
     <div class="lp-section-inner" style="text-align:center">
-      <div class="lp-eyebrow reveal">Why Switch</div>
-      <h2 class="lp-section-title reveal">Why we're better than<br/><em>the alternatives</em></h2>
-      <p class="lp-section-sub reveal">Legacy compliance tools charge $20k–$50k/yr and still make you do the hard work manually. We don't.</p>
+      <div class="lp-eyebrow reveal">The Honest Comparison</div>
+      <h2 class="lp-section-title reveal">Built for where<br/><em>you actually are</em></h2>
+      <p class="lp-section-sub reveal">Enterprise compliance platforms run $7,500–$25,000+ a year on annual contracts — before you've paid a single audit fee. Great at 100 employees. Overkill before your first enterprise deal closes.</p>
 
       <div class="lp-vs-wrap reveal" style="--d:.04s;max-width:820px;margin:0 auto">
 
@@ -1062,31 +1080,27 @@ header{
           </div>
           <div class="lp-vs-row">
             <div class="lp-vs-icon-no">✕</div>
-            <div class="lp-vs-text-no">$20,000–$50,000/year sticker price — before setup fees</div>
+            <div class="lp-vs-text-no">$7,500–$25,000+/yr contracts — and the actual audit still costs $10k+ on top</div>
           </div>
           <div class="lp-vs-row">
             <div class="lp-vs-icon-no">✕</div>
-            <div class="lp-vs-text-no">Checklist tools — you still write every policy yourself</div>
+            <div class="lp-vs-text-no">Sales call, demo, and procurement before you see your own data</div>
           </div>
           <div class="lp-vs-row">
             <div class="lp-vs-icon-no">✕</div>
-            <div class="lp-vs-text-no">No AI — static questionnaires haven't changed in a decade</div>
+            <div class="lp-vs-text-no">Annual contracts — locked in even if the deal that triggered this falls through</div>
           </div>
           <div class="lp-vs-row">
             <div class="lp-vs-icon-no">✕</div>
-            <div class="lp-vs-text-no">6–12 week onboarding with a dedicated "customer success" rep</div>
+            <div class="lp-vs-text-no">Weeks of onboarding and integration setup before your first score</div>
           </div>
           <div class="lp-vs-row">
             <div class="lp-vs-icon-no">✕</div>
-            <div class="lp-vs-text-no">Generic readiness score with no clear next steps</div>
+            <div class="lp-vs-text-no">Policy templates you still have to adapt, own, and maintain yourself</div>
           </div>
           <div class="lp-vs-row">
             <div class="lp-vs-icon-no">✕</div>
-            <div class="lp-vs-text-no">Annual contracts — you're locked in even if you don't use it</div>
-          </div>
-          <div class="lp-vs-row">
-            <div class="lp-vs-icon-no">✕</div>
-            <div class="lp-vs-text-no">Evidence collection is manual — screenshots, copy-paste, repeat</div>
+            <div class="lp-vs-text-no">Priced per employee and per framework — the bill grows with you</div>
           </div>
         </div>
 
@@ -1101,19 +1115,19 @@ header{
           </div>
           <div class="lp-vs-row">
             <div class="lp-vs-icon-yes">✓</div>
-            <div class="lp-vs-text-yes">From $250/mo — cancel anytime, no sales call required</div>
+            <div class="lp-vs-text-yes">Free scan first — see your real gaps before paying a cent</div>
           </div>
           <div class="lp-vs-row">
             <div class="lp-vs-icon-yes">✓</div>
-            <div class="lp-vs-text-yes">AI generates policy documents for key controls in seconds, not weeks</div>
+            <div class="lp-vs-text-yes">Sign in and get your SOC 2 readiness score in under 10 minutes</div>
           </div>
           <div class="lp-vs-row">
             <div class="lp-vs-icon-yes">✓</div>
-            <div class="lp-vs-text-yes">Powered by a state-of-the-art large language model</div>
+            <div class="lp-vs-text-yes">From $250/mo, month-to-month — cancel online, no sales call ever</div>
           </div>
           <div class="lp-vs-row">
             <div class="lp-vs-icon-yes">✓</div>
-            <div class="lp-vs-text-yes">Connect GitHub and get your SOC 2 score in under 10 minutes</div>
+            <div class="lp-vs-text-yes">AI drafts the policy documents auditors ask for in seconds, not weeks</div>
           </div>
           <div class="lp-vs-row">
             <div class="lp-vs-icon-yes">✓</div>
@@ -1121,14 +1135,48 @@ header{
           </div>
           <div class="lp-vs-row">
             <div class="lp-vs-icon-yes">✓</div>
-            <div class="lp-vs-text-yes">Monthly billing, cancel anytime — we earn your renewal every month</div>
-          </div>
-          <div class="lp-vs-row">
-            <div class="lp-vs-icon-yes">✓</div>
-            <div class="lp-vs-text-yes">Scan on demand, anytime, and surface gaps instantly</div>
+            <div class="lp-vs-text-yes">Flat monthly price — same bill at 3 employees or 30</div>
           </div>
         </div>
 
+      </div>
+    </div>
+  </section>
+
+  <!-- ── WHAT THE SCAN CHECKS ─────────────────────────────────── -->
+  <section class="lp-section" id="lpChecks" style="padding:72px 24px">
+    <div class="lp-section-inner" style="max-width:880px;margin:0 auto;text-align:center">
+      <div class="lp-eyebrow reveal">No Black Box</div>
+      <h2 class="lp-section-title reveal">What the free scan<br/><em>actually checks</em></h2>
+      <p class="lp-section-sub reveal">No vague "AI magic." The scan reads real signals from your GitHub org and repos — read-only — and maps each one to a control on your checklist. Here's exactly what it looks for:</p>
+      <div class="reveal" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;margin-top:28px;text-align:left">
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px"><div style="font-family:var(--mono);font-size:10px;color:#2563eb;font-weight:600;margin-bottom:4px">CC8.2 · CHANGE MGMT</div><div style="font-size:12.5px;color:#334155;line-height:1.5">Branch protection with required PR reviews, plus CODEOWNERS files</div></div>
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px"><div style="font-family:var(--mono);font-size:10px;color:#2563eb;font-weight:600;margin-bottom:4px">CC6.2 · ACCESS</div><div style="font-size:12.5px;color:#334155;line-height:1.5">Org-wide two-factor authentication enforcement and secret scanning</div></div>
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px"><div style="font-family:var(--mono);font-size:10px;color:#2563eb;font-weight:600;margin-bottom:4px">CC8.5 · SECURITY TESTING</div><div style="font-size:12.5px;color:#334155;line-height:1.5">Dependabot, CodeQL / code scanning, and security workflows in CI</div></div>
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px"><div style="font-family:var(--mono);font-size:10px;color:#2563eb;font-weight:600;margin-bottom:4px">CC8.1 · CHANGE MGMT</div><div style="font-size:12.5px;color:#334155;line-height:1.5">Pull-request workflow in active use across your repos</div></div>
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px"><div style="font-family:var(--mono);font-size:10px;color:#2563eb;font-weight:600;margin-bottom:4px">CC8.3 · ENVIRONMENTS</div><div style="font-size:12.5px;color:#334155;line-height:1.5">Separate dev / staging / production environments and deploy pipelines</div></div>
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px"><div style="font-family:var(--mono);font-size:10px;color:#2563eb;font-weight:600;margin-bottom:4px">CC6.1 · ACCESS</div><div style="font-size:12.5px;color:#334155;line-height:1.5">Collaborator access provisioning and org audit-log availability</div></div>
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px"><div style="font-family:var(--mono);font-size:10px;color:#2563eb;font-weight:600;margin-bottom:4px">CC1.1 · POLICIES</div><div style="font-size:12.5px;color:#334155;line-height:1.5">SECURITY.md and security policy documentation signals</div></div>
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px"><div style="font-family:var(--mono);font-size:10px;color:#2563eb;font-weight:600;margin-bottom:4px">+ GOOGLE DRIVE</div><div style="font-size:12.5px;color:#334155;line-height:1.5">Connect a Drive folder and it maps your existing policy docs to controls</div></div>
+      </div>
+      <p class="reveal" style="font-size:12px;color:#94a3b8;margin-top:18px;line-height:1.6">Every auto-filled control shows you exactly what was detected and why — so you can defend it to an auditor. Directional signals are marked "in progress," never counted as done.</p>
+    </div>
+  </section>
+
+  <!-- ── FAQ ──────────────────────────────────────────────────── -->
+  <section class="lp-section" id="lpFaq" style="padding:24px 24px 72px">
+    <div class="lp-section-inner" style="max-width:680px;margin:0 auto">
+      <div style="text-align:center">
+        <div class="lp-eyebrow reveal">Straight Answers</div>
+        <h2 class="lp-section-title reveal">Frequently asked<br/><em>questions</em></h2>
+      </div>
+      <div class="reveal" style="margin-top:28px;display:flex;flex-direction:column;gap:8px">
+        <details style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 18px"><summary style="font-size:14px;font-weight:600;color:#0f172a;cursor:pointer">Is this a real SOC 2 audit?</summary><p style="font-size:13px;color:#64748b;line-height:1.7;margin-top:8px">No — and anyone who tells you software alone gets you SOC 2 is lying. A SOC 2 report can only be issued by a licensed CPA firm. AuditReady gets you <em>ready</em> for that audit: it scores your controls, finds the gaps, drafts your policies, and packages your evidence so the audit itself is faster and cheaper. When your score is strong, we point you to independent audit firms.</p></details>
+        <details style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 18px"><summary style="font-size:14px;font-weight:600;color:#0f172a;cursor:pointer">What access do you get to my systems?</summary><p style="font-size:13px;color:#64748b;line-height:1.7;margin-top:8px">Read-only. The GitHub scan reads repo and org metadata — branch protection settings, workflow names, security features — never your source code contents. Google Drive access is limited to the single folder you explicitly pick. You can revoke access from your GitHub or Google settings at any time.</p></details>
+        <details style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 18px"><summary style="font-size:14px;font-weight:600;color:#0f172a;cursor:pointer">What's actually free?</summary><p style="font-size:13px;color:#64748b;line-height:1.7;margin-top:8px">The full 49-control checklist, GitHub scans (up to 3/hour), your readiness score, category breakdown, and manual evidence tracking — no credit card. Paid plans add AI-generated policy documents, the exportable readiness report, the shareable Trust Page, higher scan limits, and evidence renewal tracking.</p></details>
+        <details style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 18px"><summary style="font-size:14px;font-weight:600;color:#0f172a;cursor:pointer">How is this different from Vanta or Drata?</summary><p style="font-size:13px;color:#64748b;line-height:1.7;margin-top:8px">Those platforms are excellent for companies with dedicated security teams and budgets to match — annual contracts typically starting at $7,500–$25,000/yr plus onboarding. AuditReady is the stage before that: a self-serve readiness scanner and policy generator for startups facing their first security questionnaire. Start free, pay monthly, cancel online. If you outgrow us into a full platform, that's a good problem.</p></details>
+        <details style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 18px"><summary style="font-size:14px;font-weight:600;color:#0f172a;cursor:pointer">Will my auditor accept AI-generated policies?</summary><p style="font-size:13px;color:#64748b;line-height:1.7;margin-top:8px">Auditors accept policies that are accurate, adopted, and followed — regardless of who drafted them. Our AI drafts give you a professional starting point mapped to the control; you review, adapt them to how your company actually operates, and formally adopt them. That review step is on you, and we say so in the product.</p></details>
+        <details style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 18px"><summary style="font-size:14px;font-weight:600;color:#0f172a;cursor:pointer">Can I cancel anytime?</summary><p style="font-size:13px;color:#64748b;line-height:1.7;margin-top:8px">Yes — online, from Account → Cancel Subscription. No phone call, no email thread, no retention specialist. Billing is month-to-month and stops at the end of the paid period.</p></details>
       </div>
     </div>
   </section>
@@ -1220,7 +1268,7 @@ header{
                 <div style="font-size:12.5px;color:#0f172a"><span style="color:#16a34a;font-weight:700">✓</span> Full AI audit-readiness report &amp; exportable PDF</div>
                 <div style="font-size:12.5px;color:#0f172a"><span style="color:#16a34a;font-weight:700">✓</span> Personalized 30 / 60 / 90-day fix plan</div>
                 <div style="font-size:12.5px;color:#0f172a"><span style="color:#16a34a;font-weight:700">✓</span> Shareable auditor &amp; customer Trust Page</div>
-                <div style="font-size:12.5px;color:#0f172a"><span style="color:#16a34a;font-weight:700">✓</span> Auto-rescan on login + renewal alerts</div>
+                <div style="font-size:12.5px;color:#0f172a"><span style="color:#16a34a;font-weight:700">✓</span> Evidence renewal &amp; expiry due-date alerts</div>
               </div>
               <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
                 <button class="btn btn-primary btn-sm" onclick="openPricingModal('growth')">⚡ Unlock my fix plan →</button>
@@ -1302,7 +1350,7 @@ header{
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
       <div>
         <h1 style="font-size:20px;font-weight:600;letter-spacing:-.03em">Control Checklist</h1>
-        <p style="font-size:13px;color:var(--muted);margin-top:2px">SOC 2 Type 1 checklist — track your evidence across all 9 TSC categories</p>
+        <p style="font-size:13px;color:var(--muted);margin-top:2px">49-control SOC 2 Type 1 readiness checklist, organized around the AICPA Trust Services Criteria</p>
       </div>
     </div>
     <div class="filter-bar" id="controlFilters">
@@ -1368,11 +1416,11 @@ header{
         <div id="pm-annual-note-starter" style="font-size:11px;color:#16a34a;font-weight:600;min-height:16px;margin-bottom:14px"></div>
         <div style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5">Pre-seed startups closing their first enterprise deal.</div>
         <ul style="list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:8px">
-          <li class="pm-check">GitHub integration (AWS coming soon)</li>
-          <li class="pm-check">Full 49-control TSC mapping</li>
+          <li class="pm-check">GitHub scanning (AWS coming soon)</li>
+          <li class="pm-check">49-control SOC 2 readiness checklist</li>
           <li class="pm-check">AI policy document generator</li>
           <li class="pm-check">Exportable Audit Readiness report</li>
-          <li class="pm-check">Score dashboard + gap tracker</li>
+          <li class="pm-check">Score dashboard + prioritized gap tracker</li>
         </ul>
         <button class="pm-cta pm-cta-outline">Get started</button>
       </div>
@@ -1389,8 +1437,8 @@ header{
         <div id="pm-annual-note-growth" style="font-size:11px;color:#16a34a;font-weight:600;min-height:16px;margin-bottom:14px"></div>
         <div style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5">Seed-stage teams closing multiple enterprise deals at once.</div>
         <ul style="list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:8px">
-          <li class="pm-check">GitHub integration (AWS, GCP coming soon)</li>
-          <li class="pm-check">Scan on demand, anytime</li>
+          <li class="pm-check">Everything in Starter</li>
+          <li class="pm-check">10× higher scan limits (30/hour)</li>
           <li class="pm-check">Live Trust Page + share link</li>
           <li class="pm-check">AI audit report generation</li>
           <li class="pm-check">Evidence Locker + Vendor Risk Tracker</li>
@@ -1439,7 +1487,7 @@ header{
       <div style="font-size:10px;color:#94a3b8;text-align:center;margin-top:8px;line-height:1.5">Subscriptions auto-renew monthly until cancelled. Fees are non-refundable except where required by law. By clicking "Pay & Activate", you agree to our <a href="/terms.html" target="_blank" style="color:#2563eb">Terms of Service</a> and <a href="/privacy.html" target="_blank" style="color:#2563eb">Privacy Policy</a>.</div>
     </div>
 
-    <div class="pm-free-note">Free sandbox: manual tracking, score dashboard, up to 3 scans/hour. No credit card required.</div>
+    <div class="pm-free-note">Free sandbox: full 49-control checklist, GitHub scans (3/hour), score dashboard, and manual evidence tracking. No credit card required.</div>
   </div>
 </div>
 <!-- SOC 2 Education Modal -->
