@@ -11,6 +11,14 @@ const redis = new Redis({
 });
 
 const PRICE_TO_MODE = {
+  // Current prices (monthly / annual)
+  'price_1To8FUFQiRRnlhwuSXSe3gl4': 'starter',
+  'price_1To8IqFQiRRnlhwuPXeFFKeb': 'starter',
+  'price_1To8LOFQiRRnlhwumml3WTem': 'growth',
+  'price_1To8M8FQiRRnlhwuf0VjLFdn': 'growth',
+  'price_1To8OiFQiRRnlhwuPbggNIXU': 'enterprise',
+  'price_1To8TuFQiRRnlhwuR218IfIc': 'enterprise',
+  // Legacy prices — kept so existing subscribers keep working
   'price_1ThZIZFQiRRnlhwuYRI3MfNX': 'starter',
   'price_1ThZLSFQiRRnlhwueStdff4L': 'growth',
   'price_1ThZNGFQiRRnlhwuH23alwzB': 'enterprise',

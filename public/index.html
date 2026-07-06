@@ -1272,7 +1272,7 @@ header{
               </div>
               <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
                 <button class="btn btn-primary btn-sm" onclick="openPricingModal('growth')">⚡ Unlock my fix plan →</button>
-                <span style="font-size:11px;color:#94a3b8">Plans from $250/mo</span>
+                <span style="font-size:11px;color:#94a3b8">Plans from $500/mo</span>
               </div>
             </div>
           </div>
@@ -1401,44 +1401,47 @@ header{
     <div style="text-align:center;margin-bottom:24px">
       <div style="font-size:22px;font-weight:800;color:#0f172a;margin-bottom:4px">Simple, transparent pricing</div>
       <div style="font-size:14px;color:#64748b">From first readiness check to live audit — pick your stage.</div>
-      <!-- Annual billing toggle hidden until annual Stripe prices exist (was charging the monthly price). -->
+      <div style="display:inline-flex;align-items:center;gap:10px;margin-top:16px;background:#f1f5f9;border-radius:50px;padding:4px 6px">
+        <span id="pmLabelMonthly" style="font-size:13px;font-weight:600;padding:4px 14px;border-radius:50px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.1);color:#0f172a;cursor:pointer" onclick="setPmBilling(false)">Monthly</span>
+        <span id="pmLabelAnnual" style="font-size:13px;font-weight:600;padding:4px 14px;border-radius:50px;color:#64748b;cursor:pointer" onclick="setPmBilling(true)">Annual <span style="color:#16a34a;font-size:11px;font-weight:700">2 months free</span></span>
+      </div>
     </div>
 
     <div class="pm-cards">
       <!-- Starter -->
-      <div class="pm-card pm-card-side" id="pm-starter" onclick="selectPlan('starter','price_1ThZIZFQiRRnlhwuYRI3MfNX',250)">
+      <div class="pm-card pm-card-side" id="pm-starter" onclick="selectPlan('starter')">
         <div style="font-size:13px;font-weight:700;color:#64748b;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">Starter</div>
         <div style="display:flex;align-items:flex-end;gap:2px;margin-bottom:4px">
           <span style="font-size:20px;font-weight:700;color:#0f172a;align-self:flex-start;margin-top:10px">$</span>
-          <span class="pm-price-num" id="pm-price-starter">250</span>
-          <span style="font-size:14px;color:#64748b;margin-bottom:8px">/mo</span>
+          <span class="pm-price-num" id="pm-price-starter">500</span>
+          <span style="font-size:14px;color:#64748b;margin-bottom:8px" id="pm-per-starter">/mo</span>
         </div>
         <div id="pm-annual-note-starter" style="font-size:11px;color:#16a34a;font-weight:600;min-height:16px;margin-bottom:14px"></div>
-        <div style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5">Pre-seed startups closing their first enterprise deal.</div>
+        <div style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5">Seed-stage startups closing their first enterprise deal.</div>
         <ul style="list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:8px">
-          <li class="pm-check">GitHub scanning (AWS coming soon)</li>
-          <li class="pm-check">49-control SOC 2 readiness checklist</li>
+          <li class="pm-check">GitHub integration (AWS coming soon)</li>
+          <li class="pm-check">Full 49-control TSC mapping</li>
           <li class="pm-check">AI policy document generator</li>
           <li class="pm-check">Exportable Audit Readiness report</li>
-          <li class="pm-check">Score dashboard + prioritized gap tracker</li>
+          <li class="pm-check">Score dashboard + gap tracker</li>
         </ul>
         <button class="pm-cta pm-cta-outline">Get started</button>
       </div>
 
       <!-- Growth — center / popular -->
-      <div class="pm-card pm-card-center" id="pm-growth" onclick="selectPlan('growth','price_1ThZLSFQiRRnlhwueStdff4L',500)">
+      <div class="pm-card pm-card-center" id="pm-growth" onclick="selectPlan('growth')">
         <div class="pm-popular">⭐ Most Popular</div>
         <div style="font-size:13px;font-weight:700;color:#2563eb;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">Growth</div>
         <div style="display:flex;align-items:flex-end;gap:2px;margin-bottom:4px">
           <span style="font-size:20px;font-weight:700;color:#0f172a;align-self:flex-start;margin-top:10px">$</span>
-          <span class="pm-price-num" id="pm-price-growth">500</span>
-          <span style="font-size:14px;color:#64748b;margin-bottom:8px">/mo</span>
+          <span class="pm-price-num" id="pm-price-growth">1,000</span>
+          <span style="font-size:14px;color:#64748b;margin-bottom:8px" id="pm-per-growth">/mo</span>
         </div>
         <div id="pm-annual-note-growth" style="font-size:11px;color:#16a34a;font-weight:600;min-height:16px;margin-bottom:14px"></div>
         <div style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5">Seed-stage teams closing multiple enterprise deals at once.</div>
         <ul style="list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:8px">
-          <li class="pm-check">Everything in Starter</li>
-          <li class="pm-check">10× higher scan limits (30/hour)</li>
+          <li class="pm-check">GitHub integration (AWS, GCP coming soon)</li>
+          <li class="pm-check">Scan on demand, anytime</li>
           <li class="pm-check">Live Trust Page + share link</li>
           <li class="pm-check">AI audit report generation</li>
           <li class="pm-check">Evidence Locker + Vendor Risk Tracker</li>
@@ -1448,12 +1451,12 @@ header{
       </div>
 
       <!-- Audit-Ready -->
-      <div class="pm-card pm-card-side" id="pm-enterprise" onclick="selectPlan('enterprise','price_1ThZNGFQiRRnlhwuH23alwzB',1000)">
+      <div class="pm-card pm-card-side" id="pm-enterprise" onclick="selectPlan('enterprise')">
         <div style="font-size:13px;font-weight:700;color:#64748b;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">Audit-Ready</div>
         <div style="display:flex;align-items:flex-end;gap:2px;margin-bottom:4px">
           <span style="font-size:20px;font-weight:700;color:#0f172a;align-self:flex-start;margin-top:10px">$</span>
-          <span class="pm-price-num" id="pm-price-enterprise">1,000</span>
-          <span style="font-size:14px;color:#64748b;margin-bottom:8px">/mo</span>
+          <span class="pm-price-num" id="pm-price-enterprise">2,000</span>
+          <span style="font-size:14px;color:#64748b;margin-bottom:8px" id="pm-per-enterprise">/mo</span>
         </div>
         <div id="pm-annual-note-enterprise" style="font-size:11px;color:#16a34a;font-weight:600;min-height:16px;margin-bottom:14px"></div>
         <div style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5">Series A companies undergoing an active audit right now.</div>
@@ -1484,7 +1487,7 @@ header{
         <span id="payBtnText">🔒 Pay & Activate</span>
       </button>
       <div class="pay-secure">🔒 Secured by Stripe · 256-bit encryption</div>
-      <div style="font-size:10px;color:#94a3b8;text-align:center;margin-top:8px;line-height:1.5">Subscriptions auto-renew monthly until cancelled. Fees are non-refundable except where required by law. By clicking "Pay & Activate", you agree to our <a href="/terms.html" target="_blank" style="color:#2563eb">Terms of Service</a> and <a href="/privacy.html" target="_blank" style="color:#2563eb">Privacy Policy</a>.</div>
+      <div style="font-size:10px;color:#94a3b8;text-align:center;margin-top:8px;line-height:1.5">Subscriptions auto-renew (monthly or annually, per your selection) until cancelled. Fees are non-refundable except where required by law. By clicking "Pay & Activate", you agree to our <a href="/terms.html" target="_blank" style="color:#2563eb">Terms of Service</a> and <a href="/privacy.html" target="_blank" style="color:#2563eb">Privacy Policy</a>.</div>
     </div>
 
     <div class="pm-free-note">Evaluation tier: full 49-control checklist, GitHub scanning, score dashboard, and evidence tracking — assess the platform against your environment before subscribing.</div>
@@ -2976,32 +2979,48 @@ function initStripe() {
 }
 
 let _pmAnnual = false;
-const PM_PRICES = {
-  starter:    { monthly: 250,   annual: 208  },
-  growth:     { monthly: 500,   annual: 416  },
-  enterprise: { monthly: 1000,  annual: 833  },
+// Each billing period maps to its own Stripe price — the priceId sent to
+// checkout MUST always match the amount shown on screen.
+const PM_PLANS = {
+  starter:    { monthly: { amount: 500,   priceId: 'price_1To8FUFQiRRnlhwuSXSe3gl4' },
+                annual:  { amount: 5000,  priceId: 'price_1To8IqFQiRRnlhwuPXeFFKeb' } },
+  growth:     { monthly: { amount: 1000,  priceId: 'price_1To8LOFQiRRnlhwumml3WTem' },
+                annual:  { amount: 10000, priceId: 'price_1To8M8FQiRRnlhwuf0VjLFdn' } },
+  enterprise: { monthly: { amount: 2000,  priceId: 'price_1To8OiFQiRRnlhwuPbggNIXU' },
+                annual:  { amount: 20000, priceId: 'price_1To8TuFQiRRnlhwuR218IfIc' } },
 };
+function pmPlan(name) { return PM_PLANS[name][_pmAnnual ? 'annual' : 'monthly']; }
+function pmPriceLabel(name) { return '$' + pmPlan(name).amount.toLocaleString() + (_pmAnnual ? '/yr' : '/mo'); }
+function pmRenewalText(name) {
+  return 'Your subscription automatically renews ' + (_pmAnnual ? 'annually' : 'monthly') + ' at ' + pmPriceLabel(name) +
+    ' until canceled. Subscriptions can be canceled from Account → Cancel Subscription; billing stops at the end of the current period.';
+}
 
 function setPmBilling(annual) {
-  // Annual billing is disabled until annual Stripe prices exist — force monthly.
-  annual = false;
-  _pmAnnual = false;
+  _pmAnnual = annual;
   const lm = document.getElementById('pmLabelMonthly');
   const la = document.getElementById('pmLabelAnnual');
-  if (lm) lm.style.cssText = 'font-size:13px;font-weight:600;padding:4px 14px;border-radius:50px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.1);color:#0f172a;cursor:pointer';
-  if (la) la.style.cssText = 'font-size:13px;font-weight:600;padding:4px 14px;border-radius:50px;color:#64748b;cursor:pointer';
+  if (lm) lm.style.cssText = annual
+    ? 'font-size:13px;font-weight:600;padding:4px 14px;border-radius:50px;color:#64748b;cursor:pointer'
+    : 'font-size:13px;font-weight:600;padding:4px 14px;border-radius:50px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.1);color:#0f172a;cursor:pointer';
+  if (la) la.style.cssText = annual
+    ? 'font-size:13px;font-weight:600;padding:4px 14px;border-radius:50px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.1);color:#0f172a;cursor:pointer'
+    : 'font-size:13px;font-weight:600;padding:4px 14px;border-radius:50px;color:#64748b;cursor:pointer';
 
-  ['starter','growth','enterprise'].forEach(plan => {
+  Object.keys(PM_PLANS).forEach(plan => {
     const el = document.getElementById('pm-price-' + plan);
+    const per = document.getElementById('pm-per-' + plan);
     const note = document.getElementById('pm-annual-note-' + plan);
     if (!el) return;
     el.classList.add('flip');
     setTimeout(() => {
-      const price = annual ? PM_PRICES[plan].annual : PM_PRICES[plan].monthly;
-      el.textContent = price.toLocaleString();
+      el.textContent = pmPlan(plan).amount.toLocaleString();
+      if (per) per.textContent = annual ? '/yr' : '/mo';
       el.classList.remove('flip');
     }, 120);
-    if (note) note.textContent = annual ? 'Billed $' + (PM_PRICES[plan].annual * 12).toLocaleString() + '/yr' : '';
+    if (note) note.textContent = annual
+      ? '≈ $' + Math.round(PM_PLANS[plan].annual.amount / 12).toLocaleString() + '/mo · 2 months free'
+      : '';
   });
 
   if (annual && typeof confetti === 'function') {
@@ -3010,14 +3029,13 @@ function setPmBilling(annual) {
 
   // Update pay section if plan already selected
   if (_selectedPlan) {
-    const price = annual ? PM_PRICES[_selectedPlan.name].annual : PM_PRICES[_selectedPlan.name].monthly;
-    _selectedPlan.amount = price;
-    document.getElementById('payPlanPrice').textContent = '$' + price + '/mo';
-    document.getElementById('payBillingNote').textContent = annual
-      ? 'Billed annually'
-      : 'Billed monthly';
+    const p = pmPlan(_selectedPlan.name);
+    _selectedPlan.amount = p.amount;
+    _selectedPlan.priceId = p.priceId;
+    document.getElementById('payPlanPrice').textContent = pmPriceLabel(_selectedPlan.name);
+    document.getElementById('payBillingNote').textContent = annual ? 'Billed annually' : 'Billed monthly';
     const noteEl = document.getElementById('payRenewalNote');
-    if (noteEl) noteEl.textContent = 'Your subscription automatically renews ' + (annual ? 'annually' : 'monthly') + ' at $' + price + (annual ? '/mo (billed yearly)' : '/mo') + ' until canceled. Subscriptions can be canceled from Account → Cancel Subscription; billing stops at the end of the current period.';
+    if (noteEl) noteEl.textContent = pmRenewalText(_selectedPlan.name);
   }
 }
 
@@ -3042,22 +3060,22 @@ function closePricingModal() {
   if (_stripeCard) { try { _stripeCard.destroy(); } catch(e){} _stripeCard = null; }
 }
 
-function selectPlan(name, priceId, amount) {
-  const price = _pmAnnual ? PM_PRICES[name].annual : PM_PRICES[name].monthly;
-  _selectedPlan = { name, priceId, amount: price };
+function selectPlan(name) {
+  const p = pmPlan(name);
+  _selectedPlan = { name, priceId: p.priceId, amount: p.amount };
   document.querySelectorAll('.pm-card').forEach(c => c.classList.remove('pm-selected'));
   const card = document.getElementById('pm-' + name);
   if (card) card.classList.add('pm-selected');
 
   const paySection = document.getElementById('paySection');
   paySection.style.display = 'block';
-  document.getElementById('payPlanName').textContent = name.charAt(0).toUpperCase() + name.slice(1) + ' Plan';
-  document.getElementById('payPlanPrice').textContent = '$' + price + '/mo';
+  document.getElementById('payPlanName').textContent = (name === 'enterprise' ? 'Audit-Ready' : name.charAt(0).toUpperCase() + name.slice(1)) + ' Plan';
+  document.getElementById('payPlanPrice').textContent = pmPriceLabel(name);
   document.getElementById('payBillingNote').textContent = _pmAnnual
     ? 'Billed annually'
     : 'Billed monthly';
   document.getElementById('payError').textContent = '';
-  document.getElementById('payRenewalNote').textContent = 'Your subscription automatically renews ' + (_pmAnnual ? 'annually' : 'monthly') + ' at $' + price + (_pmAnnual ? '/mo (billed yearly)' : '/mo') + ' until canceled. Subscriptions can be canceled from Account → Cancel Subscription; billing stops at the end of the current period.';
+  document.getElementById('payRenewalNote').textContent = pmRenewalText(name);
 
   if (_stripeCard) { try { _stripeCard.destroy(); } catch(e){} }
   if (!_stripe) { initStripe(); }
