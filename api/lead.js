@@ -21,7 +21,7 @@ const LEAD_TO = process.env.LEAD_TO_EMAIL || 'vlad@auditready.space';
 // Resend requires the "from" to be on a verified domain. Until the
 // domain is verified, Resend's shared onboarding sender still delivers
 // to the account owner's own address.
-const LEAD_FROM = process.env.LEAD_FROM_EMAIL || 'AuditReady Leads <onboarding@resend.dev>';
+const LEAD_FROM = process.env.LEAD_FROM_EMAIL || 'Audit Ready AI Leads <onboarding@resend.dev>';
 
 function setCors(req, res) {
   const origin = req.headers.origin || '';

@@ -1,6 +1,6 @@
 {
-  "name": "AuditReady AI",
-  "short_name": "AuditReady",
+  "name": "Audit Ready AI",
+  "short_name": "AR AI",
   "description": "SOC 2 readiness score in under 10 minutes.",
   "start_url": "/",
   "display": "standalone",

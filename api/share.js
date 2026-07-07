@@ -134,7 +134,7 @@ async function buildPublicPayload(userId, options = {}) {
     categoryBreakdown,
     generatedAt: new Date().toISOString(),
     // Transparency: this is self-reported
-    disclaimer: 'This compliance readiness score is self-reported and was assessed using AuditReady AI. It has not been independently verified by a licensed CPA firm and does not constitute a SOC 2 attestation.',
+    disclaimer: 'This compliance readiness score is self-reported and was assessed using Audit Ready AI. It has not been independently verified by a licensed CPA firm and does not constitute a SOC 2 attestation.',
     selfReported: true,
     company: {
       name: profile.companyName || '',
@@ -235,7 +235,7 @@ export default async function handler(req, res) {
       const payload = await buildPublicPayload(userId, options);
       payload.companyName = companyName;
       payload.sharedAt = createdAt;
-      payload.poweredBy = 'AuditReady AI';
+      payload.poweredBy = 'Audit Ready AI';
 
       return res.status(200).json(payload);
     } catch (err) {
