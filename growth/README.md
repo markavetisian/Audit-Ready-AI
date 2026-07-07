@@ -71,6 +71,18 @@ node growth/cli.js mark <id> won        # closes into the MRR number
 node growth/cli.js status
 ```
 
+## Dashboard
+
+`node growth/cli.js dashboard` (or `npm run growth:dashboard`) starts a local
+web UI at `http://127.0.0.1:4173` — same data, click-through instead of CLI
+commands: MRR progress bar, per-channel cards with a "fetch new leads" button
+for hn/github/producthunt, a "build today's queue" button, and a lead table
+with status dropdowns and drafted-message previews.
+
+It's a plain `node:http` server bound to `127.0.0.1` only (not `0.0.0.0`) —
+there's no auth layer, and lead contact info is PII, so it's built to run on
+your own machine, not to be exposed on a network.
+
 `growth/out/` (drafts) and `.env.local` (secrets) are gitignored — this repo
 is the product's source, not a place to keep leads' contact info or your
 Redis token.

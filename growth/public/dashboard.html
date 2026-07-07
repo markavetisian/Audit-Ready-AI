@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Growth Dashboard — auditready.space</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #0b0d10; --panel: #14171c; --panel-2: #1b1f26; --border: #262b33;
+    --text: #e7eaee; --muted: #8b93a1; --accent: #5b8cff; --accent-2: #34d399;
+    --warn: #f5b942; --bad: #f2545b;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f5f6f8; --panel: #ffffff; --panel-2: #f0f1f4; --border: #e2e4e9;
+      --text: #14171c; --muted: #5c6472; --accent: #3b6fe0; --accent-2: #0f9d68;
+      --warn: #b5790a; --bad: #c8323a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+  }
+  header { padding: 24px clamp(16px, 4vw, 40px) 8px; }
+  header h1 { margin: 0 0 2px; font-size: 20px; }
+  header .sub { color: var(--muted); font-size: 13px; }
+  main { padding: 16px clamp(16px, 4vw, 40px) 60px; max-width: 1100px; margin: 0 auto; }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px; margin-bottom: 16px;
+  }
+  .goal-row { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  .goal-row .mrr { font-size: 28px; font-weight: 650; }
+  .goal-row .mrr span { color: var(--muted); font-weight: 400; font-size: 16px; }
+  .bar { height: 10px; border-radius: 6px; background: var(--panel-2); overflow: hidden; margin: 10px 0 6px; }
+  .bar > div { height: 100%; background: var(--accent-2); transition: width .3s; }
+  .goal-meta { color: var(--muted); font-size: 12px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .chan-card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+  .chan-card h3 { margin: 0 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  .chan-card .n { font-size: 22px; font-weight: 650; }
+  .chan-card .cap { color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+  .chan-card .hint { color: var(--muted); font-size: 11px; font-family: ui-monospace, monospace; word-break: break-all; }
+
+  button {
+    font: inherit; cursor: pointer; border: 1px solid var(--border); background: var(--panel-2);
+    color: var(--text); border-radius: 7px; padding: 6px 10px;
+  }
+  button.primary { background: var(--accent); color: white; border-color: transparent; }
+  button.small { padding: 3px 8px; font-size: 12px; }
+  button:hover { filter: brightness(1.08); }
+  button:disabled { opacity: .5; cursor: default; }
+
+  .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tabs button { background: transparent; }
+  .tabs button.active { background: var(--accent); color: white; border-color: transparent; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
+  td.contact a { color: var(--accent); text-decoration: none; word-break: break-all; }
+  td.contact a:hover { text-decoration: underline; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; background: var(--panel-2); color: var(--muted); }
+  .note { color: var(--muted); font-size: 12px; max-width: 260px; }
+  .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .draft { margin-top: 8px; padding: 8px; background: var(--panel-2); border-radius: 8px; white-space: pre-wrap; font-size: 12.5px; display: none; }
+  .draft.open { display: block; }
+  .empty { color: var(--muted); padding: 24px; text-align: center; }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--panel); border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .2s; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Growth Dashboard</h1>
+  <div class="sub">auditready.space — 6-channel outreach tracker</div>
+</header>
+<main>
+  <div class="card" id="goal-card"></div>
+  <div class="grid" id="channels"></div>
+
+  <div class="card">
+    <div class="toolbar">
+      <button class="primary" id="build-queue">Build today's queue</button>
+      <button id="refresh">Refresh</button>
+      <span class="goal-meta" id="queue-result"></span>
+    </div>
+    <div id="queue-panel"></div>
+  </div>
+
+  <div class="card">
+    <div class="toolbar tabs" id="tabs"></div>
+    <table id="leads-table">
+      <thead>
+        <tr><th>Company</th><th>Name</th><th>Channel</th><th>Contact</th><th>Note</th><th>Status</th><th></th></tr>
+      </thead>
+      <tbody id="leads-body"></tbody>
+    </table>
+    <div class="empty" id="leads-empty" style="display:none">No leads in this view yet.</div>
+  </div>
+</main>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+const STATUSES = ['new','queued','contacted','replied','demo','won','lost'];
+const CHANNEL_LABELS = { x: 'X (Twitter)', linkedin: 'LinkedIn', hn: 'HN Hiring', producthunt: 'Product Hunt', github: 'GitHub', apollo: 'Apollo' };
+const AUTO_CHANNELS = new Set(['hn', 'github', 'producthunt']);
+let currentTab = 'all';
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+async function api(path, opts) {
+  const res = await fetch(path, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'request failed');
+  return data;
+}
+
+function renderGoal(s) {
+  const pct = Math.min(100, Math.round((s.won / s.goal.customersNeeded) * 100));
+  document.getElementById('goal-card').innerHTML = `
+    <div class="goal-row">
+      <div class="mrr">$${s.mrr.toLocaleString()} <span>/ $${s.goal.mrrTarget.toLocaleString()} MRR</span></div>
+      <div class="goal-meta">${s.customersRemaining} customers to go · ${s.daysLeft} days left (${s.goal.deadline})</div>
+    </div>
+    <div class="bar"><div style="width:${pct}%"></div></div>
+    <div class="goal-meta">${s.won} won of ${s.goal.customersNeeded} needed @ $${s.goal.pricePerCustomer}/mo each</div>
+  `;
+}
+
+function renderChannels(s) {
+  const el = document.getElementById('channels');
+  el.innerHTML = s.channels.map(c => `
+    <div class="chan-card">
+      <h3>${CHANNEL_LABELS[c] || c}</h3>
+      <div class="n">${s.byChannel[c] || 0}</div>
+      <div class="cap">${s.sentToday[c]}/${s.dailyCaps[c]} sent today</div>
+      ${AUTO_CHANNELS.has(c)
+        ? `<button class="small source-btn" data-channel="${c}">Fetch new leads</button>`
+        : `<div class="hint">node growth/cli.js import leads.csv --channel ${c}</div>`}
+    </div>
+  `).join('');
+  el.querySelectorAll('.source-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      btn.disabled = true; btn.textContent = 'Fetching…';
+      try {
+        const r = await api('/api/source', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ which: btn.dataset.channel }) });
+        toast(r.skipped ? r.reason : `+${r.added} new leads (${r.duplicates || 0} dupes)`);
+        await refresh();
+      } catch (e) { toast('Error: ' + e.message); }
+      finally { btn.disabled = false; btn.textContent = 'Fetch new leads'; }
+    });
+  });
+}
+
+function renderTabs() {
+  const tabs = ['all', ...STATUSES];
+  document.getElementById('tabs').innerHTML = tabs.map(t =>
+    `<button data-tab="${t}" class="${t === currentTab ? 'active' : ''}">${t}</button>`
+  ).join('');
+  document.querySelectorAll('#tabs button').forEach(b => {
+    b.addEventListener('click', () => { currentTab = b.dataset.tab; renderTabs(); loadLeads(); });
+  });
+}
+
+function escapeHtml(str) {
+  return (str || '').replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+}
+
+function contactHref(contact) {
+  if (/^https?:\/\//i.test(contact)) return contact;
+  if (/@/.test(contact)) return `mailto:${contact}`;
+  return null;
+}
+
+async function loadLeads() {
+  const { leads } = await api(`/api/leads?status=${currentTab}`);
+  const body = document.getElementById('leads-body');
+  document.getElementById('leads-empty').style.display = leads.length ? 'none' : 'block';
+  body.innerHTML = leads.map(lead => {
+    const href = contactHref(lead.contact);
+    const draftHtml = lead.draft ? `${lead.draft.subject ? `<b>${escapeHtml(lead.draft.subject)}</b>\n\n` : ''}${escapeHtml(lead.draft.body)}` : '';
+    return `
+    <tr data-id="${lead.id}">
+      <td>${escapeHtml(lead.company) || '—'}</td>
+      <td>${escapeHtml(lead.name) || '—'}</td>
+      <td><span class="badge">${lead.channel}</span></td>
+      <td class="contact">${href ? `<a href="${href}" target="_blank" rel="noopener">${escapeHtml(lead.contact)}</a>` : escapeHtml(lead.contact)}</td>
+      <td class="note">${escapeHtml(lead.note).slice(0, 140)}</td>
+      <td><span class="badge">${lead.status}</span></td>
+      <td>
+        <div class="row-actions">
+          ${lead.draft ? `<button class="small draft-toggle">draft</button>` : ''}
+          <select class="small status-select">
+            <option value="">move to…</option>
+            ${STATUSES.filter(s => s !== lead.status).map(s => `<option value="${s}">${s}</option>`).join('')}
+          </select>
+        </div>
+        ${lead.draft ? `<div class="draft">${draftHtml}</div>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+
+  body.querySelectorAll('tr').forEach(row => {
+    const id = row.dataset.id;
+    const select = row.querySelector('.status-select');
+    select?.addEventListener('change', async () => {
+      if (!select.value) return;
+      try {
+        await api('/api/mark', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, status: select.value }) });
+        toast(`Marked ${select.value}`);
+        await refresh();
+      } catch (e) { toast('Error: ' + e.message); }
+    });
+    row.querySelector('.draft-toggle')?.addEventListener('click', () => {
+      row.querySelector('.draft').classList.toggle('open');
+    });
+  });
+}
+
+document.getElementById('build-queue').addEventListener('click', async (e) => {
+  const btn = e.currentTarget;
+  btn.disabled = true; btn.textContent = 'Building…';
+  try {
+    const r = await api('/api/queue', { method: 'POST' });
+    document.getElementById('queue-result').textContent = r.totalQueued
+      ? `Queued ${r.totalQueued} leads${r.outPath ? ' — saved to ' + r.outPath : ''}`
+      : 'Nothing to queue (caps hit or no new leads).';
+    await refresh();
+  } catch (e) { toast('Error: ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = "Build today's queue"; }
+});
+
+document.getElementById('refresh').addEventListener('click', refresh);
+
+async function refresh() {
+  const s = await api('/api/status');
+  renderGoal(s);
+  renderChannels(s);
+  await loadLeads();
+}
+
+renderTabs();
+refresh().catch(e => toast('Error: ' + e.message));
+</script>
+</body>
+</html>

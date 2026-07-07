@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "description": "SOC 2 compliance automation SaaS — transformed from 404DEV AI",
+  "scripts": {
+    "growth": "node growth/cli.js",
+    "growth:dashboard": "node growth/cli.js dashboard"
+  },
   "dependencies": {
     "@upstash/redis": "^1.34.0"
   }
