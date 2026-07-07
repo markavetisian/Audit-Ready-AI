@@ -802,6 +802,41 @@ header{
 }
 @keyframes quizPop{0%{transform:scale(0)}60%{transform:scale(1.12)}100%{transform:scale(1)}}
 .quiz-done-check svg{width:34px;height:34px;stroke:#fff;stroke-width:3;fill:none}
+
+/* ── Offline screen ─────────────────────────────────────────── */
+#offlineOverlay{
+  position:fixed;inset:0;z-index:2000;display:none;
+  align-items:center;justify-content:center;
+  background:#f8fafc;padding:24px;
+}
+#offlineOverlay.on{display:flex}
+.off-card{text-align:center;max-width:340px;animation:fadeIn .3s ease}
+.off-art{
+  width:120px;height:120px;border-radius:50%;margin:0 auto 24px;
+  background:linear-gradient(135deg,#eff6ff,#f1f5f9);
+  border:1px solid #e2e8f0;
+  display:flex;align-items:center;justify-content:center;
+  animation:offFloat 3s ease-in-out infinite;
+}
+@keyframes offFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.off-title{font-size:20px;font-weight:700;color:#0f172a;letter-spacing:-.02em;margin-bottom:8px}
+.off-sub{font-size:13.5px;color:#64748b;line-height:1.7;margin-bottom:22px}
+.off-retry{
+  padding:11px 26px;border-radius:12px;border:none;cursor:pointer;
+  background:var(--accent);color:#fff;font-size:14px;font-weight:600;
+  transition:opacity .15s,transform .12s;box-shadow:0 6px 18px rgba(37,99,235,.25);
+}
+.off-retry:hover{opacity:.92;transform:translateY(-1px)}
+.off-retry:active{transform:scale(.98)}
+.off-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#dc2626;margin-right:6px;animation:lp-pulse 1.6s ease-in-out infinite}
+.off-status{font-size:11px;color:#94a3b8;margin-top:14px;font-family:var(--mono)}
+/* Landing "download app" button */
+.lp-btn-app{
+  height:44px;padding:0 22px;border-radius:22px;background:#fff;color:#0f172a;
+  font-size:13.5px;font-weight:500;border:1px solid #e2e8f0;cursor:pointer;
+  display:inline-flex;align-items:center;gap:8px;transition:border-color .15s,transform .12s,box-shadow .15s;
+}
+.lp-btn-app:hover{border-color:#94a3b8;transform:translateY(-1px);box-shadow:0 4px 14px rgba(15,23,42,.08)}
 .lp-btn-cta{
   height:50px;padding:0 32px;border-radius:25px;
   background:#fff;color:#1d4ed8;font-size:15px;font-weight:600;
@@ -1259,6 +1294,12 @@ header{
           Start your assessment →
         </button>
       </div>
+      <div style="margin-top:14px">
+        <button class="lp-btn-app" id="lpInstallBtn" style="display:none" onclick="installApp()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download our app — free
+        </button>
+      </div>
       <p style="font-size:11px;color:rgba(255,255,255,.4);margin-top:14px">Evaluation tier available · Deployed same day · No implementation fees</p>
       <p style="font-size:10.5px;color:rgba(255,255,255,.35);margin-top:6px">By clicking "Start your assessment", you agree to our <a href="/terms.html" target="_blank" style="color:rgba(255,255,255,.55);text-decoration:underline">Terms of Service</a> and <a href="/privacy.html" target="_blank" style="color:rgba(255,255,255,.55);text-decoration:underline">Privacy Policy</a>.</p>
     </div>
@@ -1441,6 +1482,37 @@ header{
       <p style="font-size:13px;color:var(--muted);margin-top:2px">Connect your tools to auto-detect compliance controls</p>
     </div>
     <div id="integrationsList"><div style="color:var(--muted);font-size:12px;text-align:center;padding:32px 0"><span class="spinner"></span> Loading...</div></div>
+  </div>
+</div>
+
+<!-- ── Install instructions modal (browsers without native prompt) ── -->
+<div id="installHelpModal" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeInstallHelp()">
+  <div class="modal-box" style="max-width:400px">
+    <h3 style="margin-bottom:4px">Install AuditReady</h3>
+    <p style="margin-bottom:14px">Get the app on your home screen — no app store needed.</p>
+    <ol id="installHelpSteps" style="font-size:13px;color:var(--text);line-height:2;padding-left:20px;margin-bottom:18px"></ol>
+    <button class="btn btn-primary btn-full" onclick="closeInstallHelp()">Got it</button>
+  </div>
+</div>
+
+<!-- ── Offline screen ────────────────────────────────────────── -->
+<div id="offlineOverlay" role="alert">
+  <div class="off-card">
+    <div class="off-art">
+      <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12.55a11 11 0 0 1 5.17-2.39" opacity=".9"/>
+        <path d="M18.99 12.55a11 11 0 0 0-2.72-1.79" opacity=".55"/>
+        <path d="M1.42 9a16 16 0 0 1 6.09-3.31" opacity=".7"/>
+        <path d="M22.58 9a16 16 0 0 0-4.02-2.57" opacity=".4"/>
+        <path d="M8.53 16.11a6 6 0 0 1 6.95 0" opacity=".9"/>
+        <line x1="12" y1="20" x2="12.01" y2="20" stroke-width="2.4"/>
+        <line x1="2.5" y1="2.5" x2="21.5" y2="21.5" stroke="#dc2626" stroke-width="1.8"/>
+      </svg>
+    </div>
+    <div class="off-title">You're offline</div>
+    <div class="off-sub">Connect to the internet to see your compliance data. Your scores and evidence are safe on our servers — nothing is lost.</div>
+    <button class="off-retry" onclick="offlineRetry()">Try again</button>
+    <div class="off-status"><span class="off-dot"></span>No connection detected</div>
   </div>
 </div>
 
@@ -4353,9 +4425,13 @@ function isStandalone() {
 }
 
 function refreshInstallButton() {
+  // Dashboard button: only when the browser has offered a native prompt.
   const btn = document.getElementById('installAppBtn');
-  if (!btn) return;
-  btn.style.display = (_deferredInstallPrompt && !isStandalone()) ? 'flex' : 'none';
+  if (btn) btn.style.display = (_deferredInstallPrompt && !isStandalone()) ? 'flex' : 'none';
+  // Landing button: shown to everyone not already in the app — browsers
+  // without beforeinstallprompt (iOS Safari) get instructions instead.
+  const lp = document.getElementById('lpInstallBtn');
+  if (lp) lp.style.display = isStandalone() ? 'none' : 'inline-flex';
 }
 
 window.addEventListener('beforeinstallprompt', e => {
@@ -4371,7 +4447,12 @@ window.addEventListener('appinstalled', () => {
 });
 
 async function installApp() {
-  if (!_deferredInstallPrompt) return;
+  if (!_deferredInstallPrompt) {
+    // No native prompt available (iOS Safari, Firefox, or not yet fired):
+    // show per-platform instructions instead of doing nothing.
+    openInstallHelp();
+    return;
+  }
   const btn = document.getElementById('installAppBtn');
   if (btn) btn.disabled = true;
   _deferredInstallPrompt.prompt();
@@ -4381,6 +4462,41 @@ async function installApp() {
   if (btn) btn.disabled = false;
   refreshInstallButton();
 }
+
+function openInstallHelp() {
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const steps = isIOS
+    ? '<li>Tap the <strong>Share</strong> button <span style="font-size:15px">⎋</span> in Safari\'s toolbar</li>' +
+      '<li>Scroll down and tap <strong>Add to Home Screen</strong></li>' +
+      '<li>Tap <strong>Add</strong> — AuditReady appears like any other app</li>'
+    : '<li>Open the browser menu (⋮ or ⋯ in the toolbar)</li>' +
+      '<li>Choose <strong>Install AuditReady…</strong> / <strong>Add to Home screen</strong></li>' +
+      '<li>Confirm — the app opens in its own window</li>';
+  document.getElementById('installHelpSteps').innerHTML = steps;
+  document.getElementById('installHelpModal').style.display = 'flex';
+}
+function closeInstallHelp() { document.getElementById('installHelpModal').style.display = 'none'; }
+
+// ── Offline detection ─────────────────────────────────────────
+// When the connection drops, replace the UI with a full-screen offline
+// state instead of letting every panel fail with its own error.
+
+function updateOfflineState() {
+  const el = document.getElementById('offlineOverlay');
+  if (!el) return;
+  el.classList.toggle('on', !navigator.onLine);
+}
+
+function offlineRetry() {
+  if (navigator.onLine) { location.reload(); return; }
+  const status = document.querySelector('.off-status');
+  if (status) {
+    status.innerHTML = '<span class="off-dot"></span>Still offline — check Wi-Fi or cellular data';
+  }
+}
+
+window.addEventListener('online', () => { updateOfflineState(); location.reload(); });
+window.addEventListener('offline', updateOfflineState);
 
 // ── Init ──────────────────────────────────────────────────────
 
@@ -4392,6 +4508,8 @@ if (ST.user) {
 } else {
   nav('login');
 }
+refreshInstallButton();
+updateOfflineState();
 </script>
 </body>
 </html>
