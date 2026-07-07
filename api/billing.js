@@ -1,12 +1,10 @@
 // ─────────────────────────────────────────────────────────────
-// api/billing.js
-// ACTION: MERGED from stripe-checkout.js + stripe-cancel.js
+// api/billing.js — Stripe subscription management
 //
-//   POST   /api/billing → create subscription checkout (was stripe-checkout.js)
-//   DELETE /api/billing → cancel subscription at period end (was stripe-cancel.js)
+//   POST   /api/billing → create subscription checkout
+//   DELETE /api/billing → cancel subscription at period end
 //
-// Logic: identical to originals. Method router only change.
-// api/stripe-webhook.js: UNTOUCHED — never modified.
+// Plan activation happens in api/stripe-webhook.js.
 // ─────────────────────────────────────────────────────────────
 
 import { Redis } from '@upstash/redis';
@@ -20,6 +18,14 @@ const redis = new Redis({
 const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY;
 
 const PRICE_TO_MODE = {
+  // Current prices (monthly / annual)
+  'price_1To8FUFQiRRnlhwuSXSe3gl4': 'starter',
+  'price_1To8IqFQiRRnlhwuPXeFFKeb': 'starter',
+  'price_1To8LOFQiRRnlhwumml3WTem': 'growth',
+  'price_1To8M8FQiRRnlhwuf0VjLFdn': 'growth',
+  'price_1To8OiFQiRRnlhwuPbggNIXU': 'enterprise',
+  'price_1To8TuFQiRRnlhwuR218IfIc': 'enterprise',
+  // Legacy prices — kept so existing subscribers keep working
   'price_1ThZIZFQiRRnlhwuYRI3MfNX': 'starter',
   'price_1ThZLSFQiRRnlhwueStdff4L': 'growth',
   'price_1ThZNGFQiRRnlhwuH23alwzB': 'enterprise',
