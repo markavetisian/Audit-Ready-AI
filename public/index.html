@@ -1318,6 +1318,10 @@ header{
           <button class="upgrade-btn" onclick="openPricingModal()">
             ⚡ Upgrade Plan
           </button>
+          <button class="btn btn-secondary btn-full btn-sm" id="installAppBtn" style="display:none;margin-top:8px" onclick="installApp()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span id="installAppBtnText">Install App</span>
+          </button>
         </div>
       </div>
       <!-- Main -->
@@ -2001,7 +2005,7 @@ function nav(page) {
   document.querySelectorAll('.hn').forEach(h => h.classList.remove('active'));
   const hn = document.getElementById('hn-' + page);
   if (hn) hn.classList.add('active');
-  if (page === 'dashboard') loadDashboard();
+  if (page === 'dashboard') { loadDashboard(); refreshInstallButton(); }
   if (page === 'controls') loadControls();
   if (page === 'integrations') loadIntegrations();
   if (page === 'locker') loadLocker();
@@ -4333,6 +4337,50 @@ function quizDone() {
 }
 
 document.addEventListener('DOMContentLoaded', () => { if (document.getElementById('quizStage')) quizRender(); });
+
+// ── PWA: service worker + install prompt ───────────────────────
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(err => console.error('SW registration failed:', err));
+  });
+}
+
+let _deferredInstallPrompt = null;
+
+function isStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
+function refreshInstallButton() {
+  const btn = document.getElementById('installAppBtn');
+  if (!btn) return;
+  btn.style.display = (_deferredInstallPrompt && !isStandalone()) ? 'flex' : 'none';
+}
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _deferredInstallPrompt = e;
+  refreshInstallButton();
+});
+
+window.addEventListener('appinstalled', () => {
+  _deferredInstallPrompt = null;
+  refreshInstallButton();
+  toast('AuditReady installed — find it on your home screen', 'success');
+});
+
+async function installApp() {
+  if (!_deferredInstallPrompt) return;
+  const btn = document.getElementById('installAppBtn');
+  if (btn) btn.disabled = true;
+  _deferredInstallPrompt.prompt();
+  try { await _deferredInstallPrompt.userChoice; } catch {}
+  // The prompt is single-use regardless of the user's choice.
+  _deferredInstallPrompt = null;
+  if (btn) btn.disabled = false;
+  refreshInstallButton();
+}
 
 // ── Init ──────────────────────────────────────────────────────
 
