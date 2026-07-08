@@ -11,7 +11,6 @@ import { fileURLToPath } from 'node:url';
 import { STATUSES, setStatus, listAll, listByStatus } from './lib/store.js';
 import { buildTodayQueue, writeQueueFile } from './lib/queue.js';
 import { getStatusSnapshot } from './lib/status.js';
-import { ingestHN } from './sources/hn.js';
 import { ingestGitHub } from './sources/github.js';
 import { ingestProductHunt } from './sources/producthunt.js';
 
@@ -67,10 +66,9 @@ async function handleApi(req, res, pathname) {
 
   if (pathname === '/api/source' && req.method === 'POST') {
     const { which } = await readBody(req);
-    if (which === 'hn') return send(res, 200, await ingestHN());
     if (which === 'github') return send(res, 200, await ingestGitHub());
     if (which === 'producthunt') return send(res, 200, await ingestProductHunt());
-    return send(res, 400, { error: 'which must be hn, github, or producthunt' });
+    return send(res, 400, { error: 'which must be github or producthunt' });
   }
 
   return send(res, 404, { error: 'not found' });

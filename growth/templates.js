@@ -1,35 +1,13 @@
 // Per-channel message drafts, matching the tone already used in
 // outreach_emails.txt: one specific observation tied to their product/context,
 // a one-line pitch, a low-friction ask, plain signature. No hype, no bullet
-// lists, short enough to read on a phone.
-
-import { SENDER } from './config.js';
+// lists, short enough to read on a phone. DM/social channels only — no
+// email builders here.
 
 function firstName(lead) {
   const n = (lead.name || '').trim();
   if (!n) return null;
   return n.split(' ')[0];
-}
-
-function pitch() {
-  return "I built a tool that scans your stack, scores real SOC 2 readiness against the actual controls, and writes the policy docs — a fraction of what Vanta/Drata charge. Free to run if useful.";
-}
-
-function sig() {
-  return `${SENDER.name}\n${SENDER.site}`;
-}
-
-function hn(lead) {
-  const name = firstName(lead) || 'there';
-  const company = lead.company || 'your team';
-  const subject = `${company} + SOC 2`;
-  const body = [
-    `${name}, saw ${company}'s listing on the HN hiring thread. Growing B2B teams like yours tend to hit the security-questionnaire wall right around the first enterprise deal.`,
-    pitch(),
-    `So what do you think, ${name}?`,
-    sig(),
-  ].join('\n\n');
-  return { subject, body };
 }
 
 function x(lead) {
@@ -60,20 +38,7 @@ function github(lead) {
   return { subject: '', body };
 }
 
-function apollo(lead) {
-  const name = firstName(lead) || 'there';
-  const company = lead.company || 'your team';
-  const subject = `quick one for ${company}`;
-  const body = [
-    `${name}, congrats on the round. Compliance tends to land on someone's desk right after — usually earlier than expected once enterprise procurement gets involved.`,
-    pitch(),
-    `So what do you think, ${name}?`,
-    sig(),
-  ].join('\n\n');
-  return { subject, body };
-}
-
-const BUILDERS = { hn, x, linkedin, producthunt, github, apollo };
+const BUILDERS = { x, linkedin, producthunt, github };
 
 export function draftMessage(lead) {
   const builder = BUILDERS[lead.channel];

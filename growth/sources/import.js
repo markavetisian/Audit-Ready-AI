@@ -1,10 +1,8 @@
-// Methods 1, 2, 6 (X, LinkedIn, Apollo) and manual Product Hunt/Peerlist follow-ups.
-// These channels either have no public API for this use case (X search,
-// LinkedIn groups) or are explicitly meant to stay low-volume and manual
-// (Apollo, per the method's own "avoid automated detection" framing). So
-// instead of a bot, this is a CSV import: you browse the target list by
-// hand exactly as the method describes, save what you find, and this
-// loads it into the same tracker/queue as the automated sources.
+// Methods 1 and 2 (X, LinkedIn) and manual Product Hunt/Peerlist follow-ups.
+// No email channels here by design — X search and LinkedIn groups have no
+// public API for this anyway, so it's a CSV import: you browse the target
+// list by hand, save what you find, and this loads it into the same
+// tracker/queue as the automated sources.
 
 import { readFileSync } from 'node:fs';
 import { addLead } from '../lib/store.js';
@@ -65,7 +63,7 @@ export async function importCsv(path, { defaultChannel } = {}) {
 if (import.meta.url === `file://${process.argv[1]}`) {
   const [, , path, ...flags] = process.argv;
   if (!path) {
-    console.error('Usage: node growth/sources/import.js <csv-path> [--channel <x|linkedin|apollo|producthunt|github|hn>]');
+    console.error('Usage: node growth/sources/import.js <csv-path> [--channel <x|linkedin|producthunt|github>]');
     process.exit(1);
   }
   const channelFlagIdx = flags.indexOf('--channel');

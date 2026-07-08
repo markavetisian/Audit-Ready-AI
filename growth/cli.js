@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import { ingestHN } from './sources/hn.js';
 import { ingestGitHub } from './sources/github.js';
 import { ingestProductHunt } from './sources/producthunt.js';
 import { importCsv } from './sources/import.js';
@@ -11,10 +10,9 @@ import { DAILY_CAPS, GOAL } from './config.js';
 function usage() {
   console.log(`auditready growth CLI
 
-  node growth/cli.js source hn                 fetch this month's HN "who is hiring" thread
   node growth/cli.js source github              scan GitHub for candidate repos/contributors
   node growth/cli.js source producthunt         scan today's Product Hunt launches (needs PRODUCTHUNT_TOKEN)
-  node growth/cli.js import <csv> [--channel c] import hand-collected leads (x / linkedin / apollo / ...)
+  node growth/cli.js import <csv> [--channel c] import hand-collected leads (x / linkedin)
   node growth/cli.js queue                      build today's capped outreach batch with drafted messages
   node growth/cli.js mark <id> <status>         update a lead's status (${STATUSES.join('|')})
   node growth/cli.js status                     pipeline + MRR progress dashboard
@@ -23,10 +21,7 @@ function usage() {
 }
 
 async function cmdSource(which) {
-  if (which === 'hn') {
-    const r = await ingestHN();
-    console.log(`[hn] ${r.threadTitle}\nScanned ${r.scanned}, matched ${r.matched}, added ${r.added} new leads (${r.duplicates} dupes).`);
-  } else if (which === 'github') {
+  if (which === 'github') {
     const r = await ingestGitHub();
     console.log(`[github] Scanned ${r.scanned} repos, added ${r.added} new leads (${r.duplicates} dupes).`);
   } else if (which === 'producthunt') {
@@ -34,7 +29,7 @@ async function cmdSource(which) {
     if (r.skipped) console.log(`[producthunt] skipped: ${r.reason}`);
     else console.log(`[producthunt] Scanned ${r.scanned}, added ${r.added} new leads (${r.duplicates} dupes).`);
   } else {
-    console.error(`Unknown source: ${which}. Try hn, github, or producthunt.`);
+    console.error(`Unknown source: ${which}. Try github or producthunt.`);
     process.exit(1);
   }
 }

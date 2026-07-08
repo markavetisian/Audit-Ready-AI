@@ -8,30 +8,21 @@ export const GOAL = {
 };
 
 // Per-channel daily send caps. Kept deliberately low on the channels where
-// bulk/automated sending gets you banned (X, LinkedIn) or burns a domain's
-// email reputation (Apollo). HN is event-based (one thread/month), not capped.
+// bulk/automated sending gets you banned (X, LinkedIn).
 export const DAILY_CAPS = {
   x: 10,
   linkedin: 8,
-  hn: 50,
   producthunt: 5,
   github: 10,
-  apollo: 5,
 };
-
-// Keywords used to filter HN "who is hiring" listings and GitHub repo search
-// toward companies likely to hit SOC 2 / security-questionnaire friction soon.
-export const TARGET_KEYWORDS = [
-  'soc 2', 'soc2', 'security questionnaire', 'compliance', 'infosec',
-  'fintech', 'healthtech', 'hipaa', 'devtools', 'saas', 'b2b', 'api platform',
-  'data platform', 'ai infra', 'llm infra', 'identity', 'iam',
-];
 
 export const HEADCOUNT_HINTS = [
   'seed', 'series a', 'small team', 'early stage', 'startup', 'yc ', 'y combinator',
 ];
 
-export const CHANNELS = ['x', 'linkedin', 'hn', 'producthunt', 'github', 'apollo'];
+// No email channels (HN hiring-thread, Apollo) — outreach here is DM/social
+// only, by design, to stay off CAN-SPAM/email-compliance risk entirely.
+export const CHANNELS = ['x', 'linkedin', 'producthunt', 'github'];
 
 // GitHub topic slugs to search for candidate B2B repos (method 5).
 export const GITHUB_TOPICS = ['saas', 'b2b-saas', 'devtools', 'api-platform', 'fintech', 'healthtech'];
