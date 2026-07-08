@@ -2,7 +2,7 @@
 
 export const GOAL = {
   mrrTarget: 10000,        // $/mo
-  pricePerCustomer: 250,   // matches the $250/mo plan on auditready.space
+  pricePerCustomer: 500,   // Starter plan — the realistic first-sale price for cold leads
   get customersNeeded() { return Math.ceil(this.mrrTarget / this.pricePerCustomer); },
   deadline: '2026-09-22',  // end of summer (northern hemisphere equinox)
 };
