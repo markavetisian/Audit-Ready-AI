@@ -1273,7 +1273,7 @@ header{
       <div style="text-align:center">
         <div class="lp-eyebrow reveal">60-Second Readiness Check</div>
         <h2 class="lp-section-title reveal">Where does your company<br/><em>actually stand?</em></h2>
-        <p class="lp-section-sub reveal">Six quick taps and we'll email you a readout on where you stand and what to fix first. Nobody calls you.</p>
+        <p class="lp-section-sub reveal">Six quick taps and tell us where to send it. We'll review where you stand and reach out with what to fix first. No spam, no sales calls.</p>
       </div>
 
       <div class="reveal quiz-card" id="quizCard">
@@ -4333,7 +4333,7 @@ const QUIZ = [
       { e:'🧰', t:'A platform like Vanta or Drata' },
       { e:'🔗', t:'A mix of the above' },
     ] },
-  { id: 'role', q: "What's your role?", sub: 'So we address the readout to the right person.',
+  { id: 'role', q: "What's your role?", sub: 'So we reach out to the right person.',
     opts: [
       { e:'👑', t:'Founder / CEO' },
       { e:'💻', t:'CTO / Engineering lead' },
@@ -4382,11 +4382,11 @@ function quizRender() {
     label.textContent = 'Last step: where do we send it?';
     stage.innerHTML =
       '<div class="quiz-slide">' +
-      '<div class="quiz-q">Get your personalized readout</div>' +
-      '<div class="quiz-q-sub">We\'ll email a tailored summary of where you stand and what to fix first.</div>' +
+      '<div class="quiz-q">Where should we reach you?</div>' +
+      '<div class="quiz-q-sub">We\'ll review your answers and get back to you with where you stand and what to fix first.</div>' +
       '<input class="quiz-field" id="qEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@company.com" value="' + esc(_qLead.email) + '"/>' +
       '<input class="quiz-field" id="qCompany" type="text" autocomplete="organization" placeholder="Company name" value="' + esc(_qLead.company) + '"/>' +
-      '<button class="quiz-submit" id="qSubmit" onclick="quizSubmit()"><span id="qSubmitTxt">Send my readout →</span></button>' +
+      '<button class="quiz-submit" id="qSubmit" onclick="quizSubmit()"><span id="qSubmitTxt">Send it over →</span></button>' +
       '<div class="quiz-legal">By submitting, you agree to be contacted about your SOC 2 readiness. Unsubscribe anytime.</div>' +
       '</div>';
     setTimeout(() => { const el = document.getElementById('qEmail'); if (el) el.focus(); }, 360);
@@ -4451,7 +4451,7 @@ async function quizSubmit() {
     quizDone();
   } catch (err) {
     btn.disabled = false;
-    txt.textContent = 'Send my readout →';
+    txt.textContent = 'Send it over →';
     toast('Something went wrong — please try again.', 'error');
   }
 }
@@ -4464,9 +4464,9 @@ function quizDone() {
   stage.innerHTML =
     '<div class="quiz-done">' +
     '<div class="quiz-done-check"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg></div>' +
-    '<div class="quiz-q" style="margin-bottom:6px">You\'re on your way</div>' +
+    '<div class="quiz-q" style="margin-bottom:6px">Got it — thanks</div>' +
     '<p style="font-size:13.5px;color:#64748b;line-height:1.7;max-width:360px;margin:0 auto 20px">' +
-    'Your readout is on its way to <strong style="color:#0f172a">' + esc(_qLead.email) + '</strong>. ' +
+    'We\'ll review where <strong style="color:#0f172a">' + esc(_qLead.company) + '</strong> stands and reach out at <strong style="color:#0f172a">' + esc(_qLead.email) + '</strong>. ' +
     'Want your live SOC 2 score now? Connect your stack and see it in minutes.</p>' +
     '<button class="lp-btn-cta" style="margin:0 auto" onclick="location.href=\'/api/auth?provider=github\'">' +
     'Start your assessment →</button>' +
