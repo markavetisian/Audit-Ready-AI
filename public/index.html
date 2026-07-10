@@ -1332,6 +1332,8 @@ header{
         <span style="color:#cbd5e1;font-size:12px">·</span>
         <a href="/privacy.html" style="font-size:12.5px;color:#64748b;text-decoration:none;padding:0 14px;transition:color .15s" onmouseover="this.style.color='#1e293b'" onmouseout="this.style.color='#64748b'">Privacy Policy</a>
         <span style="color:#cbd5e1;font-size:12px">·</span>
+        <a href="/founder.html" style="font-size:12.5px;color:#64748b;text-decoration:none;padding:0 14px;transition:color .15s" onmouseover="this.style.color='#1e293b'" onmouseout="this.style.color='#64748b'">Founder</a>
+        <span style="color:#cbd5e1;font-size:12px">·</span>
         <a href="mailto:vlad@auditready.space" style="font-size:12.5px;color:#64748b;text-decoration:none;padding:0 14px;transition:color .15s" onmouseover="this.style.color='#1e293b'" onmouseout="this.style.color='#64748b'">Contact</a>
       </div>
       <p style="font-size:11.5px;color:#94a3b8;line-height:1.7;max-width:460px;margin:0 auto 18px">Audit Ready AI provides self-reported SOC 2 readiness tracking and is not a certified auditing firm. Scores reflect documented controls and do not constitute an official SOC 2 report.</p>
@@ -1638,17 +1640,17 @@ header{
 <div id="trustSampleModal" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeTrustSample()">
   <div class="tp-modal-box">
     <div class="tp-sample-tag">
-      <span>Sample — this is the live page your customers would see</span>
+      <span>Our own Trust Page · a live example of what yours becomes</span>
       <span class="tp-x" onclick="closeTrustSample()">&times;</span>
     </div>
 
     <div class="tp-hero">
       <div class="tp-hero-top">
         <div class="tp-co">
-          <div class="tp-logo">NL</div>
+          <div class="tp-logo">AR</div>
           <div>
-            <div class="tp-co-name">Northwind Labs</div>
-            <div class="tp-live"><span class="tp-live-dot"></span> Live · updated 2 hours ago</div>
+            <div class="tp-co-name">Audit Ready AI</div>
+            <div class="tp-live"><span class="tp-live-dot"></span> Self-reported · continuously updated</div>
           </div>
         </div>
         <div class="tp-score-ring">
@@ -1664,7 +1666,7 @@ header{
       </div>
       <div class="tp-continuous">
         <span>🔄</span>
-        <span>Continuously verified. This page updates on its own as Northwind stays compliant — never a stale PDF, never out of date.</span>
+        <span>We run Audit Ready AI on ourselves. This page updates on its own as our readiness changes, so it is never a stale PDF and never out of date.</span>
       </div>
     </div>
 
@@ -1700,9 +1702,19 @@ header{
         <div class="tp-check"><span class="tp-check-mark">✓</span> Continuous monitoring</div>
       </div>
 
+      <div style="margin-top:26px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px">
+        <div class="tp-sec-title" style="margin-bottom:12px">How this score is calculated</div>
+        <div style="display:flex;flex-direction:column;gap:11px">
+          <div style="display:flex;gap:10px;font-size:12.5px;color:#475569;line-height:1.55"><span style="color:#2563eb;font-weight:700">1.</span><span>Audit Ready AI reads read-only signals from your GitHub org and repos (branch protection, MFA, secret scanning, Dependabot, code scanning, and more) and connected sources like Google Drive.</span></div>
+          <div style="display:flex;gap:10px;font-size:12.5px;color:#475569;line-height:1.55"><span style="color:#2563eb;font-weight:700">2.</span><span>Each signal maps to one of the 49 SOC 2 controls across the AICPA Trust Services Criteria. Strong evidence marks a control as met; partial signals are counted as in progress, not done.</span></div>
+          <div style="display:flex;gap:10px;font-size:12.5px;color:#475569;line-height:1.55"><span style="color:#2563eb;font-weight:700">3.</span><span>The overall score is the percentage of controls met across every category, so a higher score means more of the framework is genuinely covered by evidence.</span></div>
+          <div style="display:flex;gap:10px;font-size:12.5px;color:#475569;line-height:1.55"><span style="color:#2563eb;font-weight:700">4.</span><span>It recalculates on every scan, so this page reflects current readiness rather than a point-in-time snapshot.</span></div>
+        </div>
+      </div>
+
       <div class="tp-foot">
         <div class="tp-powered">🛡 Powered by <b><span class="tp-brand-audit">Audit</span> Ready AI</b></div>
-        <div class="tp-disclaim">Self-reported readiness — not a certified SOC 2 audit. Reflects documented controls.</div>
+        <div class="tp-disclaim">Self-reported readiness, not a certified SOC 2 audit. Reflects documented controls.</div>
       </div>
 
       <div class="tp-cta">
