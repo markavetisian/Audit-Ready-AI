@@ -331,7 +331,7 @@ header{
 .lp-blob-2{width:400px;height:250px;background:rgba(196,181,253,0.35);bottom:-60px;left:-80px;border-radius:40%}
 .lp-blob-3{width:300px;height:200px;background:rgba(253,186,116,0.22);bottom:100px;right:80px;border-radius:40%}
 /* login nav */
-.lp-nav{position:relative;z-index:10;width:100%;max-width:1100px;display:flex;align-items:center;justify-content:space-between;padding:22px 32px;margin:0 auto}
+.lp-nav{position:relative;z-index:100;width:100%;max-width:1100px;display:flex;align-items:center;justify-content:space-between;padding:22px 32px;margin:0 auto}
 .lp-logo{display:flex;align-items:center;gap:9px}
 .lp-logo-mark{width:32px;height:32px;border-radius:8px;background:#2563eb;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
 .lp-logo-name{font-size:15px;font-weight:650;letter-spacing:-.03em;color:#0f172a}
@@ -341,6 +341,18 @@ header{
 .lp-nav-link:hover{color:#0f172a}
 .lp-nav-signin{height:36px;padding:0 18px;border-radius:18px;background:#0f172a;color:#fff;font-size:13px;font-weight:500;border:none;cursor:pointer;transition:opacity .15s}
 .lp-nav-signin:hover{opacity:.85}
+.lp-nav-actions{display:flex;align-items:center;gap:10px}
+.lp-burger{display:none;width:40px;height:40px;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:#fff;border:1px solid #e2e8f0;border-radius:11px;cursor:pointer;padding:0}
+.lp-burger span{display:block;width:18px;height:2px;background:#0f172a;border-radius:2px;transition:transform .2s,opacity .2s}
+.lp-burger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.lp-burger.open span:nth-child(2){opacity:0}
+.lp-burger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+.lp-mobile-menu{display:none;position:absolute;top:calc(100% - 4px);left:16px;right:16px;background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 16px 44px rgba(15,23,42,.16);padding:8px;z-index:60;flex-direction:column}
+.lp-mobile-menu.open{display:flex;animation:lpMenuIn .18s ease}
+@keyframes lpMenuIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.lp-mobile-menu .lp-nav-link{font-size:15px;color:#0f172a;padding:14px 15px;border-radius:10px}
+.lp-mobile-menu .lp-nav-link:hover,.lp-mobile-menu .lp-nav-link:active{background:#f1f5f9}
+.lp-mobile-menu .lp-menu-signin{margin-top:6px;height:46px;border-radius:12px;background:#0f172a;color:#fff;font-size:15px;font-weight:600;border:none;cursor:pointer}
 /* badge */
 .lp-badge{position:relative;z-index:10;display:inline-flex;align-items:center;gap:6px;margin:28px auto 0;padding:5px 14px;border-radius:20px;background:rgba(37,99,235,.07);border:1px solid rgba(37,99,235,.18);font-size:12px;font-weight:500;color:#2563eb}
 .lp-badge-dot{width:6px;height:6px;border-radius:50%;background:#2563eb;animation:lp-pulse 2s ease-in-out infinite;flex-shrink:0}
@@ -440,7 +452,7 @@ header{
 .oauth-gh{background:var(--accent);color:#fff;border-color:transparent}
 .oauth-gg{background:var(--surface2);color:var(--text)}
 .oauth-or{text-align:center;font-size:11px;color:var(--muted);margin:4px 0}
-@media(max-width:640px){.lp-nav-links{display:none}.lp-mock-sidebar{display:none}.lp-mock-body{grid-template-columns:1fr}}
+@media(max-width:640px){.lp-nav-links{display:none}.lp-burger{display:flex}.lp-nav{padding:18px 20px}.lp-mock-sidebar{display:none}.lp-mock-body{grid-template-columns:1fr}}
 
 /* ── Page layouts ────────────────────────── */
 .page-inner{max-width:1024px;margin:0 auto;padding:20px;width:100%}
@@ -981,8 +993,24 @@ header{
       <div class="lp-nav-link" onclick="openSoc2Modal()">SOC 2 Guide</div>
       <div class="lp-nav-link" onclick="location.href='/founder.html'">Founder</div>
     </div>
-    <button class="lp-nav-signin" onclick="location.href='/api/auth?provider=github'">Sign in</button>
+    <div class="lp-nav-actions">
+      <button class="lp-nav-signin" onclick="location.href='/api/auth?provider=github'">Sign in</button>
+      <button class="lp-burger" id="lpBurger" onclick="toggleLpNav()" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+    <div class="lp-mobile-menu" id="lpMobileMenu">
+      <div class="lp-nav-link" onclick="closeLpNav();document.getElementById('lpHow').scrollIntoView({behavior:'smooth'})">How it works</div>
+      <div class="lp-nav-link" onclick="closeLpNav();openPricingModal()">Pricing</div>
+      <div class="lp-nav-link" onclick="closeLpNav();document.getElementById('lpFaq').scrollIntoView({behavior:'smooth'})">Readiness check</div>
+      <div class="lp-nav-link" onclick="closeLpNav();openSoc2Modal()">SOC 2 Guide</div>
+      <div class="lp-nav-link" onclick="location.href='/founder.html'">Founder</div>
+      <button class="lp-menu-signin" onclick="location.href='/api/auth?provider=github'">Sign in</button>
+    </div>
   </nav>
+  <script>
+    function toggleLpNav(){var m=document.getElementById('lpMobileMenu'),b=document.getElementById('lpBurger');if(!m)return;var open=m.classList.toggle('open');if(b)b.classList.toggle('open',open);}
+    function closeLpNav(){var m=document.getElementById('lpMobileMenu'),b=document.getElementById('lpBurger');if(m)m.classList.remove('open');if(b)b.classList.remove('open');}
+    document.addEventListener('click',function(e){var m=document.getElementById('lpMobileMenu'),b=document.getElementById('lpBurger');if(m&&m.classList.contains('open')&&!m.contains(e.target)&&b&&!b.contains(e.target))closeLpNav();});
+  </script>
 
   <!-- hero -->
   <div class="lp-hero" style="padding-top:48px">
