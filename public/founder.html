@@ -49,6 +49,20 @@
   .story p.lead{font-size:18px;color:var(--text);font-weight:500}
   .pull{font-family:var(--display);font-weight:700;font-size:20px;color:var(--text);border-left:3px solid var(--accent);padding:2px 0 2px 18px;margin:30px 0;line-height:1.4}
 
+  /* Dramatic year timeline */
+  .timeline{position:relative;margin-top:44px;padding-left:38px}
+  .timeline::before{content:"";position:absolute;left:10px;top:16px;bottom:30px;width:2px;background:linear-gradient(180deg,#3b82f6,#22d3ee 55%,rgba(34,211,238,0))}
+  .era{position:relative;margin-bottom:30px}
+  .era-dot{position:absolute;left:-38px;top:12px;width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid #2563eb;box-shadow:0 0 0 5px rgba(37,99,235,.12)}
+  .era.now .era-dot{border-color:#16a34a;box-shadow:0 0 0 5px rgba(22,163,74,.14);animation:erapulse 2s infinite}
+  @keyframes erapulse{0%{box-shadow:0 0 0 0 rgba(22,163,74,.4)}70%{box-shadow:0 0 0 9px rgba(22,163,74,0)}100%{box-shadow:0 0 0 0 rgba(22,163,74,0)}}
+  .era-year{display:flex;align-items:baseline;gap:10px;margin-bottom:12px}
+  .era-year b{font-family:var(--display);font-weight:800;font-size:clamp(34px,8vw,52px);letter-spacing:-.03em;line-height:.9;
+    background:linear-gradient(135deg,#1d4ed8,#22d3ee);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .era.now .era-year b{background:linear-gradient(135deg,#15803d,#22c55e);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .era-year span{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .era p{margin:0 0 14px}
+
   .cta{margin-top:48px;background:linear-gradient(135deg,#1e3a8a,#2563eb);border-radius:18px;padding:30px 28px;text-align:center;color:#fff}
   .cta h3{font-family:var(--display);font-size:22px;font-weight:700;margin:0 0 8px}
   .cta p{color:rgba(255,255,255,.75);font-size:14px;margin:0 auto 20px;max-width:420px}
@@ -82,27 +96,38 @@
   </div>
 
   <div class="story">
-    <p class="lead">I started building websites and working in marketing in 2020.</p>
+    <p class="lead">This is the road from building websites to building trust.</p>
 
-    <p>In the early days, I focused on creating websites, testing ideas, and understanding how businesses attract users and grow online.</p>
+    <div class="timeline">
+      <div class="era">
+        <div class="era-dot"></div>
+        <div class="era-year"><b>2020</b><span>Where it started</span></div>
+        <p>I started building websites and working in marketing. In the early days, I focused on creating websites, testing ideas, and understanding how businesses attract users and grow online.</p>
+      </div>
 
-    <p>When large language models started becoming popular, I was one of the early people to experience what later became known as "vibe coding." I saw how AI was changing the way software could be built, allowing individuals to move faster, experiment more, and create things that previously required much larger teams.</p>
+      <div class="era">
+        <div class="era-dot"></div>
+        <div class="era-year"><b>2021</b><span>The AI shift</span></div>
+        <p>When large language models started becoming popular in 2021, I was one of the early people to experience what later became known as "vibe coding." I saw how AI was changing the way software could be built, letting individuals move faster, experiment more, and create things that used to require much larger teams.</p>
+        <p>I spent that time building websites, simple products, AI-powered tools, and automation systems while learning how the entire software development process was changing.</p>
+      </div>
 
-    <p>I spent that time building websites, simple products, AI-powered tools, and automation systems while learning how the entire software development process was changing.</p>
+      <div class="era">
+        <div class="era-dot"></div>
+        <div class="era-year"><b>2024–2025</b><span>Going deeper</span></div>
+        <p>My focus moved from websites into deeper technical systems. I started working on infrastructure, AI agents, software platforms, and tools that solved more complex problems.</p>
+        <p>While building these systems, I noticed a problem that kept appearing.</p>
+        <p class="pull">Companies could build and launch products faster than ever, but becoming enterprise-ready was still slow and complicated.</p>
+        <p>Security reviews, compliance requirements, and preparation for SOC 2 often became a major obstacle for growing startups.</p>
+      </div>
 
-    <p>By 2024 and 2025, my focus moved from websites into deeper technical systems. I started working on infrastructure, AI agents, software platforms, and tools that solved more complex problems.</p>
-
-    <p>While building these systems, I noticed a problem that kept appearing.</p>
-
-    <p class="pull">Companies could build and launch products faster than ever, but becoming enterprise-ready was still slow and complicated.</p>
-
-    <p>Security reviews, compliance requirements, and preparation for SOC 2 often became a major obstacle for growing startups.</p>
-
-    <p>That is why I built Audit Ready AI.</p>
-
-    <p>Audit Ready AI helps startups understand their security readiness, identify gaps, and prepare for SOC 2 requirements with a faster and more organized process.</p>
-
-    <p>The goal is simple: make it easier for companies to move from building products to becoming trusted businesses.</p>
+      <div class="era now">
+        <div class="era-dot"></div>
+        <div class="era-year"><b>Today</b><span>Audit Ready AI</span></div>
+        <p>That is why I built Audit Ready AI. It helps startups understand their security readiness, identify gaps, and prepare for SOC 2 requirements with a faster and more organized process.</p>
+        <p>The goal is simple: make it easier for companies to move from building products to becoming trusted businesses.</p>
+      </div>
+    </div>
   </div>
 
   <div class="cta">
