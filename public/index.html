@@ -460,14 +460,46 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
 .page-inner-narrow{max-width:720px;margin:0 auto;padding:20px;width:100%}
 
 /* ── Dashboard layout ────────────────────── */
-.dash-grid{display:grid;grid-template-columns:280px 1fr;gap:16px;align-items:start}
-.dash-score-panel{
-  background:#fff;border:1px solid var(--border);border-radius:var(--r);
-  padding:24px 20px;text-align:center;
-  position:sticky;top:72px;
-  box-shadow:0 2px 8px rgba(15,23,42,.06);
-}
+.dash-grid{display:flex;flex-direction:column;gap:16px}
 .dash-main{}
+
+/* ── Score hero strip ─────────────────────── */
+.dash-hero{
+  background:#fff;border:1px solid var(--border);border-radius:14px;
+  padding:22px 24px;box-shadow:0 2px 10px rgba(15,23,42,.05);
+  display:flex;align-items:center;gap:26px;flex-wrap:wrap;
+}
+.dh-ring{position:relative;width:118px;height:118px;flex-shrink:0}
+.dh-ring svg{transform:rotate(-90deg);display:block}
+.dh-ring-txt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.dh-ring-num{font-family:var(--mono);font-size:27px;font-weight:700;letter-spacing:-.04em;line-height:1}
+.dh-ring-lbl{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-top:4px}
+.dh-info{flex:1;min-width:220px}
+.dh-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-family:var(--mono);margin-bottom:6px}
+.dh-sub{font-size:14px;font-weight:600;color:var(--text)}
+.dh-context{font-size:12.5px;color:var(--muted);margin-top:3px}
+.dh-meta{font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:8px}
+.dh-note{font-size:11px;color:var(--muted);margin-top:8px}
+.dh-note span{color:var(--accent);cursor:pointer}
+.dh-actions{display:flex;flex-direction:column;gap:8px;min-width:190px}
+.dh-actions-row{display:flex;gap:8px}
+.dh-actions-row .btn{flex:1}
+@media(max-width:720px){
+  .dash-hero{flex-direction:column;text-align:center;gap:16px;padding:20px 16px}
+  .dh-info{min-width:0}
+  .dh-actions{width:100%;min-width:0}
+}
+
+.dash-two{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+@media(max-width:860px){.dash-two{grid-template-columns:1fr}}
+
+/* ── Skeleton loading (shimmer) ───────────── */
+.skel{position:relative;overflow:hidden;background:#eef2f7;border-radius:6px}
+.skel::after{content:"";position:absolute;inset:0;transform:translateX(-100%);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent);
+  animation:skelShimmer 1.3s infinite}
+@keyframes skelShimmer{to{transform:translateX(100%)}}
+@media(prefers-reduced-motion:reduce){.skel::after{animation:none}}
 
 /* ── Scan button ─────────────────────────── */
 .scan-btn{
@@ -475,7 +507,7 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
   background:var(--accent);color:#fff;
   border-radius:var(--r);font-size:13px;font-weight:500;
   display:flex;align-items:center;justify-content:center;gap:6px;
-  cursor:pointer;transition:opacity .12s;margin-top:14px;
+  cursor:pointer;transition:opacity .12s;
 }
 .scan-btn:hover{opacity:.9}
 .scan-btn:disabled{opacity:.4;cursor:not-allowed}
@@ -578,8 +610,6 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
 .score-number{font-family:var(--mono);font-size:42px;font-weight:600;line-height:1;letter-spacing:-.04em}
 
 @media(max-width:768px){
-  .dash-grid{grid-template-columns:1fr}
-  .dash-score-panel{position:static;padding:16px}
   .score-number{font-size:36px}
   .stat-grid{grid-template-columns:repeat(2,1fr)}
   .hdr-nav{display:none}
@@ -1361,32 +1391,35 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
 <div class="page" id="pg-dashboard">
   <div class="page-inner" style="padding-top:24px">
     <div class="dash-grid" id="dashGrid">
-      <!-- Score panel -->
-      <div>
-        <div class="dash-score-panel">
-          <div class="section-heading" style="justify-content:center;margin-bottom:16px">SOC 2 READINESS</div>
-          <div class="score-ring-wrap" id="scoreDisplay">
-            <div class="score-number" id="scoreNum" style="color:#94a3b8">0%</div>
-            <div class="score-label" id="scoreLabel" style="color:#94a3b8">Not Started</div>
-            <div class="score-sub" id="scoreSub" style="font-size:11px;color:var(--muted)">Run a scan to get your score</div>
-            <div id="scoreContext" style="font-size:11px;color:var(--muted);margin-top:4px;text-align:center"></div>
+      <!-- Score hero -->
+      <div class="dash-hero" id="dashHero">
+        <div class="dh-ring">
+          <svg width="118" height="118" viewBox="0 0 118 118">
+            <circle cx="59" cy="59" r="52" fill="none" stroke="#eef2f7" stroke-width="10"/>
+            <circle id="dhRingFill" cx="59" cy="59" r="52" fill="none" stroke="#94a3b8" stroke-width="10" stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="326.7" style="transition:stroke-dashoffset .9s cubic-bezier(.22,1,.36,1),stroke .3s"/>
+          </svg>
+          <div class="dh-ring-txt">
+            <div class="dh-ring-num" id="scoreNum" style="color:#94a3b8">0%</div>
+            <div class="dh-ring-lbl" id="scoreLabel" style="color:#94a3b8">Not Started</div>
           </div>
+        </div>
+        <div class="dh-info">
+          <div class="dh-title">SOC 2 Readiness</div>
+          <div class="dh-sub" id="scoreSub">Run a scan to get your score</div>
+          <div class="dh-context" id="scoreContext"></div>
+          <div class="dh-meta" id="scanMeta"></div>
+          <div id="scoreTrend" style="display:none;margin-top:6px"></div>
+          <div class="dh-note">ℹ️ Self-reported readiness, not a certified audit. <span onclick="openSoc2Modal()">What is SOC 2? →</span></div>
+        </div>
+        <div class="dh-actions">
           <button class="scan-btn" id="scanBtn" onclick="triggerScan()">
             <span id="scanBtnText">⚡ Scan Now</span>
           </button>
-          <div id="scanMeta" style="font-size:10px;color:var(--muted);margin-top:6px;font-family:var(--mono);min-height:14px"></div>
-          <div style="font-size:11px;color:var(--muted);margin-top:10px;padding:8px 10px;background:#f8fafc;border:1px solid var(--border);border-radius:6px;line-height:1.5;text-align:left">
-            ℹ️ Score reflects your documented controls, not a certified audit.
-            <span style="color:var(--accent);cursor:pointer" onclick="openSoc2Modal()"> What is SOC 2? →</span>
+          <div class="dh-actions-row">
+            <button class="btn btn-secondary btn-sm" onclick="generateReport()"><span id="reportBtnText">📄 Report</span></button>
+            <button class="btn btn-ghost btn-sm" onclick="openShareModal()">🔗 Share</button>
           </div>
-          <div id="scoreTrend" style="display:none;margin-top:6px;text-align:center"></div>
-          <button class="btn btn-secondary btn-full btn-sm" style="margin-top:8px" onclick="generateReport()">
-            <span id="reportBtnText">📄 Generate Report</span>
-          </button>
-          <button class="btn btn-ghost btn-full btn-sm" style="margin-top:6px" onclick="openShareModal()">
-            🔗 Share with Auditor
-          </button>
-          <button class="upgrade-btn" onclick="openPricingModal()">
+          <button class="upgrade-btn" style="margin-top:0" onclick="openPricingModal()">
             ⚡ Upgrade Plan
           </button>
         </div>
@@ -1442,20 +1475,21 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
           </div>
           <button class="btn btn-primary btn-sm" style="margin-top:14px;width:100%" onclick="triggerScan();document.getElementById('onboardingCard').style.display='none'">⚡ Run First Scan Now</button>
         </div>
-        <!-- Category breakdown -->
-        <div class="card" style="margin-bottom:16px">
-          <div class="section-heading">CATEGORY BREAKDOWN</div>
-          <div id="categoryBars"><div style="color:var(--muted);font-size:12px;padding:8px 0">Loading...</div></div>
+        <!-- Category breakdown + Top gaps, side by side -->
+        <div class="dash-two" style="margin-bottom:16px">
+          <div class="card">
+            <div class="section-heading">CATEGORY BREAKDOWN</div>
+            <div id="categoryBars"></div>
+          </div>
+          <div class="card">
+            <div class="section-heading">TOP GAPS TO FIX</div>
+            <div id="topGapsList"></div>
+          </div>
         </div>
         <!-- Next Steps -->
         <div id="nextStepsCard" class="card" style="display:none;margin-bottom:16px">
           <div class="section-heading">YOUR NEXT STEPS</div>
           <div id="nextStepsList" style="display:flex;flex-direction:column;gap:8px;margin-top:10px"></div>
-        </div>
-        <!-- Top gaps -->
-        <div class="card" style="margin-bottom:16px">
-          <div class="section-heading">TOP GAPS TO FIX</div>
-          <div id="topGapsList"><div style="color:var(--muted);font-size:12px;padding:8px 0">Loading...</div></div>
         </div>
         <!-- Latest report -->
         <div id="latestReportSection" style="display:none">
@@ -1496,7 +1530,7 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
       <div class="filter-pill" data-filter="EVIDENCE_UPLOADED" onclick="filterControls('EVIDENCE_UPLOADED',this)">Evidence Added</div>
       <div class="filter-pill" data-filter="CONNECTED_AUTO" onclick="filterControls('CONNECTED_AUTO',this)">Auto-Detected</div>
     </div>
-    <div id="controlsList"><div style="color:var(--muted);font-size:12px;text-align:center;padding:32px 0"><span class="spinner"></span> Loading controls...</div></div>
+    <div id="controlsList"></div>
   </div>
 </div>
 
@@ -1507,7 +1541,7 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
       <h1 style="font-size:20px;font-weight:600;letter-spacing:-.03em">Connected Tools</h1>
       <p style="font-size:13px;color:var(--muted);margin-top:2px">Connect your tools to auto-detect compliance controls</p>
     </div>
-    <div id="integrationsList"><div style="color:var(--muted);font-size:12px;text-align:center;padding:32px 0"><span class="spinner"></span> Loading...</div></div>
+    <div id="integrationsList"></div>
   </div>
 </div>
 
@@ -1776,7 +1810,7 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
       </div>
     </div>
     <div id="lockerStats" style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap"></div>
-    <div id="lockerContent"><div style="color:var(--muted);font-size:12px;text-align:center;padding:48px 0"><span class="spinner"></span> Loading evidence...</div></div>
+    <div id="lockerContent"></div>
   </div>
 </div>
 
@@ -1854,7 +1888,7 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
         <div class="section-heading" style="margin-bottom:0">UPCOMING RENEWALS & EXPIRIES</div>
         <button class="btn btn-secondary btn-sm" onclick="loadReminders()">↺ Refresh</button>
       </div>
-      <div id="remindersList"><div style="color:var(--muted);font-size:12px;text-align:center;padding:24px 0"><span class="spinner"></span> Loading...</div></div>
+      <div id="remindersList"></div>
     </div>
 
     <!-- Vendor tracker -->
@@ -1863,7 +1897,7 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
         <div class="section-heading" style="margin-bottom:0">VENDOR RISK TRACKER</div>
         <button class="btn btn-primary btn-sm" onclick="openAddVendor()">+ Add Vendor</button>
       </div>
-      <div id="vendorsList"><div style="color:var(--muted);font-size:12px;text-align:center;padding:24px 0"><span class="spinner"></span> Loading vendors...</div></div>
+      <div id="vendorsList"></div>
     </div>
   </div>
 </div>
@@ -2207,34 +2241,72 @@ document.addEventListener('click', e => {
 
 // ── Dashboard ─────────────────────────────────────────────────
 
+// Skeleton placeholders shown while data loads (instead of spinners).
+function skelBars(n) {
+  let h = '';
+  for (let i = 0; i < n; i++) {
+    h += '<div style="display:flex;align-items:center;gap:10px;padding:7px 0">' +
+      '<div class="skel" style="width:' + (90 + (i * 17) % 50) + 'px;height:11px"></div>' +
+      '<div class="skel" style="flex:1;height:8px;border-radius:4px"></div>' +
+      '<div class="skel" style="width:30px;height:11px"></div></div>';
+  }
+  return h;
+}
+function skelRows(n, tall) {
+  let h = '';
+  for (let i = 0; i < n; i++) {
+    h += '<div style="display:flex;align-items:center;gap:10px;padding:' + (tall ? '12px' : '9px') + ' 0">' +
+      '<div class="skel" style="width:38px;height:11px"></div>' +
+      '<div class="skel" style="flex:1;height:' + (tall ? '14px' : '11px') + ';max-width:' + (55 + (i * 13) % 30) + '%"></div>' +
+      '<div class="skel" style="width:76px;height:' + (tall ? '26px' : '11px') + ';margin-left:auto;border-radius:' + (tall ? '8px' : '4px') + '"></div></div>';
+  }
+  return h;
+}
+function skelGroups(n) {
+  let h = '';
+  for (let g = 0; g < n; g++) {
+    h += '<div style="margin-bottom:22px">' +
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">' +
+      '<div class="skel" style="width:150px;height:13px"></div>' +
+      '<div class="skel" style="width:44px;height:13px;margin-left:auto"></div></div>' +
+      skelRows(3) + '</div>';
+  }
+  return h;
+}
+function dashSkeletons() {
+  const bars = document.getElementById('categoryBars');
+  if (bars && !ST.score) bars.innerHTML = skelBars(5);
+  const gaps = document.getElementById('topGapsList');
+  if (gaps && !ST.score) gaps.innerHTML = skelRows(3);
+}
+
 async function loadDashboard() {
   if (!ST.user) return;
-  const scoreData = await loadScore();
-  await Promise.all([loadLatestReport(), loadDashboardReminders(), loadUserMode(scoreData)]);
-  // Load score history for trend display
-  try {
-    const hr = await fetch('/api/score?history=true', { headers: authHeaders() });
-    if (hr.ok) {
-      const hd = await hr.json();
-      renderScoreTrend(hd.history || []);
-    }
-  } catch {}
+  dashSkeletons();
+  // Fire everything in parallel — the score render never waits on
+  // reports/reminders/history, and scan meta rides alongside.
+  const scorePromise = loadScore();
+  const extras = Promise.all([loadLatestReport(), loadDashboardReminders()]);
+  const historyPromise = (async () => {
+    try {
+      const hr = await fetch('/api/score?history=true', { headers: authHeaders() });
+      if (hr.ok) renderScoreTrend((await hr.json()).history || []);
+    } catch {}
+  })();
+  const scoreData = await scorePromise;
+  const modePromise = loadUserMode(scoreData);
+  await Promise.all([extras, historyPromise, modePromise]);
   // Auto-rescan if last scan >2hrs old and GitHub connected
   if (ST.user?.githubToken) {
-    try {
-      const sr = await fetch('/api/scan', { headers: authHeaders() });
-      if (sr.ok) {
-        const sd = await sr.json();
-        if (sd.scanned && sd.scannedAt) {
-          const ageMs = Date.now() - new Date(sd.scannedAt).getTime();
-          if (ageMs > 2 * 60 * 60 * 1000) {
-            quietScan();
-          }
-        } else if (!sd.scanned) {
-          quietScan();
-        }
+    const sd = ST.lastScanMeta;
+    if (sd) {
+      if (sd.scanned && sd.scannedAt) {
+        const ageMs = Date.now() - new Date(sd.scannedAt).getTime();
+        if (ageMs > 2 * 60 * 60 * 1000) quietScan();
+      } else if (!sd.scanned) {
+        quietScan();
       }
-    } catch {}
+    }
   }
 }
 
@@ -2258,6 +2330,27 @@ function renderScoreTrend(history) {
 
 async function loadScore() {
   try {
+    // Score and scan-meta load in parallel; the score renders as soon as
+    // it arrives instead of waiting on the scan endpoint.
+    const scanMetaPromise = (async () => {
+      try {
+        const sr = await fetch('/api/scan', { headers: authHeaders() });
+        if (!sr.ok) return;
+        const sd = await sr.json();
+        ST.lastScanMeta = sd;
+        const meta = document.getElementById('scanMeta');
+        if (meta && sd.scanned && sd.scannedAt) {
+          const ageMs = Date.now() - new Date(sd.scannedAt).getTime();
+          const ageMins = Math.floor(ageMs / 60000);
+          const ageStr = ageMins < 60 ? ageMins + 'm ago' : Math.floor(ageMins / 60) + 'h ago';
+          // We rescan opportunistically when a GitHub-connected user loads the
+          // dashboard and the last scan is >2h old — there is no background cron,
+          // so we describe it honestly rather than counting down to a fake scan.
+          const rescanNote = ST.user?.githubToken ? ' · rescans on login if older than 2h' : '';
+          meta.textContent = 'Last scan: ' + ageStr + ' · ' + sd.controlsAutoFilled + ' auto-filled' + rescanNote;
+        }
+      } catch {}
+    })();
     const r = await fetch('/api/score', { headers: authHeaders() });
     if (!r.ok) { showScoreError(); return null; }
     const d = await r.json();
@@ -2266,23 +2359,7 @@ async function loadScore() {
     renderCategoryBars(d.categoryBreakdown);
     renderTopGaps(d.topGaps);
     renderUpgradeCTA();
-    // Load last scan meta
-    const sr = await fetch('/api/scan', { headers: authHeaders() });
-    if (sr.ok) {
-      const sd = await sr.json();
-      const meta = document.getElementById('scanMeta');
-      if (sd.scanned && sd.scannedAt) {
-        const dt = new Date(sd.scannedAt);
-        const ageMs = Date.now() - dt.getTime();
-        const ageMins = Math.floor(ageMs / 60000);
-        const ageStr = ageMins < 60 ? ageMins + 'm ago' : Math.floor(ageMins / 60) + 'h ago';
-        // We rescan opportunistically when a GitHub-connected user loads the
-        // dashboard and the last scan is >2h old — there is no background cron,
-        // so we describe it honestly rather than counting down to a fake scan.
-        const rescanNote = ST.user?.githubToken ? ' · rescans on login if older than 2h' : '';
-        meta.textContent = 'Last scan: ' + ageStr + ' · ' + sd.controlsAutoFilled + ' auto-filled' + rescanNote;
-      }
-    }
+    await scanMetaPromise;
     return d;
   } catch (err) {
     console.error('loadScore error:', err);
@@ -2309,6 +2386,14 @@ function renderScorePanel(d) {
   lb.textContent = d.label;
   lb.style.color = d.color;
   sb.textContent = d.verified + ' of ' + d.applicable + ' controls met';
+  // Animate the hero progress ring (circumference 2π·52 ≈ 326.7)
+  const ring = document.getElementById('dhRingFill');
+  if (ring) {
+    ring.style.stroke = d.color || '#94a3b8';
+    requestAnimationFrame(() => {
+      ring.style.strokeDashoffset = String(326.7 * (1 - Math.min(100, Math.max(0, d.score)) / 100));
+    });
+  }
   // Show onboarding if first time (score is 0 and no evidence yet)
   const ob = document.getElementById('onboardingCard');
   if (ob) ob.style.display = (d.score === 0 || d.verified === 0) ? 'block' : 'none';
@@ -2318,8 +2403,8 @@ function renderScorePanel(d) {
   if (contextEl) {
     const contexts = {
       AUDIT_READY: 'Ready to engage a CPA firm for Type 1 audit',
-      GETTING_CLOSE: 'Close — address top gaps before scheduling audit',
-      IN_PROGRESS: 'Building your evidence base — keep going',
+      GETTING_CLOSE: 'Close. Address the top gaps, then schedule your audit',
+      IN_PROGRESS: 'Building your evidence base. Keep going',
       NOT_READY: 'Start with the top gaps listed below',
     };
     contextEl.textContent = contexts[d.tier] || '';
@@ -2628,7 +2713,7 @@ async function generateReport() {
 async function loadControls() {
   if (!ST.user) return;
   const el = document.getElementById('controlsList');
-  el.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:32px 0"><span class="spinner"></span></div>';
+  el.innerHTML = skelGroups(3);
   try {
     const r = await fetch('/api/controls?grouped=true', { headers: authHeaders() });
     if (!r.ok) throw new Error('Failed to load controls');
@@ -2892,6 +2977,7 @@ function updateScoreQuick(score) {
 async function loadIntegrations() {
   if (!ST.user) return;
   const el = document.getElementById('integrationsList');
+  el.innerHTML = skelRows(3, true);
   try {
     const r = await fetch('/api/integrations', { headers: authHeaders() });
     if (!r.ok) throw new Error('Failed to load integrations');
@@ -3434,7 +3520,7 @@ let _lockerAllItems = [];
 async function loadLocker() {
   if (!ST.user) return;
   const el = document.getElementById('lockerContent');
-  el.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:48px 0"><span class="spinner"></span></div>';
+  el.innerHTML = skelRows(5, true);
 
   try {
     // Fetch ALL evidence across controls (manual items have no expiry date, so
@@ -3724,6 +3810,7 @@ function closeMobileNav() {
 async function loadReminders() {
   const el = document.getElementById('remindersList');
   if (!el) return;
+  el.innerHTML = skelRows(2);
   try {
     const r = await fetch('/api/platform?type=reminders', { headers: authHeaders() });
     if (!r.ok) throw new Error('Failed');
@@ -3775,6 +3862,7 @@ function renderReminders(reminders, urgentCount) {
 async function loadVendors() {
   const el = document.getElementById('vendorsList');
   if (!el) return;
+  el.innerHTML = skelRows(2, true);
   try {
     const r = await fetch('/api/platform?type=vendors', { headers: authHeaders() });
     if (!r.ok) throw new Error('Failed');
@@ -4182,7 +4270,7 @@ function renderUpgradeCTA() {
   const gaps = Math.max(0, (ST.score.applicable || 0) - (ST.score.verified || 0));
   const head = document.getElementById('upsellHeadline');
   const sub = document.getElementById('upsellSub');
-  if (head) head.textContent = "You're " + score + '% audit-ready — let’s close the gap';
+  if (head) head.textContent = "You're " + score + '% audit-ready. Let\'s close the gap';
   if (sub) {
     sub.textContent = gaps > 0
       ? ('Your assessment found ' + gaps + ' control' + (gaps === 1 ? '' : 's') + ' still missing evidence. Unlock the tools to close them and prove it to your customers:')
