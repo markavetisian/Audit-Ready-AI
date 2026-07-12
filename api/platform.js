@@ -115,6 +115,15 @@ export default async function handler(req, res) {
       } catch (err) { return res.status(500).json({ error: 'Internal error. Please try again.' }); }
     }
 
+    // ── Risk register ─────────────────────────────────────────────
+    if (type === 'risks') {
+      try {
+        const raw = await redis.get(`user:${userId}:risks`);
+        const risks = raw ? (typeof raw === 'object' ? raw : JSON.parse(raw)) : [];
+        return res.status(200).json({ risks });
+      } catch (err) { return res.status(500).json({ error: 'Internal error. Please try again.' }); }
+    }
+
     if (type === 'reminders') {
       try {
         const now = Date.now();
@@ -298,11 +307,58 @@ export default async function handler(req, res) {
       } catch (err) { return res.status(500).json({ error: 'Internal error. Please try again.' }); }
     }
 
+    // ── Risk register: create or update a risk ────────────────────
+    if (body.type === 'risk') {
+      const { id: riskId, title, description, category, likelihood, impact, status, owner, treatment } = body;
+      if (!title || !title.trim()) return res.status(400).json({ error: 'Risk title required' });
+      const clamp = (n) => Math.min(5, Math.max(1, parseInt(n, 10) || 3));
+      const STATUSES = ['OPEN', 'MITIGATING', 'ACCEPTED', 'CLOSED'];
+      try {
+        const key = `user:${userId}:risks`;
+        const raw = await redis.get(key);
+        let risks = raw ? (typeof raw === 'object' ? raw : JSON.parse(raw)) : [];
+        const L = clamp(likelihood), I = clamp(impact);
+        const fields = {
+          title: title.trim(),
+          description: (description || '').slice(0, 1000),
+          category: category || 'Operational',
+          likelihood: L,
+          impact: I,
+          score: L * I,
+          status: STATUSES.includes(status) ? status : 'OPEN',
+          owner: (owner || '').slice(0, 120),
+          treatment: (treatment || '').slice(0, 1000),
+        };
+        let risk;
+        const idx = riskId ? risks.findIndex(r => r.id === riskId) : -1;
+        if (idx >= 0) {
+          risk = { ...risks[idx], ...fields, updatedAt: new Date().toISOString() };
+          risks[idx] = risk;
+        } else {
+          risk = { id: generateId(), ...fields, createdAt: new Date().toISOString() };
+          risks.unshift(risk);
+        }
+        await redis.set(key, JSON.stringify(risks.slice(0, 200)));
+        return res.status(200).json({ ok: true, risk });
+      } catch (err) { return res.status(500).json({ error: 'Internal error. Please try again.' }); }
+    }
+
     return res.status(400).json({ error: 'Missing or invalid type' });
   }
 
   // ── DELETE ────────────────────────────────────────────────────────────────
   if (req.method === 'DELETE') {
+    if (type === 'risk' && id) {
+      try {
+        const key = `user:${userId}:risks`;
+        const raw = await redis.get(key);
+        let risks = raw ? (typeof raw === 'object' ? raw : JSON.parse(raw)) : [];
+        risks = risks.filter(r => r.id !== id);
+        await redis.set(key, JSON.stringify(risks));
+        return res.status(200).json({ ok: true });
+      } catch (err) { return res.status(500).json({ error: 'Internal error. Please try again.' }); }
+    }
+
     if (type === 'vendor' && id) {
       try {
         const key = `user:${userId}:vendors`;
@@ -331,6 +387,7 @@ export default async function handler(req, res) {
           `user:${userId}:score`,
           `user:${userId}:scoreHistory`,
           `user:${userId}:vendors`,
+          `user:${userId}:risks`,
           `user:${userId}:profile`,
           `user:${userId}:shares`,
           `user:${userId}:lastScan`,

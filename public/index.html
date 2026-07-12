@@ -533,6 +533,37 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
 .dash-two{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
 @media(max-width:860px){.dash-two{grid-template-columns:1fr}}
 
+/* GRC: stat tiles */
+.mon-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+@media(max-width:720px){.mon-stats{grid-template-columns:repeat(2,1fr)}}
+.stat-tile{background:#fff;border:1px solid var(--border);border-radius:12px;padding:15px 16px}
+.stat-tile-val{font-family:var(--mono);font-size:26px;font-weight:700;letter-spacing:-.03em;line-height:1}
+.stat-tile-lbl{font-size:11.5px;color:var(--muted);margin-top:6px;font-weight:500}
+
+/* Monitors */
+.mon-row{display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--border)}
+.mon-row:last-child{border-bottom:none}
+.mon-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.mon-pass{background:#16a34a;box-shadow:0 0 0 3px rgba(22,163,74,.14)}
+.mon-fail{background:#dc2626;box-shadow:0 0 0 3px rgba(220,38,38,.12)}
+.mon-warn{background:#d97706;box-shadow:0 0 0 3px rgba(217,119,6,.14)}
+.mon-name{font-size:13.5px;font-weight:600;color:var(--text)}
+.mon-meta{font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:2px}
+.mon-cid{font-family:var(--mono);font-size:10px;color:var(--muted);flex-shrink:0}
+.mon-badge{font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;flex-shrink:0;margin-left:auto}
+.mon-drift{font-family:var(--mono);font-size:9.5px;font-weight:700;color:#b45309;background:#fef3c7;border:1px solid #fcd34d;padding:2px 7px;border-radius:20px;margin-left:8px}
+
+/* Risk matrix 5x5 */
+.rk-matrix{display:grid;grid-template-columns:auto repeat(5,1fr);gap:3px;font-family:var(--mono);font-size:10px}
+.rk-cell{aspect-ratio:1;border-radius:5px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:12px}
+.rk-axis{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:9px}
+.rk-lbl{font-size:11px;color:var(--muted);display:block;margin-bottom:4px}
+.rk-item{display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--border)}
+.rk-item:last-child{border-bottom:none}
+.rk-score{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+.rk-status{font-family:var(--mono);font-size:9.5px;font-weight:700;padding:3px 9px;border-radius:20px;flex-shrink:0}
+@media(max-width:640px){.dev-grid{grid-template-columns:1fr!important}}
+
 /* ── Skeleton loading (shimmer) ───────────── */
 .skel{position:relative;overflow:hidden;background:#eef2f7;border-radius:6px}
 .skel::after{content:"";position:absolute;inset:0;transform:translateX(-100%);
@@ -994,6 +1025,8 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
     <div class="sb-label">Workspace</div>
     <div class="hn" id="hn-dashboard" onclick="nav('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Dashboard</span></div>
     <div class="hn" id="hn-controls" onclick="nav('controls')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l3 3 5-6"/></svg><span>Controls</span></div>
+    <div class="hn" id="hn-monitors" onclick="nav('monitors')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2.5 7 5-14L17 12h4"/></svg><span>Monitoring</span></div>
+    <div class="hn" id="hn-risk" onclick="nav('risk')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l9.5 17H2.5z"/><path d="M12 10v4M12 17.5h.01"/></svg><span>Risk Register</span></div>
     <div class="hn" id="hn-integrations" onclick="nav('integrations')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 0 1 0 10h-2M8 12h8"/></svg><span>Integrations</span></div>
     <div class="hn" id="hn-locker" onclick="nav('locker')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4"/></svg><span>Evidence Locker</span></div>
     <div class="hn" id="hn-trust" onclick="nav('trust')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 3v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V6z"/></svg><span>Trust Page</span></div>
@@ -1014,6 +1047,8 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
         </div>
         <div class="dd-item" onclick="nav('dashboard')">📊 Dashboard</div>
         <div class="dd-item" onclick="nav('controls')">✅ Controls</div>
+        <div class="dd-item" onclick="nav('monitors')">📡 Monitoring</div>
+        <div class="dd-item" onclick="nav('risk')">⚠️ Risk Register</div>
         <div class="dd-item" onclick="nav('integrations')">🔌 Integrations</div>
         <div class="dd-item" onclick="nav('locker')">🗄 Evidence Locker</div>
         <div class="dd-item" onclick="nav('trust')">🛡 Trust Page</div>
@@ -1049,6 +1084,8 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
   <div style="padding:0 8px">
     <div class="mob-nav-item" onclick="closeMobileNav();nav('dashboard')">📊 Dashboard</div>
     <div class="mob-nav-item" onclick="closeMobileNav();nav('controls')">✅ Controls</div>
+    <div class="mob-nav-item" onclick="closeMobileNav();nav('monitors')">📡 Monitoring</div>
+    <div class="mob-nav-item" onclick="closeMobileNav();nav('risk')">⚠️ Risk Register</div>
     <div class="mob-nav-item" onclick="closeMobileNav();nav('integrations')">🔌 Integrations</div>
     <div class="mob-nav-item" onclick="closeMobileNav();nav('locker')">🗄 Evidence Locker</div>
     <div class="mob-nav-item" onclick="closeMobileNav();nav('trust')">🛡 Trust Page</div>
@@ -1549,6 +1586,28 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
             <div id="topGapsList"></div>
           </div>
         </div>
+        <!-- Developer tools -->
+        <div class="card" style="margin-bottom:16px">
+          <div class="section-heading">FOR DEVELOPERS</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px" class="dev-grid">
+            <div style="border:1px solid var(--border);border-radius:10px;padding:13px 14px">
+              <div style="font-size:13px;font-weight:600;margin-bottom:3px">📊 README badge</div>
+              <div style="font-size:11.5px;color:var(--muted);line-height:1.5;margin-bottom:9px">A live SOC 2 readiness badge for your repo.</div>
+              <button class="btn btn-secondary btn-sm" onclick="copyBadge()">Copy markdown</button>
+            </div>
+            <div style="border:1px solid var(--border);border-radius:10px;padding:13px 14px">
+              <div style="font-size:13px;font-weight:600;margin-bottom:3px">⬇ JSON export</div>
+              <div style="font-size:11.5px;color:var(--muted);line-height:1.5;margin-bottom:9px">Your controls &amp; evidence as machine-readable JSON.</div>
+              <button class="btn btn-secondary btn-sm" onclick="exportJson()">Export</button>
+            </div>
+            <div style="border:1px solid var(--border);border-radius:10px;padding:13px 14px">
+              <div style="font-size:13px;font-weight:600;margin-bottom:3px">📡 Drift alerts</div>
+              <div style="font-size:11.5px;color:var(--muted);line-height:1.5;margin-bottom:9px">Slack &amp; GitHub Check alerts when a control regresses.</div>
+              <button class="btn btn-ghost btn-sm" onclick="nav('monitors')">View monitors →</button>
+            </div>
+          </div>
+        </div>
+
         <!-- Next Steps -->
         <div id="nextStepsCard" class="card" style="display:none;margin-bottom:16px">
           <div class="section-heading">YOUR NEXT STEPS</div>
@@ -1965,6 +2024,105 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
   </div>
 </div>
 
+<!-- ── Continuous Monitoring ─────────────────────────────────── -->
+<div class="page" id="pg-monitors">
+  <div class="page-inner" style="padding-top:24px">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px">
+      <div>
+        <h1 style="font-size:22px;font-weight:700;letter-spacing:-.03em">Continuous Monitoring</h1>
+        <p style="font-size:13px;color:var(--muted);margin-top:3px">Automated checks that watch your stack and flag drift. Re-verified on every scan.</p>
+      </div>
+      <button class="scan-btn" style="width:auto;padding:9px 18px" onclick="triggerScan()"><span id="monScanTxt">⚡ Re-scan now</span></button>
+    </div>
+    <div id="monStats" class="mon-stats"></div>
+    <div class="card">
+      <div class="section-heading">MONITORS</div>
+      <div id="monitorsList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Risk Register ─────────────────────────────────────────── -->
+<div class="page" id="pg-risk">
+  <div class="page-inner" style="padding-top:24px">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px">
+      <div>
+        <h1 style="font-size:22px;font-weight:700;letter-spacing:-.03em">Risk Register</h1>
+        <p style="font-size:13px;color:var(--muted);margin-top:3px">Identify, score, and treat the risks to your security posture. Required for SOC 2 CC3.</p>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="openRiskModal()">+ Add Risk</button>
+    </div>
+    <div id="riskStats" class="mon-stats"></div>
+    <div class="dash-two" style="margin-bottom:16px">
+      <div class="card">
+        <div class="section-heading">RISK MATRIX</div>
+        <div id="riskMatrix"></div>
+      </div>
+      <div class="card">
+        <div class="section-heading">BY STATUS</div>
+        <div id="riskByStatus"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-heading">ALL RISKS</div>
+      <div id="risksList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Risk Modal ─────────────────────────────────────────────── -->
+<div id="riskModal" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeRiskModal()">
+  <div class="modal-box" style="max-width:520px">
+    <h3 id="riskModalTitle" style="margin-bottom:14px">Add Risk</h3>
+    <input type="hidden" id="riskId"/>
+    <div style="display:flex;flex-direction:column;gap:11px">
+      <div>
+        <label class="rk-lbl">Risk title *</label>
+        <input class="ev-input" id="riskTitle" placeholder="e.g. No formal access review process" style="width:100%;box-sizing:border-box"/>
+      </div>
+      <div>
+        <label class="rk-lbl">Description</label>
+        <textarea class="ev-input" id="riskDesc" rows="2" placeholder="What could go wrong, and why it matters" style="width:100%;box-sizing:border-box;resize:vertical"></textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label class="rk-lbl">Category</label>
+          <select class="ev-input" id="riskCategory" style="width:100%;box-sizing:border-box">
+            <option>Access</option><option>Infrastructure</option><option>Data Protection</option>
+            <option>Vendor</option><option>Operational</option><option>Availability</option><option>Compliance</option>
+          </select>
+        </div>
+        <div>
+          <label class="rk-lbl">Owner</label>
+          <input class="ev-input" id="riskOwner" placeholder="e.g. CTO" style="width:100%;box-sizing:border-box"/>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div>
+          <label class="rk-lbl">Likelihood (1-5)</label>
+          <select class="ev-input" id="riskLikelihood" style="width:100%;box-sizing:border-box"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option></select>
+        </div>
+        <div>
+          <label class="rk-lbl">Impact (1-5)</label>
+          <select class="ev-input" id="riskImpact" style="width:100%;box-sizing:border-box"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option></select>
+        </div>
+        <div>
+          <label class="rk-lbl">Status</label>
+          <select class="ev-input" id="riskStatus" style="width:100%;box-sizing:border-box"><option value="OPEN">Open</option><option value="MITIGATING">Mitigating</option><option value="ACCEPTED">Accepted</option><option value="CLOSED">Closed</option></select>
+        </div>
+      </div>
+      <div>
+        <label class="rk-lbl">Treatment plan</label>
+        <textarea class="ev-input" id="riskTreatment" rows="2" placeholder="How you'll reduce or accept this risk" style="width:100%;box-sizing:border-box;resize:vertical"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+        <button class="btn btn-ghost btn-sm" onclick="closeRiskModal()">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="saveRisk()"><span id="riskSaveTxt">Save risk</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ── Add Vendor Modal ───────────────────────────────────────── -->
 <div id="addVendorModal" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeAddVendor()">
   <div class="modal-box" style="max-width:480px">
@@ -2261,6 +2419,8 @@ function nav(page) {
   if (hn) hn.classList.add('active');
   if (page === 'dashboard') loadDashboard();
   if (page === 'controls') loadControls();
+  if (page === 'monitors') loadMonitors();
+  if (page === 'risk') loadRisks();
   if (page === 'integrations') loadIntegrations();
   if (page === 'locker') loadLocker();
   if (page === 'trust') loadTrustPage();
@@ -4038,6 +4198,286 @@ async function removeVendor(id) {
   } catch (err) { toast(err.message, 'error'); }
 }
 
+// ── Continuous Monitoring ─────────────────────────────────────
+// Automated checks derived from the same GitHub signals the scan reads.
+// Drift is detected client-side by comparing to the last snapshot.
+const AUTO_MONITORS = [
+  { id: 'CC6.2', name: 'MFA / 2FA enforced org-wide' },
+  { id: 'CC6.1', name: 'Access provisioning controls in place' },
+  { id: 'CC6.6', name: 'Org audit log accessible' },
+  { id: 'CC8.2', name: 'Branch protection + required reviews' },
+  { id: 'CC8.1', name: 'Pull-request workflow in active use' },
+  { id: 'CC8.3', name: 'Separate dev / staging / prod environments' },
+  { id: 'CC8.4', name: 'CI/CD workflows configured' },
+  { id: 'CC8.5', name: 'Security scanning in CI (CodeQL / Dependabot)' },
+  { id: 'CC1.1', name: 'Security policy present (SECURITY.md)' },
+  { id: 'CC5.2', name: 'TLS / HTTPS enforced' },
+];
+
+async function loadMonitors() {
+  if (!ST.user) return;
+  const list = document.getElementById('monitorsList');
+  const stats = document.getElementById('monStats');
+  if (list) list.innerHTML = skelRows(6);
+  if (stats) stats.innerHTML = '';
+  try {
+    const r = await fetch('/api/controls?grouped=true', { headers: authHeaders() });
+    if (!r.ok) throw new Error('Failed to load monitors');
+    const d = await r.json();
+    const byId = {};
+    (d.controls || []).forEach(c => { byId[c.id] = c; });
+    // Also ensure scan meta is available for "last checked"
+    if (!ST.lastScanMeta) { try { const sr = await fetch('/api/scan', { headers: authHeaders() }); if (sr.ok) ST.lastScanMeta = await sr.json(); } catch {} }
+    renderMonitors(byId);
+  } catch (err) {
+    if (list) list.innerHTML = '<div style="color:var(--red);font-size:13px">' + esc(err.message) + '</div>';
+  }
+}
+
+function renderMonitors(byId) {
+  const monitors = AUTO_MONITORS.map(m => {
+    const c = byId[m.id] || {};
+    const st = c.status;
+    const state = (st === 'CONNECTED_AUTO') ? 'pass' : (st === 'EVIDENCE_UPLOADED' ? 'manual' : 'fail');
+    return { ...m, state, detail: c.detectionDetails || '' };
+  });
+  // Drift detection vs last snapshot
+  const key = 'ar_mon_' + (ST.user?.email || 'anon');
+  let prev = {};
+  try { prev = JSON.parse(localStorage.getItem(key) || '{}'); } catch {}
+  monitors.forEach(m => {
+    const was = prev[m.id];
+    if (was && was !== m.state) {
+      m.drift = (m.state === 'fail' && was !== 'fail') ? 'REGRESSED'
+              : (m.state !== 'fail' && was === 'fail') ? 'RESOLVED' : '';
+    }
+  });
+  try { localStorage.setItem(key, JSON.stringify(Object.fromEntries(monitors.map(m => [m.id, m.state])))); } catch {}
+
+  const passing = monitors.filter(m => m.state === 'pass').length;
+  const failing = monitors.filter(m => m.state === 'fail').length;
+  const drifted = monitors.filter(m => m.drift === 'REGRESSED').length;
+  const sd = ST.lastScanMeta;
+  let lastChecked = 'Not scanned yet';
+  if (sd && sd.scanned && sd.scannedAt) {
+    const mins = Math.floor((Date.now() - new Date(sd.scannedAt).getTime()) / 60000);
+    lastChecked = mins < 60 ? mins + 'm ago' : Math.floor(mins / 60) + 'h ago';
+  }
+  const stats = document.getElementById('monStats');
+  if (stats) stats.innerHTML =
+    tile(passing + '/' + monitors.length, 'Monitors passing', '#16a34a') +
+    tile(String(failing), 'Failing checks', failing ? '#dc2626' : '#64748b') +
+    tile(String(drifted), 'Drift detected', drifted ? '#d97706' : '#64748b') +
+    tile(lastChecked, 'Last checked', '#0f172a');
+
+  const el = document.getElementById('monitorsList');
+  const badge = { pass: ['PASSING', '#dcfce7', '#16a34a'], fail: ['FAILING', '#fee2e2', '#dc2626'], manual: ['MANUAL', '#e0edff', '#2563eb'] };
+  el.innerHTML = monitors.map(m => {
+    const dot = m.state === 'pass' ? 'mon-pass' : m.state === 'fail' ? 'mon-fail' : 'mon-warn';
+    const b = badge[m.state];
+    const driftEl = m.drift === 'REGRESSED' ? '<span class="mon-drift">⚠ REGRESSED</span>'
+                  : m.drift === 'RESOLVED' ? '<span class="mon-drift" style="color:#15803d;background:#dcfce7;border-color:#86efac">✓ RESOLVED</span>' : '';
+    return '<div class="mon-row">' +
+      '<div class="mon-dot ' + dot + '"></div>' +
+      '<div style="flex:1;min-width:0"><div class="mon-name">' + esc(m.name) + driftEl + '</div>' +
+      '<div class="mon-meta">' + esc(m.id) + ' · checked ' + esc(lastChecked) + (m.detail ? ' · ' + esc(m.detail.slice(0, 60)) : '') + '</div></div>' +
+      '<span class="mon-badge" style="background:' + b[1] + ';color:' + b[2] + '">' + b[0] + '</span>' +
+      '</div>';
+  }).join('');
+}
+function tile(val, lbl, color) {
+  return '<div class="stat-tile"><div class="stat-tile-val" style="color:' + color + '">' + esc(val) + '</div><div class="stat-tile-lbl">' + esc(lbl) + '</div></div>';
+}
+
+// ── Risk Register ─────────────────────────────────────────────
+const RISK_STATUS_META = {
+  OPEN:      ['Open', '#fee2e2', '#dc2626'],
+  MITIGATING:['Mitigating', '#fef3c7', '#b45309'],
+  ACCEPTED:  ['Accepted', '#e0edff', '#2563eb'],
+  CLOSED:    ['Closed', '#dcfce7', '#16a34a'],
+};
+function riskColor(score) { return score >= 15 ? '#dc2626' : score >= 8 ? '#d97706' : score >= 4 ? '#ca8a04' : '#16a34a'; }
+const STARTER_RISKS = [
+  { title: 'No formal access review process', category: 'Access', likelihood: 4, impact: 4, status: 'OPEN', treatment: 'Implement quarterly access reviews with sign-off.' },
+  { title: 'Missing incident response plan', category: 'Operational', likelihood: 3, impact: 5, status: 'OPEN', treatment: 'Draft and test an IR runbook.' },
+  { title: 'Vendor without SOC 2 report', category: 'Vendor', likelihood: 3, impact: 3, status: 'MITIGATING', treatment: 'Collect sub-processor reports or DPAs.' },
+  { title: 'No encryption-at-rest verification', category: 'Data Protection', likelihood: 2, impact: 5, status: 'OPEN', treatment: 'Document and verify DB/storage encryption.' },
+  { title: 'Single cloud region (no DR)', category: 'Availability', likelihood: 2, impact: 4, status: 'ACCEPTED', treatment: 'Accepted for now; revisit at next tier.' },
+];
+
+async function loadRisks() {
+  if (!ST.user) return;
+  const list = document.getElementById('risksList');
+  if (list) list.innerHTML = skelRows(4, true);
+  ['riskStats', 'riskMatrix', 'riskByStatus'].forEach(id => { const e = document.getElementById(id); if (e) e.innerHTML = ''; });
+  try {
+    const r = await fetch('/api/platform?type=risks', { headers: authHeaders() });
+    if (!r.ok) throw new Error('Failed to load risks');
+    const d = await r.json();
+    ST.risks = d.risks || [];
+    renderRisks();
+  } catch (err) {
+    if (list) list.innerHTML = '<div style="color:var(--red);font-size:13px">' + esc(err.message) + '</div>';
+  }
+}
+
+function renderRisks() {
+  const risks = ST.risks || [];
+  const open = risks.filter(r => r.status === 'OPEN' || r.status === 'MITIGATING').length;
+  const high = risks.filter(r => (r.score || 0) >= 15).length;
+  const treated = risks.filter(r => r.status === 'ACCEPTED' || r.status === 'CLOSED').length;
+  document.getElementById('riskStats').innerHTML =
+    tile(String(risks.length), 'Total risks', '#0f172a') +
+    tile(String(open), 'Open / mitigating', open ? '#d97706' : '#64748b') +
+    tile(String(high), 'High severity', high ? '#dc2626' : '#64748b') +
+    tile(String(treated), 'Accepted / closed', '#16a34a');
+
+  // 5x5 matrix (impact rows 5→1, likelihood cols 1→5)
+  let mx = '<div class="rk-matrix"><div class="rk-axis"></div>';
+  for (let l = 1; l <= 5; l++) mx += '<div class="rk-axis">L' + l + '</div>';
+  for (let i = 5; i >= 1; i--) {
+    mx += '<div class="rk-axis">I' + i + '</div>';
+    for (let l = 1; l <= 5; l++) {
+      const s = l * i;
+      const count = risks.filter(r => r.likelihood === l && r.impact === i).length;
+      mx += '<div class="rk-cell" style="background:' + riskColor(s) + (count ? '' : ';opacity:.28') + '">' + (count || '') + '</div>';
+    }
+  }
+  mx += '</div><div style="font-size:10px;color:var(--muted);margin-top:8px;font-family:var(--mono)">Likelihood → · Impact ↑</div>';
+  document.getElementById('riskMatrix').innerHTML = mx;
+
+  // By status
+  const bs = document.getElementById('riskByStatus');
+  const counts = {};
+  Object.keys(RISK_STATUS_META).forEach(s => counts[s] = risks.filter(r => r.status === s).length);
+  const max = Math.max(1, ...Object.values(counts));
+  bs.innerHTML = Object.entries(RISK_STATUS_META).map(([s, m]) =>
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">' +
+    '<div style="width:78px;font-size:12px;color:var(--muted)">' + m[0] + '</div>' +
+    '<div style="flex:1;height:8px;background:#eef2f7;border-radius:4px;overflow:hidden"><div style="width:' + (counts[s] / max * 100) + '%;height:100%;background:' + m[2] + '"></div></div>' +
+    '<div style="width:24px;text-align:right;font-family:var(--mono);font-size:12px;font-weight:600">' + counts[s] + '</div></div>'
+  ).join('');
+
+  // List
+  const el = document.getElementById('risksList');
+  if (!risks.length) {
+    el.innerHTML = '<div style="text-align:center;padding:26px 0">' +
+      '<div style="font-size:13px;color:var(--muted);margin-bottom:14px">No risks logged yet. Every SOC 2 audit expects a risk register (CC3).</div>' +
+      '<button class="btn btn-primary btn-sm" onclick="seedStarterRisks()">✨ Add 5 starter risks</button></div>';
+    return;
+  }
+  const sorted = [...risks].sort((a, b) => (b.score || 0) - (a.score || 0));
+  el.innerHTML = sorted.map(r => {
+    const m = RISK_STATUS_META[r.status] || RISK_STATUS_META.OPEN;
+    return '<div class="rk-item">' +
+      '<div class="rk-score" style="background:' + riskColor(r.score || 0) + '">' + (r.score || 0) + '</div>' +
+      '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600">' + esc(r.title) + '</div>' +
+      '<div style="font-size:11px;color:var(--muted);margin-top:2px">' + esc(r.category || '') + (r.owner ? ' · ' + esc(r.owner) : '') + ' · L' + r.likelihood + '×I' + r.impact + '</div></div>' +
+      '<span class="rk-status" style="background:' + m[1] + ';color:' + m[2] + '">' + m[0] + '</span>' +
+      '<button class="btn btn-ghost btn-sm" onclick=\'editRisk("' + esc(r.id) + '")\'>Edit</button>' +
+      '<button class="btn btn-ghost btn-sm" onclick="deleteRisk(\'' + esc(r.id) + '\')" style="color:var(--red)">×</button>' +
+      '</div>';
+  }).join('');
+}
+
+function openRiskModal() {
+  document.getElementById('riskModalTitle').textContent = 'Add Risk';
+  document.getElementById('riskId').value = '';
+  document.getElementById('riskTitle').value = '';
+  document.getElementById('riskDesc').value = '';
+  document.getElementById('riskCategory').value = 'Access';
+  document.getElementById('riskOwner').value = '';
+  document.getElementById('riskLikelihood').value = '3';
+  document.getElementById('riskImpact').value = '3';
+  document.getElementById('riskStatus').value = 'OPEN';
+  document.getElementById('riskTreatment').value = '';
+  document.getElementById('riskModal').style.display = 'flex';
+}
+function closeRiskModal() { document.getElementById('riskModal').style.display = 'none'; }
+function editRisk(id) {
+  const r = (ST.risks || []).find(x => x.id === id);
+  if (!r) return;
+  openRiskModal();
+  document.getElementById('riskModalTitle').textContent = 'Edit Risk';
+  document.getElementById('riskId').value = r.id;
+  document.getElementById('riskTitle').value = r.title || '';
+  document.getElementById('riskDesc').value = r.description || '';
+  document.getElementById('riskCategory').value = r.category || 'Access';
+  document.getElementById('riskOwner').value = r.owner || '';
+  document.getElementById('riskLikelihood').value = String(r.likelihood || 3);
+  document.getElementById('riskImpact').value = String(r.impact || 3);
+  document.getElementById('riskStatus').value = r.status || 'OPEN';
+  document.getElementById('riskTreatment').value = r.treatment || '';
+}
+async function saveRisk() {
+  const title = document.getElementById('riskTitle').value.trim();
+  if (!title) { toast('Risk title is required', 'error'); return; }
+  const btn = document.getElementById('riskSaveTxt');
+  const prev = btn.textContent; btn.innerHTML = '<span class="spinner"></span>';
+  const payload = {
+    type: 'risk',
+    id: document.getElementById('riskId').value || undefined,
+    title,
+    description: document.getElementById('riskDesc').value,
+    category: document.getElementById('riskCategory').value,
+    owner: document.getElementById('riskOwner').value,
+    likelihood: document.getElementById('riskLikelihood').value,
+    impact: document.getElementById('riskImpact').value,
+    status: document.getElementById('riskStatus').value,
+    treatment: document.getElementById('riskTreatment').value,
+  };
+  try {
+    const r = await fetch('/api/platform', { method: 'POST', headers: authHeaders(), body: JSON.stringify(payload) });
+    if (!r.ok) throw new Error('Could not save risk');
+    closeRiskModal();
+    toast('Risk saved', 'success');
+    loadRisks();
+  } catch (err) { toast(err.message, 'error'); btn.textContent = prev; }
+}
+async function deleteRisk(id) {
+  if (!confirm('Delete this risk?')) return;
+  try {
+    const r = await fetch('/api/platform?type=risk&id=' + encodeURIComponent(id), { method: 'DELETE', headers: authHeaders() });
+    if (!r.ok) throw new Error('Failed');
+    toast('Risk deleted', 'success');
+    loadRisks();
+  } catch (err) { toast(err.message, 'error'); }
+}
+async function seedStarterRisks() {
+  toast('Adding starter risks…', 'info');
+  for (const r of STARTER_RISKS) {
+    try { await fetch('/api/platform', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ type: 'risk', ...r }) }); } catch {}
+  }
+  loadRisks();
+}
+
+// ── Developer tools (dashboard card) ──────────────────────────
+async function exportJson() {
+  try {
+    const r = await fetch('/api/platform?type=export', { headers: authHeaders() });
+    if (!r.ok) throw new Error('Export failed');
+    const data = await r.json();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'audit-ready-export.json'; a.click();
+    URL.revokeObjectURL(url);
+    toast('Exported', 'success');
+  } catch (err) { toast(err.message, 'error'); }
+}
+async function copyBadge() {
+  try {
+    const r = await fetch('/api/share?list=true', { headers: authHeaders() });
+    const d = r.ok ? await r.json() : { shares: [] };
+    const tok = (d.shares || [])[0]?.token;
+    if (!tok) { toast('Create a Trust Page link first (Share with Auditor) to enable your badge.', 'info'); return; }
+    const base = location.origin;
+    const md = '[![SOC 2 readiness](' + base + '/api/share?badge=' + tok + ')](' + base + '/api/share?token=' + tok + ')';
+    await navigator.clipboard.writeText(md);
+    toast('Badge markdown copied to clipboard', 'success');
+  } catch (err) { toast('Could not build badge. Try again.', 'error'); }
+}
+
 // ── Reminders badge on dashboard ──────────────────────────────
 
 async function loadDashboardReminders() {
@@ -4714,6 +5154,13 @@ if (new URLSearchParams(location.search).has('demo')) {
       googleDrive: { name: 'Google Drive', status: 'DISCONNECTED' },
       aws: { name: 'AWS', status: 'DISCONNECTED', comingSoon: true },
     },
+    risks: [
+      { id: 'r1', title: 'No formal access review process', category: 'Access', likelihood: 4, impact: 4, score: 16, status: 'OPEN', owner: 'CTO' },
+      { id: 'r2', title: 'Missing incident response plan', category: 'Operational', likelihood: 3, impact: 5, score: 15, status: 'MITIGATING', owner: 'Security' },
+      { id: 'r3', title: 'Vendor without SOC 2 report', category: 'Vendor', likelihood: 3, impact: 3, score: 9, status: 'OPEN', owner: 'Ops' },
+      { id: 'r4', title: 'No encryption-at-rest verification', category: 'Data Protection', likelihood: 2, impact: 5, score: 10, status: 'OPEN', owner: 'CTO' },
+      { id: 'r5', title: 'Single cloud region (no DR)', category: 'Availability', likelihood: 2, impact: 4, score: 8, status: 'ACCEPTED', owner: 'CTO' },
+    ],
   };
   const realFetch = window.fetch.bind(window);
   window.fetch = (url, opts) => {
@@ -4726,6 +5173,7 @@ if (new URLSearchParams(location.search).has('demo')) {
     else if (u.includes('/api/controls')) body = { controls: Object.values(DEMO.grouped).flat(), grouped: DEMO.grouped };
     else if (u.includes('/api/integrations')) body = { integrations: DEMO.integrations };
     else if (u.includes('/api/report')) body = { reports: [] };
+    else if (u.includes('/api/platform') && u.includes('type=risks')) body = { risks: DEMO.risks };
     else if (u.includes('/api/platform')) body = { reminders: [], vendors: [], mode: 'sandbox' };
     else if (u.includes('/api/evidence')) body = { evidence: [], items: [] };
     else if (u.includes('/api/share')) body = { links: [] };
