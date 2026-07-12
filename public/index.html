@@ -77,13 +77,50 @@ header{
 .logo-text{font-family:var(--mono);font-size:13px;font-weight:500;letter-spacing:-.02em}
 .logo-text span{color:var(--accent)}
 .hdr-nav{display:flex;gap:2px}
+.sb-label{display:none}
 .hn{
   padding:5px 12px;border-radius:6px;font-size:12px;font-weight:500;
   color:var(--muted);cursor:pointer;transition:color .12s,background .12s;
-  min-height:32px;display:flex;align-items:center;
+  min-height:32px;display:flex;align-items:center;gap:9px;
 }
+.hn svg{width:18px;height:18px;flex-shrink:0}
 .hn:hover{color:var(--text);background:var(--surface2)}
 .hn.active{color:var(--accent);background:var(--accent-dim);font-weight:600}
+
+/* ── Signed-in app shell: left sidebar ─────── */
+body.signed-in{background:#eef1f7}
+body.signed-in #hdr{
+  position:fixed;top:0;left:0;bottom:0;width:236px;height:auto;
+  flex-direction:column;align-items:stretch;justify-content:flex-start;
+  padding:18px 14px 16px;gap:0;
+  border-bottom:none;border-right:1px solid var(--border);
+  background:#fff;backdrop-filter:none;overflow-y:auto;z-index:90;
+}
+body.signed-in #hdr .logo{padding:4px 8px 0;flex-wrap:wrap}
+body.signed-in #hdr .logo-text{white-space:nowrap}
+body.signed-in #hdr #demoBadge{margin-left:40px}
+body.signed-in .hdr-nav{flex-direction:column;gap:3px;width:100%;margin-top:22px}
+body.signed-in .sb-label{display:block;font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#94a3b8;padding:0 12px 8px}
+body.signed-in .hn{width:100%;padding:9px 12px;border-radius:9px;font-size:13.5px;min-height:40px}
+body.signed-in .hn.active{box-shadow:inset 0 0 0 1px rgba(37,99,235,.15)}
+body.signed-in .hdr-right{margin-top:auto;padding-top:14px;width:100%;flex-direction:column-reverse;align-items:stretch;gap:8px;border-top:1px solid var(--border)}
+body.signed-in .user-chip{width:100%;justify-content:flex-start;padding:7px 10px;border-radius:10px}
+body.signed-in .uc-name-desktop{flex:1}
+body.signed-in .hamburger-btn{display:none}
+/* content shifts right of the sidebar */
+body.signed-in .page.on{margin-left:236px}
+body.signed-in .page-inner{max-width:1120px;padding:26px 30px}
+
+/* ── Mobile top bar ────────────────────────── */
+#mobTopbar{
+  position:fixed;top:0;left:0;right:0;height:54px;z-index:90;
+  display:none;align-items:center;gap:12px;padding:0 14px;
+  background:rgba(255,255,255,.96);border-bottom:1px solid var(--border);backdrop-filter:blur(12px);
+}
+#mobTopbar .logo-text{font-size:13px}
+.mt-burger{width:38px;height:38px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;cursor:pointer;padding:0;margin-left:-6px}
+.mt-burger span{display:block;width:19px;height:2px;background:var(--text);border-radius:2px}
+#mobTopbar .uc-av{margin-left:auto}
 .hdr-right{display:flex;align-items:center;gap:8px}
 .user-chip{
   display:flex;align-items:center;gap:6px;
@@ -107,6 +144,8 @@ header{
   display:none;z-index:200;overflow:hidden;
 }
 .dropdown.open{display:block}
+/* In the sidebar the user chip sits at the bottom — open the menu upward */
+body.signed-in .dropdown{top:auto;bottom:calc(100% + 6px);left:0;right:0;min-width:0}
 .dd-head{padding:10px 12px;border-bottom:1px solid var(--border);background:var(--surface2)}
 .dd-name{font-size:12px;font-weight:600}
 .dd-email{font-size:10px;color:var(--muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -610,6 +649,14 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
 /* Mobile score panel compact */
 .score-number{font-family:var(--mono);font-size:42px;font-weight:600;line-height:1;letter-spacing:-.04em}
 
+@media(max-width:900px){
+  /* Collapse the sidebar; a slim mobile top bar drives nav via the drawer */
+  body.signed-in #hdr{display:none!important}
+  body.signed-in #mobTopbar{display:flex}
+  body.signed-in .page.on{margin-left:0}
+  body.signed-in .page-inner{padding:16px}
+  body.signed-in{background:#f4f6fb;padding-top:54px}
+}
 @media(max-width:768px){
   .score-number{font-size:36px}
   .stat-grid{grid-template-columns:repeat(2,1fr)}
@@ -944,12 +991,14 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
     <span id="demoBadge" style="display:none;font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.08em;color:#b45309;background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:2px 8px;margin-left:8px">DEMO</span>
   </div>
   <nav class="hdr-nav">
-    <div class="hn" id="hn-dashboard" onclick="nav('dashboard')">Dashboard</div>
-    <div class="hn" id="hn-controls" onclick="nav('controls')">Controls</div>
-    <div class="hn" id="hn-integrations" onclick="nav('integrations')">Integrations</div>
-    <div class="hn" id="hn-locker" onclick="nav('locker')">Evidence Locker</div>
-    <div class="hn" id="hn-trust" onclick="nav('trust')">Trust Page</div>
-    <div class="hn" id="hn-platform" onclick="nav('platform')">Vendors & Alerts</div>
+    <div class="sb-label">Workspace</div>
+    <div class="hn" id="hn-dashboard" onclick="nav('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Dashboard</span></div>
+    <div class="hn" id="hn-controls" onclick="nav('controls')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l3 3 5-6"/></svg><span>Controls</span></div>
+    <div class="hn" id="hn-integrations" onclick="nav('integrations')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 0 1 0 10h-2M8 12h8"/></svg><span>Integrations</span></div>
+    <div class="hn" id="hn-locker" onclick="nav('locker')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4"/></svg><span>Evidence Locker</span></div>
+    <div class="hn" id="hn-trust" onclick="nav('trust')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 3v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V6z"/></svg><span>Trust Page</span></div>
+    <div class="hn" id="hn-platform" onclick="nav('platform')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6M10 20a2 2 0 0 0 4 0"/></svg><span>Vendors & Alerts</span></div>
+    <div class="hn" id="hn-admin" style="display:none" onclick="nav('admin')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H1a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 2.6 7a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 7 2.6h.1A1.6 1.6 0 0 0 8 1.1V1a2 2 0 1 1 4 0v.1A1.6 1.6 0 0 0 15 2.6a1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7h.2a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.4 1.1z"/></svg><span>Admin</span></div>
   </nav>
   <div class="hdr-right">
     <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleMobileNav()" aria-label="Menu">
@@ -976,6 +1025,16 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
     </div>
   </div>
 </header>
+
+<!-- Mobile top bar (shown when signed in on small screens) -->
+<div id="mobTopbar">
+  <button class="mt-burger" onclick="toggleMobileNav()" aria-label="Menu"><span></span><span></span><span></span></button>
+  <div class="logo" onclick="nav('dashboard')" style="gap:8px">
+    <div class="logo-mark">AR</div>
+    <div class="logo-text"><span>Audit</span> Ready AI</div>
+  </div>
+  <div class="uc-av" id="mtAv" onclick="toggleMobileNav()" style="cursor:pointer">U</div>
+</div>
 
 <!-- Mobile nav drawer -->
 <div id="mobileNavOverlay" onclick="closeMobileNav()" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.4);z-index:150;backdrop-filter:blur(2px)"></div>
@@ -2212,23 +2271,31 @@ function nav(page) {
 
 function updateHeader() {
   const hdr = document.getElementById('hdr');
-  if (!ST.user) { hdr.style.display = 'none'; return; }
+  if (!ST.user) {
+    hdr.style.display = 'none';
+    document.body.classList.remove('signed-in');
+    return;
+  }
   hdr.style.display = 'flex';
+  document.body.classList.add('signed-in');
   const ucAv = document.getElementById('ucAv');
   const ucName = document.getElementById('ucName');
   const ddName = document.getElementById('ddName');
   const ddEmail = document.getElementById('ddEmail');
-  if (ST.user.avatar) ucAv.innerHTML = '<img src="' + esc(ST.user.avatar) + '" alt=""/>';
-  else ucAv.textContent = (ST.user.name || 'U')[0].toUpperCase();
+  const initial = (ST.user.name || 'U')[0].toUpperCase();
+  const avImg = ST.user.avatar ? '<img src="' + esc(ST.user.avatar) + '" alt=""/>' : initial;
+  ucAv.innerHTML = avImg;
+  const mtAv = document.getElementById('mtAv');
+  if (mtAv) mtAv.innerHTML = avImg;
   ucName.textContent = (ST.user.name || 'User').split(' ')[0];
   ddName.textContent = ST.user.name || '';
   ddEmail.textContent = ST.user.email || '';
   // Check admin access async
   checkAdminAccess().then(isAdmin => {
-    const adminItem = document.getElementById('ddAdminItem');
-    if (adminItem) adminItem.style.display = isAdmin ? 'flex' : 'none';
-    const mobAdmin = document.getElementById('mobAdminItem');
-    if (mobAdmin) mobAdmin.style.display = isAdmin ? 'flex' : 'none';
+    ['ddAdminItem', 'mobAdminItem', 'hn-admin'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = isAdmin ? 'flex' : 'none';
+    });
   });
 }
 
