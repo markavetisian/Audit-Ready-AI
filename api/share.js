@@ -178,7 +178,39 @@ export default async function handler(req, res) {
 
   // ── GET: Public report view — NO AUTH (token) or list (auth) ──
   if (req.method === 'GET') {
-    const { token, list } = req.query;
+    const { token, list, badge } = req.query;
+
+    // ── GET ?badge=TOKEN — public SVG readiness badge for READMEs ──
+    // Developer-first: drop it in your repo README. Reuses a share token
+    // so no separate auth surface is exposed.
+    if (badge) {
+      const svg = (label, value, color) => {
+        const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const lw = 62, vw = 10 + value.length * 7.2, w = lw + vw;
+        return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="20" role="img" aria-label="${esc(label)}: ${esc(value)}">
+<linearGradient id="s" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient>
+<clipPath id="r"><rect width="${w}" height="20" rx="3" fill="#fff"/></clipPath>
+<g clip-path="url(#r)"><rect width="${lw}" height="20" fill="#334155"/><rect x="${lw}" width="${vw}" height="20" fill="${color}"/><rect width="${w}" height="20" fill="url(#s)"/></g>
+<g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11">
+<text x="${lw / 2}" y="15" fill="#010101" fill-opacity=".3">SOC 2</text><text x="${lw / 2}" y="14">SOC 2</text>
+<text x="${lw + vw / 2}" y="15" fill="#010101" fill-opacity=".3">${esc(value)}</text><text x="${lw + vw / 2}" y="14">${esc(value)}</text></g></svg>`;
+      };
+      res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+      res.setHeader('Cache-Control', 'max-age=300, s-maxage=300');
+      try {
+        const raw = await redis.get(`share:${badge}`);
+        if (!raw) return res.status(200).send(svg('SOC 2', 'unknown', '#9ca3af'));
+        const sd = typeof raw === 'object' ? raw : JSON.parse(raw);
+        if (sd.expiresAt && Date.now() > sd.expiresAt) return res.status(200).send(svg('SOC 2', 'expired', '#9ca3af'));
+        const scoreRaw = await redis.get(`user:${sd.userId}:score`);
+        const score = scoreRaw ? (typeof scoreRaw === 'object' ? scoreRaw : JSON.parse(scoreRaw)) : { score: 0 };
+        const pct = Math.round(score.score || 0);
+        const color = pct >= 80 ? '#16a34a' : pct >= 50 ? '#d97706' : '#dc2626';
+        return res.status(200).send(svg('SOC 2', pct + '% ready', color));
+      } catch {
+        return res.status(200).send(svg('SOC 2', 'unknown', '#9ca3af'));
+      }
+    }
 
     // ── GET ?list=true — authenticated list of user's share links ─
     if (list === 'true') {
