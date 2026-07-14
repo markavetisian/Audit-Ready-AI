@@ -358,34 +358,29 @@ body.signed-in .dropdown{top:auto;bottom:calc(100% + 6px);left:0;right:0;min-wid
   align-items:center;
   overflow:hidden;
   color:#0f172a;
-  /* white base + thin grid, 6rem × 4rem cells */
-  background-color:#fff;
-  background-image:linear-gradient(to right,#f0f0f0 1px,transparent 1px),linear-gradient(to bottom,#f0f0f0 1px,transparent 1px);
-  background-size:6rem 4rem;
+  background:#fff;
 }
 #pg-login.on{
   display:flex!important;
   position:relative;
 }
-/* soft radial glow anchored at the top-right (circle 800px at 100% 200px),
-   breathing slowly. A transform/opacity-only animation stays on the GPU. */
-.lp-glow{position:absolute;top:-600px;right:-800px;width:1600px;height:1600px;z-index:0;pointer-events:none;
-  background:radial-gradient(circle closest-side,#d5c5ff,transparent);
-  animation:lpGlow 12s ease-in-out infinite alternate;will-change:transform,opacity}
-@keyframes lpGlow{
-  from{transform:translate3d(0,0,0) scale(1);opacity:.85}
-  to{transform:translate3d(-90px,60px,0) scale(1.12);opacity:1}
-}
-/* on small screens the full-size glow would flood the whole viewport —
-   shrink it to a corner accent so the white grid stays visible */
+/* digital rain — falling 0/1 (with hidden "SOC 2" streams) in brand blue,
+   as a light texture behind the hero. The canvas is capped to a top band
+   and CSS-masked so it dissolves before it reaches the sign-in buttons. */
+.lp-rain{position:absolute;top:0;left:0;width:100%;z-index:0;pointer-events:none;
+  -webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 50%,transparent 100%);
+  mask-image:linear-gradient(to bottom,#000 0%,#000 50%,transparent 100%)}
+/* white halo behind the headline so the rain never competes with the text */
+.lp-veil{position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:min(1000px,140%);height:420px;z-index:1;pointer-events:none;
+  background:radial-gradient(58% 62% at 50% 40%,#fff 40%,rgba(255,255,255,.72) 60%,transparent 100%)}
 @media (max-width:640px){
-  .lp-glow{width:820px;height:820px;top:-320px;right:-380px}
+  .lp-rain{opacity:.72}
+  .lp-veil{height:540px;background:radial-gradient(74% 58% at 50% 44%,#fff 46%,rgba(255,255,255,.8) 66%,transparent 100%)}
 }
-/* spotlight: brightens the grid lines around the cursor */
-.lp-grid-spot{position:absolute;inset:0;z-index:1;opacity:0;transition:opacity .18s;pointer-events:none;
-  -webkit-mask-image:radial-gradient(90px circle at 50% 50%,black,transparent);
-  mask-image:radial-gradient(90px circle at 50% 50%,black,transparent)}
-.lp-grid-spot canvas{position:absolute;top:0;left:0}
+@media (prefers-reduced-motion:reduce){
+  .lp-rain{opacity:.5}
+}
 /* login nav */
 .lp-nav{position:relative;z-index:100;width:100%;max-width:1100px;display:flex;align-items:center;justify-content:space-between;padding:22px 32px;margin:0 auto}
 .lp-logo{display:flex;align-items:center;gap:9px}
@@ -401,9 +396,8 @@ body.signed-in .dropdown{top:auto;bottom:calc(100% + 6px);left:0;right:0;min-wid
 @keyframes founderGlow{0%,100%{box-shadow:0 0 12px rgba(37,99,235,.22)}50%{box-shadow:0 0 22px rgba(37,99,235,.48)}}
 .lp-nav-signin{height:36px;padding:0 18px;border-radius:18px;background:#0f172a;color:#fff;font-size:13px;font-weight:500;border:none;cursor:pointer;transition:opacity .15s}
 .lp-nav-signin:hover{opacity:.85}
-/* Lock background scroll + pause the glow while any popup is open */
+/* Lock background scroll while any popup is open (the rain also pauses via JS) */
 body.modal-open{overflow:hidden}
-body.modal-open .lp-glow{animation-play-state:paused}
 /* badge */
 .lp-badge{position:relative;z-index:10;display:inline-flex;align-items:center;gap:6px;margin:28px auto 0;padding:5px 14px;border-radius:20px;background:rgba(37,99,235,.07);border:1px solid rgba(37,99,235,.18);font-size:12px;font-weight:500;color:#2563eb}
 .lp-badge-dot{width:6px;height:6px;border-radius:50%;background:#2563eb;animation:lp-pulse 2s ease-in-out infinite;flex-shrink:0}
@@ -1080,9 +1074,9 @@ body.modal-open .lp-glow{animation-play-state:paused}
 <!-- ── Login ────────────────────────────────────────────────── -->
 <div class="page" id="pg-login">
 
-  <!-- background: glow + cursor spotlight (grid itself is CSS on #pg-login) -->
-  <div class="lp-glow"></div>
-  <div class="lp-grid-spot" id="lpGridSpot"><canvas id="lpGridHot"></canvas></div>
+  <!-- background: digital rain + white halo behind the headline -->
+  <canvas class="lp-rain" id="lpRain"></canvas>
+  <div class="lp-veil"></div>
 
   <!-- nav -->
   <nav class="lp-nav">
@@ -4418,80 +4412,144 @@ async function confirmCancelSubscription() {
   };
 })();
 
-// ── Login page grid spotlight ─────────────────────────────────
-// The base grid is pure CSS on #pg-login. The spotlight canvas redraws
-// the same 6rem × 4rem grid in the accent color and is revealed through
-// a cursor-following radial mask — drawn once per resize, no per-frame JS.
+// ── Login page digital rain ───────────────────────────────────
+// Falling 0/1 with occasional hidden "SOC 2" streams, in brand blue, as
+// a light texture behind the hero. Kept cheap: integer-row matrix draw,
+// ~22fps throttle, no shadowBlur, DPR capped, trails fade to white via a
+// single translucent fillRect. The loop stops entirely whenever the tab
+// is hidden, a modal is open, reduced-motion is set, or we navigate away
+// from the login page — so it never burns CPU in the background.
 
 (function() {
-  const GX = 96, GY = 64; // must match the CSS background-size (6rem × 4rem)
-  const HOT_COL = 'rgba(37,99,235,0.55)';
-  const RADIUS = 90;
-  let inited = false;
+  const canvas = document.getElementById('lpRain');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const GLYPHS = '01';
+  const WORD = 'SOC 2';
+  const HEAD = 'rgba(29,78,216,0.92)';   // bright leading char
+  const FADE = 'rgba(255,255,255,0.11)'; // per-frame trail fade
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const FRAME = 1000 / 22;               // ~22fps is plenty for ambient rain
 
-  function drawGrid(canvas, color) {
-    const ctx = canvas.getContext('2d');
-    const W = canvas.width, H = canvas.height;
-    ctx.clearRect(0, 0, W, H);
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    for (let x = 0.5; x <= W; x += GX) { ctx.moveTo(x, 0); ctx.lineTo(x, H); }
-    for (let y = 0.5; y <= H; y += GY) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
-    ctx.stroke();
+  let W = 0, H = 0, step = 16, fontStr = '', cols = [];
+  let running = false, rafId = 0, last = 0, resizeT = 0;
+
+  const mobile = () => window.innerWidth <= 640;
+
+  function makeCol(i, seeded) {
+    const rows = Math.max(1, Math.floor(H / step));
+    return {
+      x: i * step,
+      y: seeded ? -Math.floor(Math.random() * rows * 1.6) : -2,
+      word: Math.random() < 0.20 ? WORD : null,
+      wi: 0,
+      slow: Math.random() < 0.4 ? 2 : 1, // some columns fall at half speed
+      tick: 0,
+    };
   }
 
-  function lpResize() {
+  function resize() {
     const pg = document.getElementById('pg-login');
     if (!pg) return;
-    // Every section below the hero has an opaque background, so the grid
-    // is only ever visible near the top — cap the canvas there.
-    const W = pg.offsetWidth + GX;
-    const H = Math.min(pg.offsetHeight, window.innerHeight * 1.5) + GY;
-    const c = document.getElementById('lpGridHot');
-    if (c) { c.width = W; c.height = H; drawGrid(c, HOT_COL); }
+    const dpr = Math.min(window.devicePixelRatio || 1, mobile() ? 1.5 : 2);
+    const fontPx = mobile() ? 15 : 14;
+    step = Math.round(fontPx * 1.15);
+    W = pg.offsetWidth;
+    H = Math.min(window.innerHeight * (mobile() ? 0.6 : 0.66), 760);
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    canvas.width = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    fontStr = '500 ' + fontPx + 'px "IBM Plex Mono", ui-monospace, monospace';
+    cols = Array.from({ length: Math.ceil(W / step) }, (_, i) => makeCol(i, true));
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, W, H);
   }
 
-  function initLoginGrid() {
+  function drawFrame() {
+    ctx.fillStyle = FADE;
+    ctx.fillRect(0, 0, W, H);
+    ctx.font = fontStr;
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = HEAD;
+    const rows = Math.floor(H / step) + 2;
+    for (const c of cols) {
+      if (++c.tick < c.slow) continue;
+      c.tick = 0;
+      const yPix = c.y * step;
+      if (yPix >= 0 && yPix < H) {
+        const ch = c.word ? c.word[c.wi++ % c.word.length]
+                          : GLYPHS[(Math.random() * GLYPHS.length) | 0];
+        ctx.fillText(ch, c.x, yPix);
+      }
+      if (++c.y > rows && Math.random() > 0.94) {
+        Object.assign(c, makeCol(Math.round(c.x / step), false));
+      }
+    }
+  }
+
+  function staticFrame() {
+    // reduced-motion: one faint, still frame — no animation at all
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+    ctx.font = fontStr; ctx.textBaseline = 'top';
+    ctx.fillStyle = 'rgba(37,99,235,0.16)';
+    const rows = Math.floor(H / step);
+    for (const c of cols) {
+      for (let r = 0; r < rows; r += 3) {
+        if (Math.random() < 0.5) ctx.fillText(GLYPHS[(Math.random() * 2) | 0], c.x, r * step);
+      }
+    }
+  }
+
+  function tick(now) {
+    if (!running) return;
+    rafId = requestAnimationFrame(tick);
+    if (now - last < FRAME) return;
+    last = now;
+    drawFrame();
+  }
+
+  function canRun() {
     const pg = document.getElementById('pg-login');
-    const spot = document.getElementById('lpGridSpot');
-    if (!pg || !spot) return;
-    lpResize();
-    if (inited) return;
-    inited = true;
-
-    // Spotlight mask updates are rAF-throttled: at most one mask
-    // recompute per frame no matter how fast the mouse moves.
-    let raf = 0, mx = 0, my = 0;
-    pg.addEventListener('mousemove', e => {
-      mx = e.clientX; my = e.clientY;
-      if (raf) return;
-      raf = requestAnimationFrame(() => {
-        raf = 0;
-        const r = pg.getBoundingClientRect();
-        const mask = `radial-gradient(${RADIUS}px circle at ${mx - r.left}px ${my - r.top}px, black 0%, transparent 100%)`;
-        spot.style.webkitMaskImage = mask;
-        spot.style.maskImage = mask;
-        spot.style.opacity = '1';
-      });
-    }, { passive: true });
-
-    pg.addEventListener('mouseleave', () => { spot.style.opacity = '0'; });
-    window.addEventListener('resize', lpResize);
+    return !!pg && pg.classList.contains('on')
+      && !document.hidden
+      && !document.body.classList.contains('modal-open');
   }
 
-  // Init when login page becomes visible
-  const origNav = window.nav;
+  function start() {
+    if (running || !canRun()) return;
+    if (reduce.matches) { staticFrame(); return; }
+    running = true; last = 0;
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function stop() {
+    running = false;
+    if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
+  }
+
+  function refresh() { canRun() ? start() : stop(); }
+
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeT);
+    resizeT = setTimeout(() => { resize(); if (!running && reduce.matches) staticFrame(); }, 150);
+  }, { passive: true });
+  document.addEventListener('visibilitychange', refresh);
+  reduce.addEventListener?.('change', () => { stop(); resize(); start(); });
+
+  // Pause/resume when a modal toggles the body.modal-open class
+  new MutationObserver(refresh).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+  // Start on the login page, stop everywhere else
+  const _nav = window.nav;
   window.nav = function(page) {
-    origNav(page);
-    if (page === 'login') setTimeout(initLoginGrid, 30);
+    _nav(page);
+    setTimeout(() => { if (page === 'login') { resize(); start(); } else stop(); }, 30);
   };
 
-  // Also init on page load if starting on login
   window.addEventListener('load', () => {
-    if (document.getElementById('pg-login')?.classList.contains('on')) {
-      initLoginGrid();
-    }
+    if (document.getElementById('pg-login')?.classList.contains('on')) { resize(); start(); }
   });
 })();
 
