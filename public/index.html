@@ -375,8 +375,12 @@ body.signed-in .dropdown{top:auto;bottom:calc(100% + 6px);left:0;right:0;min-wid
   width:min(1000px,140%);height:420px;z-index:1;pointer-events:none;
   background:radial-gradient(58% 62% at 50% 40%,#fff 40%,rgba(255,255,255,.72) 60%,transparent 100%)}
 @media (max-width:640px){
-  .lp-rain{opacity:.72}
-  .lp-veil{height:540px;background:radial-gradient(74% 58% at 50% 44%,#fff 46%,rgba(255,255,255,.8) 66%,transparent 100%)}
+  /* fuller rain on mobile: full opacity + the mask fades out later so the
+     rain fills the band between the nav and the headline */
+  .lp-rain{-webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 62%,transparent 100%);
+    mask-image:linear-gradient(to bottom,#000 0%,#000 62%,transparent 100%)}
+  /* halo sits lower, over the stacked mobile headline */
+  .lp-veil{top:230px;height:480px;background:radial-gradient(78% 56% at 50% 46%,#fff 44%,rgba(255,255,255,.8) 66%,transparent 100%)}
 }
 @media (prefers-reduced-motion:reduce){
   .lp-rain{opacity:.5}
@@ -4451,11 +4455,13 @@ async function confirmCancelSubscription() {
   function resize() {
     const pg = document.getElementById('pg-login');
     if (!pg) return;
-    const dpr = Math.min(window.devicePixelRatio || 1, mobile() ? 1.5 : 2);
-    const fontPx = mobile() ? 15 : 14;
+    const dpr = Math.min(window.devicePixelRatio || 1, mobile() ? 1.75 : 2);
+    const fontPx = 14;
     step = Math.round(fontPx * 1.15);
     W = pg.offsetWidth;
-    H = Math.min(window.innerHeight * (mobile() ? 0.6 : 0.66), 760);
+    // Mobile hero is taller (stacked), so the rain gets a taller band to
+    // fill the space between the nav and the headline.
+    H = Math.min(window.innerHeight * (mobile() ? 0.82 : 0.66), 820);
     canvas.style.width = W + 'px';
     canvas.style.height = H + 'px';
     canvas.width = Math.floor(W * dpr);
@@ -4511,10 +4517,10 @@ async function confirmCancelSubscription() {
   }
 
   function canRun() {
+    // Note: the rain intentionally keeps running behind open popups — it
+    // only stops when the tab is hidden or we leave the login page.
     const pg = document.getElementById('pg-login');
-    return !!pg && pg.classList.contains('on')
-      && !document.hidden
-      && !document.body.classList.contains('modal-open');
+    return !!pg && pg.classList.contains('on') && !document.hidden;
   }
 
   function start() {
@@ -4537,9 +4543,6 @@ async function confirmCancelSubscription() {
   }, { passive: true });
   document.addEventListener('visibilitychange', refresh);
   reduce.addEventListener?.('change', () => { stop(); resize(); start(); });
-
-  // Pause/resume when a modal toggles the body.modal-open class
-  new MutationObserver(refresh).observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
   // Start on the login page, stop everywhere else
   const _nav = window.nav;
