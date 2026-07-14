@@ -357,27 +357,35 @@ body.signed-in .dropdown{top:auto;bottom:calc(100% + 6px);left:0;right:0;min-wid
   flex-direction:column;
   align-items:center;
   overflow:hidden;
-  background:#f5f6fa;
   color:#0f172a;
+  /* white base + thin grid, 6rem × 4rem cells */
+  background-color:#fff;
+  background-image:linear-gradient(to right,#f0f0f0 1px,transparent 1px),linear-gradient(to bottom,#f0f0f0 1px,transparent 1px);
+  background-size:6rem 4rem;
 }
 #pg-login.on{
   display:flex!important;
   position:relative;
 }
-/* grid canvas layers */
-.lp-grid-base{position:absolute;inset:0;z-index:0;opacity:0.32;pointer-events:none}
+/* soft radial glow anchored at the top-right (circle 800px at 100% 200px),
+   breathing slowly. A transform/opacity-only animation stays on the GPU. */
+.lp-glow{position:absolute;top:-600px;right:-800px;width:1600px;height:1600px;z-index:0;pointer-events:none;
+  background:radial-gradient(circle closest-side,#d5c5ff,transparent);
+  animation:lpGlow 12s ease-in-out infinite alternate;will-change:transform,opacity}
+@keyframes lpGlow{
+  from{transform:translate3d(0,0,0) scale(1);opacity:.85}
+  to{transform:translate3d(-90px,60px,0) scale(1.12);opacity:1}
+}
+/* on small screens the full-size glow would flood the whole viewport —
+   shrink it to a corner accent so the white grid stays visible */
+@media (max-width:640px){
+  .lp-glow{width:820px;height:820px;top:-320px;right:-380px}
+}
+/* spotlight: brightens the grid lines around the cursor */
 .lp-grid-spot{position:absolute;inset:0;z-index:1;opacity:0;transition:opacity .18s;pointer-events:none;
   -webkit-mask-image:radial-gradient(90px circle at 50% 50%,black,transparent);
   mask-image:radial-gradient(90px circle at 50% 50%,black,transparent)}
-/* Canvases keep their intrinsic pixel size (drawn once, GPU-drifted via
-   transform) — never stretched to the full page height. */
-.lp-grid-base canvas,.lp-grid-spot canvas{position:absolute;top:0;left:0;animation:lpDrift 1.7s linear infinite;will-change:transform}
-@keyframes lpDrift{from{transform:translate3d(-40px,-40px,0)}to{transform:translate3d(0,0,0)}}
-/* blobs */
-.lp-blob{position:absolute;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0}
-.lp-blob-1{width:500px;height:300px;background:rgba(147,197,253,0.45);top:-80px;right:-100px;border-radius:40%}
-.lp-blob-2{width:400px;height:250px;background:rgba(196,181,253,0.35);bottom:-60px;left:-80px;border-radius:40%}
-.lp-blob-3{width:300px;height:200px;background:rgba(253,186,116,0.22);bottom:100px;right:80px;border-radius:40%}
+.lp-grid-spot canvas{position:absolute;top:0;left:0}
 /* login nav */
 .lp-nav{position:relative;z-index:100;width:100%;max-width:1100px;display:flex;align-items:center;justify-content:space-between;padding:22px 32px;margin:0 auto}
 .lp-logo{display:flex;align-items:center;gap:9px}
@@ -393,9 +401,9 @@ body.signed-in .dropdown{top:auto;bottom:calc(100% + 6px);left:0;right:0;min-wid
 @keyframes founderGlow{0%,100%{box-shadow:0 0 12px rgba(37,99,235,.22)}50%{box-shadow:0 0 22px rgba(37,99,235,.48)}}
 .lp-nav-signin{height:36px;padding:0 18px;border-radius:18px;background:#0f172a;color:#fff;font-size:13px;font-weight:500;border:none;cursor:pointer;transition:opacity .15s}
 .lp-nav-signin:hover{opacity:.85}
-/* Lock background scroll + pause the grid drift while any popup is open */
+/* Lock background scroll + pause the glow while any popup is open */
 body.modal-open{overflow:hidden}
-body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animation-play-state:paused}
+body.modal-open .lp-glow{animation-play-state:paused}
 /* badge */
 .lp-badge{position:relative;z-index:10;display:inline-flex;align-items:center;gap:6px;margin:28px auto 0;padding:5px 14px;border-radius:20px;background:rgba(37,99,235,.07);border:1px solid rgba(37,99,235,.18);font-size:12px;font-weight:500;color:#2563eb}
 .lp-badge-dot{width:6px;height:6px;border-radius:50%;background:#2563eb;animation:lp-pulse 2s ease-in-out infinite;flex-shrink:0}
@@ -413,8 +421,8 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
 .lp-btn-sl{height:46px;padding:0 26px;border-radius:23px;background:#fff;color:#0f172a;font-size:14px;font-weight:500;border:1px solid #e2e8f0;cursor:pointer;display:flex;align-items:center;gap:8px;transition:border-color .15s,transform .1s}
 .lp-btn-sl:hover{border-color:#94a3b8;transform:translateY(-1px)}
 /* preview-the-trust-page button under the oauth row */
-.lp-btn-trust{margin:16px auto 0;height:40px;padding:0 20px;border-radius:20px;background:rgba(37,99,235,.12);color:#fff;font-size:13px;font-weight:500;border:1px solid rgba(96,165,250,.35);cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background .15s,transform .1s,border-color .15s}
-.lp-btn-trust:hover{background:rgba(37,99,235,.22);border-color:rgba(96,165,250,.6);transform:translateY(-1px)}
+.lp-btn-trust{margin:16px auto 0;height:40px;padding:0 20px;border-radius:20px;background:rgba(37,99,235,.08);color:#1d4ed8;font-size:13px;font-weight:500;border:1px solid rgba(37,99,235,.35);cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background .15s,transform .1s,border-color .15s}
+.lp-btn-trust:hover{background:rgba(37,99,235,.16);border-color:rgba(37,99,235,.6);transform:translateY(-1px)}
 .lp-btn-trust .lp-btn-trust-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 0 rgba(34,197,94,.5);animation:tpPulse 2s infinite}
 @keyframes tpPulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.5)}70%{box-shadow:0 0 0 6px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
 /* ── sample Trust Page modal ─────────────────────────────── */
@@ -1072,13 +1080,8 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
 <!-- ── Login ────────────────────────────────────────────────── -->
 <div class="page" id="pg-login">
 
-  <!-- blobs -->
-  <div class="lp-blob lp-blob-1"></div>
-  <div class="lp-blob lp-blob-2"></div>
-  <div class="lp-blob lp-blob-3"></div>
-
-  <!-- grid layers -->
-  <div class="lp-grid-base"><canvas id="lpGridBase"></canvas></div>
+  <!-- background: glow + cursor spotlight (grid itself is CSS on #pg-login) -->
+  <div class="lp-glow"></div>
   <div class="lp-grid-spot" id="lpGridSpot"><canvas id="lpGridHot"></canvas></div>
 
   <!-- nav -->
@@ -4415,16 +4418,14 @@ async function confirmCancelSubscription() {
   };
 })();
 
-// ── Login page grid animation ─────────────────────────────────
-// The grid is drawn ONCE per resize onto viewport-capped canvases and
-// drifted with a GPU-composited CSS transform — no per-frame JS, no
-// full-page rasterization. (The old version redrew two page-height
-// canvases on every animation frame, forever.)
+// ── Login page grid spotlight ─────────────────────────────────
+// The base grid is pure CSS on #pg-login. The spotlight canvas redraws
+// the same 6rem × 4rem grid in the accent color and is revealed through
+// a cursor-following radial mask — drawn once per resize, no per-frame JS.
 
 (function() {
-  const GRID = 40;
-  const BASE_COL = 'rgba(37,99,235,0.13)';
-  const HOT_COL  = 'rgba(37,99,235,0.6)';
+  const GX = 96, GY = 64; // must match the CSS background-size (6rem × 4rem)
+  const HOT_COL = 'rgba(37,99,235,0.55)';
   const RADIUS = 90;
   let inited = false;
 
@@ -4433,10 +4434,10 @@ async function confirmCancelSubscription() {
     const W = canvas.width, H = canvas.height;
     ctx.clearRect(0, 0, W, H);
     ctx.strokeStyle = color;
-    ctx.lineWidth = 0.8;
+    ctx.lineWidth = 1;
     ctx.beginPath();
-    for (let x = 0; x <= W; x += GRID) { ctx.moveTo(x, 0); ctx.lineTo(x, H); }
-    for (let y = 0; y <= H; y += GRID) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
+    for (let x = 0.5; x <= W; x += GX) { ctx.moveTo(x, 0); ctx.lineTo(x, H); }
+    for (let y = 0.5; y <= H; y += GY) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
     ctx.stroke();
   }
 
@@ -4445,12 +4446,10 @@ async function confirmCancelSubscription() {
     if (!pg) return;
     // Every section below the hero has an opaque background, so the grid
     // is only ever visible near the top — cap the canvas there.
-    const W = pg.offsetWidth + GRID;
-    const H = Math.min(pg.offsetHeight, window.innerHeight * 1.5) + GRID;
-    [['lpGridBase', BASE_COL], ['lpGridHot', HOT_COL]].forEach(([id, color]) => {
-      const c = document.getElementById(id);
-      if (c) { c.width = W; c.height = H; drawGrid(c, color); }
-    });
+    const W = pg.offsetWidth + GX;
+    const H = Math.min(pg.offsetHeight, window.innerHeight * 1.5) + GY;
+    const c = document.getElementById('lpGridHot');
+    if (c) { c.width = W; c.height = H; drawGrid(c, HOT_COL); }
   }
 
   function initLoginGrid() {
