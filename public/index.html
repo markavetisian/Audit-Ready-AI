@@ -13,15 +13,15 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="theme-color" content="#f8fafc"/>
-<title>Audit Ready AI — SOC 2 Automation for AI Startups & B2B SaaS</title>
-<meta name="description" content="SOC 2 automation built for AI-native startups and B2B SaaS teams. Scan your GitHub, score your readiness, draft the policies, and clear enterprise security review — without a compliance hire."/>
+<title>Audit Ready AI | SOC 2 Automation for AI Startups & B2B SaaS</title>
+<meta name="description" content="SOC 2 automation built for AI-native startups and B2B SaaS teams. Scan your GitHub, score your readiness, draft the policies, and clear enterprise security review without a compliance hire."/>
 <link rel="canonical" href="https://auditready.space/"/>
 <meta property="og:type" content="website"/>
 <meta property="og:url" content="https://auditready.space/"/>
-<meta property="og:title" content="Audit Ready AI — SOC 2 Automation for AI Startups & B2B SaaS"/>
+<meta property="og:title" content="Audit Ready AI | SOC 2 Automation for AI Startups & B2B SaaS"/>
 <meta property="og:description" content="Built for AI startups and B2B teams: know exactly where you stand, then clear your first enterprise security review in weeks, not months. No compliance hire, no annual contract."/>
 <meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="Audit Ready AI — SOC 2 Automation for AI Startups & B2B SaaS"/>
+<meta name="twitter:title" content="Audit Ready AI | SOC 2 Automation for AI Startups & B2B SaaS"/>
 <meta name="twitter:description" content="Built for AI startups and B2B teams: know exactly where you stand, then clear your first enterprise security review in weeks, not months. No compliance hire, no annual contract."/>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=3"/>
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=3"/>
@@ -357,27 +357,34 @@ body.signed-in .dropdown{top:auto;bottom:calc(100% + 6px);left:0;right:0;min-wid
   flex-direction:column;
   align-items:center;
   overflow:hidden;
-  background:#f5f6fa;
   color:#0f172a;
+  background:#fff;
 }
 #pg-login.on{
   display:flex!important;
   position:relative;
 }
-/* grid canvas layers */
-.lp-grid-base{position:absolute;inset:0;z-index:0;opacity:0.32;pointer-events:none}
-.lp-grid-spot{position:absolute;inset:0;z-index:1;opacity:0;transition:opacity .18s;pointer-events:none;
-  -webkit-mask-image:radial-gradient(90px circle at 50% 50%,black,transparent);
-  mask-image:radial-gradient(90px circle at 50% 50%,black,transparent)}
-/* Canvases keep their intrinsic pixel size (drawn once, GPU-drifted via
-   transform) — never stretched to the full page height. */
-.lp-grid-base canvas,.lp-grid-spot canvas{position:absolute;top:0;left:0;animation:lpDrift 1.7s linear infinite;will-change:transform}
-@keyframes lpDrift{from{transform:translate3d(-40px,-40px,0)}to{transform:translate3d(0,0,0)}}
-/* blobs */
-.lp-blob{position:absolute;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0}
-.lp-blob-1{width:500px;height:300px;background:rgba(147,197,253,0.45);top:-80px;right:-100px;border-radius:40%}
-.lp-blob-2{width:400px;height:250px;background:rgba(196,181,253,0.35);bottom:-60px;left:-80px;border-radius:40%}
-.lp-blob-3{width:300px;height:200px;background:rgba(253,186,116,0.22);bottom:100px;right:80px;border-radius:40%}
+/* digital rain — falling 0/1 (with hidden "SOC 2" streams) in brand blue,
+   as a light texture behind the hero. The canvas is capped to a top band
+   and CSS-masked so it dissolves before it reaches the sign-in buttons. */
+.lp-rain{position:absolute;top:0;left:0;width:100%;z-index:0;pointer-events:none;
+  -webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 50%,transparent 100%);
+  mask-image:linear-gradient(to bottom,#000 0%,#000 50%,transparent 100%)}
+/* white halo behind the headline so the rain never competes with the text */
+.lp-veil{position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:min(1000px,140%);height:420px;z-index:1;pointer-events:none;
+  background:radial-gradient(58% 62% at 50% 40%,#fff 40%,rgba(255,255,255,.72) 60%,transparent 100%)}
+@media (max-width:640px){
+  /* fuller rain on mobile: full opacity + the mask fades out later so the
+     rain fills the band between the nav and the headline */
+  .lp-rain{-webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 62%,transparent 100%);
+    mask-image:linear-gradient(to bottom,#000 0%,#000 62%,transparent 100%)}
+  /* halo sits lower, over the stacked mobile headline */
+  .lp-veil{top:230px;height:480px;background:radial-gradient(78% 56% at 50% 46%,#fff 44%,rgba(255,255,255,.8) 66%,transparent 100%)}
+}
+@media (prefers-reduced-motion:reduce){
+  .lp-rain{opacity:.5}
+}
 /* login nav */
 .lp-nav{position:relative;z-index:100;width:100%;max-width:1100px;display:flex;align-items:center;justify-content:space-between;padding:22px 32px;margin:0 auto}
 .lp-logo{display:flex;align-items:center;gap:9px}
@@ -393,9 +400,8 @@ body.signed-in .dropdown{top:auto;bottom:calc(100% + 6px);left:0;right:0;min-wid
 @keyframes founderGlow{0%,100%{box-shadow:0 0 12px rgba(37,99,235,.22)}50%{box-shadow:0 0 22px rgba(37,99,235,.48)}}
 .lp-nav-signin{height:36px;padding:0 18px;border-radius:18px;background:#0f172a;color:#fff;font-size:13px;font-weight:500;border:none;cursor:pointer;transition:opacity .15s}
 .lp-nav-signin:hover{opacity:.85}
-/* Lock background scroll + pause the grid drift while any popup is open */
+/* Lock background scroll while any popup is open (the rain also pauses via JS) */
 body.modal-open{overflow:hidden}
-body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animation-play-state:paused}
 /* badge */
 .lp-badge{position:relative;z-index:10;display:inline-flex;align-items:center;gap:6px;margin:28px auto 0;padding:5px 14px;border-radius:20px;background:rgba(37,99,235,.07);border:1px solid rgba(37,99,235,.18);font-size:12px;font-weight:500;color:#2563eb}
 .lp-badge-dot{width:6px;height:6px;border-radius:50%;background:#2563eb;animation:lp-pulse 2s ease-in-out infinite;flex-shrink:0}
@@ -413,8 +419,8 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
 .lp-btn-sl{height:46px;padding:0 26px;border-radius:23px;background:#fff;color:#0f172a;font-size:14px;font-weight:500;border:1px solid #e2e8f0;cursor:pointer;display:flex;align-items:center;gap:8px;transition:border-color .15s,transform .1s}
 .lp-btn-sl:hover{border-color:#94a3b8;transform:translateY(-1px)}
 /* preview-the-trust-page button under the oauth row */
-.lp-btn-trust{margin:16px auto 0;height:40px;padding:0 20px;border-radius:20px;background:rgba(37,99,235,.12);color:#fff;font-size:13px;font-weight:500;border:1px solid rgba(96,165,250,.35);cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background .15s,transform .1s,border-color .15s}
-.lp-btn-trust:hover{background:rgba(37,99,235,.22);border-color:rgba(96,165,250,.6);transform:translateY(-1px)}
+.lp-btn-trust{margin:16px auto 0;height:40px;padding:0 20px;border-radius:20px;background:rgba(37,99,235,.08);color:#1d4ed8;font-size:13px;font-weight:500;border:1px solid rgba(37,99,235,.35);cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background .15s,transform .1s,border-color .15s}
+.lp-btn-trust:hover{background:rgba(37,99,235,.16);border-color:rgba(37,99,235,.6);transform:translateY(-1px)}
 .lp-btn-trust .lp-btn-trust-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 0 rgba(34,197,94,.5);animation:tpPulse 2s infinite}
 @keyframes tpPulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.5)}70%{box-shadow:0 0 0 6px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
 /* ── sample Trust Page modal ─────────────────────────────── */
@@ -1072,14 +1078,9 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
 <!-- ── Login ────────────────────────────────────────────────── -->
 <div class="page" id="pg-login">
 
-  <!-- blobs -->
-  <div class="lp-blob lp-blob-1"></div>
-  <div class="lp-blob lp-blob-2"></div>
-  <div class="lp-blob lp-blob-3"></div>
-
-  <!-- grid layers -->
-  <div class="lp-grid-base"><canvas id="lpGridBase"></canvas></div>
-  <div class="lp-grid-spot" id="lpGridSpot"><canvas id="lpGridHot"></canvas></div>
+  <!-- background: digital rain + white halo behind the headline -->
+  <canvas class="lp-rain" id="lpRain"></canvas>
+  <div class="lp-veil"></div>
 
   <!-- nav -->
   <nav class="lp-nav">
@@ -1191,7 +1192,7 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
           <div class="lp-pain-num">03</div>
           <div class="lp-pain-body">
             <div class="lp-pain-title">The tooling assumes you're big</div>
-            <div class="lp-pain-desc">Vanta and Drata want an annual contract, a sales call, and $7,500+/yr before you've seen a single number. You're a handful of people who'd rather be shipping.</div>
+            <div class="lp-pain-desc">Vanta and Drata want an annual contract and a sales call before you've seen a single number. They're built for companies with a compliance team. You're a handful of people who'd rather be shipping.</div>
           </div>
         </div>
         <div class="lp-pain-card reveal" style="--d:.2s">
@@ -1269,7 +1270,7 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
           </div>
           <div class="lp-why-title">Founder pricing</div>
-          <div class="lp-why-desc">A fraction of what Vanta or Drata cost, with no annual lock-in.</div>
+          <div class="lp-why-desc">Month-to-month, with no annual lock-in.</div>
         </div>
         <div class="lp-why-card reveal" style="--d:.16s">
           <div class="lp-why-icon" style="background:#fdf4ff">
@@ -1287,7 +1288,7 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
     <div class="lp-section-inner" style="text-align:center">
       <div class="lp-eyebrow reveal">The Honest Comparison</div>
       <h2 class="lp-section-title reveal">Vanta is built for 100 people.<br/>You're <em>five and shipping.</em></h2>
-      <p class="lp-section-sub reveal">Vanta and Drata start at $7,500+/yr on annual contracts, built for companies with a compliance team. You just need to clear one security review, fast.</p>
+      <p class="lp-section-sub reveal">Vanta and Drata are enterprise platforms: annual contracts, a sales call, and pricing built for companies with a compliance team. You just need to clear one security review, fast.</p>
 
       <div class="lp-vs-wrap reveal" style="--d:.04s;max-width:820px;margin:0 auto">
 
@@ -1299,7 +1300,7 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
           </div>
           <div class="lp-vs-row">
             <div class="lp-vs-icon-no">✕</div>
-            <div class="lp-vs-text-no">$7,500 to $25,000+/yr contracts, and the actual audit still costs $10k+ on top</div>
+            <div class="lp-vs-text-no">Enterprise annual contracts, and the third-party audit that certifies you is still a separate cost on top</div>
           </div>
           <div class="lp-vs-row">
             <div class="lp-vs-icon-no">✕</div>
@@ -1387,7 +1388,7 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
     <div class="lp-section-inner" style="max-width:640px;margin:0 auto">
       <div class="reveal" style="background:linear-gradient(160deg,#f8fafc,#eff6ff);border:1px solid #e2e8f0;border-radius:16px;padding:30px 28px;text-align:center">
         <div style="font-size:19px;font-weight:700;color:#0f172a;letter-spacing:-.02em;margin-bottom:10px">"Aren't we too early for SOC 2?"</div>
-        <p style="font-size:14px;color:#475569;line-height:1.7;margin:0">Chasing a full audit before anyone asks is a waste of time. But once a real prospect sends that questionnaire, you have weeks to answer, not months. See where you stand today for free, so you can move fast when a deal is actually on the line.</p>
+        <p style="font-size:14px;color:#475569;line-height:1.7;margin:0">Chasing a full audit before anyone asks is a waste of time. But once a real prospect sends that questionnaire, you have weeks to answer, not months. See where you stand today, so you can move fast when a deal is actually on the line.</p>
       </div>
     </div>
   </section>
@@ -1527,7 +1528,7 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
               <div class="onboard-num">1</div>
               <div>
                 <div style="font-size:13px;font-weight:600;color:#0f172a">Run your first scan</div>
-                <div style="font-size:12px;color:#64748b;margin-top:2px">Click <strong>⚡ Scan Now</strong> — it checks your connected tools for compliance signals and auto-fills controls it can verify automatically.</div>
+                <div style="font-size:12px;color:#64748b;margin-top:2px">Click <strong>⚡ Scan Now</strong>. It checks your connected tools for compliance signals and auto-fills controls it can verify automatically.</div>
               </div>
             </div>
             <div class="onboard-step" id="os-evidence">
@@ -1642,7 +1643,7 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
     <button onclick="closePricingModal()" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:#94a3b8;line-height:1">✕</button>
     <div style="text-align:center;margin-bottom:24px">
       <div style="font-size:22px;font-weight:800;color:#0f172a;margin-bottom:4px">Simple, transparent pricing</div>
-      <div style="font-size:14px;color:#64748b">From first readiness check to live audit — pick your stage.</div>
+      <div style="font-size:14px;color:#64748b">From first readiness check to live audit. Pick your stage.</div>
       <div style="display:inline-flex;align-items:center;gap:10px;margin-top:16px;background:#f1f5f9;border-radius:50px;padding:4px 6px">
         <span id="pmLabelMonthly" style="font-size:13px;font-weight:600;padding:4px 14px;border-radius:50px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.1);color:#0f172a;cursor:pointer" onclick="setPmBilling(false)">Monthly</span>
         <span id="pmLabelAnnual" style="font-size:13px;font-weight:600;padding:4px 14px;border-radius:50px;color:#64748b;cursor:pointer" onclick="setPmBilling(true)">Annual <span style="color:#16a34a;font-size:11px;font-weight:700">2 months free</span></span>
@@ -1704,7 +1705,7 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
         <div style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5">Series A companies undergoing an active audit right now.</div>
         <ul style="list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:8px">
           <li class="pm-check">Everything in Growth</li>
-          <li class="pm-check">Priority support — direct line to the founder (email)</li>
+          <li class="pm-check">Priority support: direct line to the founder (email)</li>
           <li class="pm-check">Early access to new integrations</li>
           <li class="pm-check">Custom control mapping requests</li>
           <li class="pm-check">Hands-on onboarding help</li>
@@ -1784,10 +1785,6 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
           </div>
         </div>
       </div>
-      <div class="tp-continuous">
-        <span>🔄</span>
-        <span>We run Audit Ready AI on ourselves. This page updates on its own as our readiness changes, so it is never a stale PDF and never out of date.</span>
-      </div>
     </div>
 
     <div class="tp-body">
@@ -1866,7 +1863,7 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
       <div>
         <h1 style="font-size:20px;font-weight:600;letter-spacing:-.03em">Evidence Locker</h1>
-        <p style="font-size:13px;color:var(--muted);margin-top:2px">All your compliance evidence in one place — organized, tracked, expiry-aware</p>
+        <p style="font-size:13px;color:var(--muted);margin-top:2px">All your compliance evidence in one place: organized, tracked, expiry-aware</p>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <select id="lockerFilter" class="ev-input" style="width:auto;padding:6px 10px;font-size:12px" onchange="filterLocker(this.value)">
@@ -1891,7 +1888,7 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
   <div class="page-inner" style="padding-top:24px;max-width:1100px">
     <div style="margin-bottom:20px">
       <h1 style="font-size:20px;font-weight:600;letter-spacing:-.03em">Trust Page</h1>
-      <p style="font-size:13px;color:var(--muted);margin-top:2px">Your public-facing compliance profile — share with prospects and customers to accelerate deals</p>
+      <p style="font-size:13px;color:var(--muted);margin-top:2px">Your public-facing compliance profile. Share with prospects and customers to accelerate deals</p>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start" class="trust-grid">
       <!-- Left: Company profile editor -->
@@ -1934,7 +1931,7 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
         </div>
         <div class="card">
           <div class="section-heading" style="margin-bottom:12px">SHARE YOUR TRUST PAGE</div>
-          <p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6">Generate a shareable link that shows your compliance score, category breakdown, and company profile — perfect for security questionnaires and vendor reviews.</p>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6">Generate a shareable link that shows your compliance score, category breakdown, and company profile. Perfect for security questionnaires and vendor reviews.</p>
           <div id="trustShareLinks" style="margin-bottom:12px"></div>
           <div style="display:flex;gap:8px">
             <button class="btn btn-primary btn-sm" style="flex:1" onclick="createTrustLink()">🔗 Generate Trust Link</button>
@@ -2006,9 +2003,9 @@ body.modal-open .lp-grid-base canvas,body.modal-open .lp-grid-spot canvas{animat
         <div>
           <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">Risk Level</label>
           <select class="ev-input" id="vendorRisk" style="width:100%">
-            <option value="HIGH">HIGH — stores your data</option>
-            <option value="MEDIUM" selected>MEDIUM — SaaS tool</option>
-            <option value="LOW">LOW — minimal access</option>
+            <option value="HIGH">HIGH: stores your data</option>
+            <option value="MEDIUM" selected>MEDIUM: SaaS tool</option>
+            <option value="LOW">LOW: minimal access</option>
           </select>
         </div>
       </div>
@@ -2157,7 +2154,7 @@ function authHeaders() {
         _reauthing = true;
         ST.user = null; sessionStorage.removeItem('ar_user');
         try { updateHeader(); } catch {}
-        try { toast('Your session expired — please sign in again', 'error'); } catch {}
+        try { toast('Your session expired. Please sign in again.', 'error'); } catch {}
         try { nav('login'); } catch {}
         setTimeout(() => { _reauthing = false; }, 3000);
       }
@@ -2223,7 +2220,7 @@ function applyAuthPayload(payload) {
         body: JSON.stringify({ provider: 'googleDrive', googleToken: payload.googleToken }),
       }).catch(() => {});
       updateHeader();
-      toast('Google Drive connected — scanning for evidence…', 'success');
+      toast('Google Drive connected. Scanning for evidence…', 'success');
       nav('integrations');
       triggerScan();
       return;
@@ -2514,7 +2511,7 @@ function renderCategoryBars(breakdown) {
 function renderTopGaps(gaps) {
   const el = document.getElementById('topGapsList');
   if (!gaps || !gaps.length) {
-    el.innerHTML = '<div style="color:var(--green);font-size:13px;padding:8px 0">✓ All controls addressed — you\'re close to audit-ready.</div>';
+    el.innerHTML = '<div style="color:var(--green);font-size:13px;padding:8px 0">✓ All controls addressed. You\'re close to audit-ready.</div>';
     return;
   }
   el.innerHTML = gaps.map(g => {
@@ -2659,7 +2656,7 @@ async function downloadReportPdf(id) {
     const w = window.open('', '_blank');
     if (!w) { toast('Allow pop-ups to download the PDF', 'error'); return; }
     w.document.write(
-      '<!DOCTYPE html><html><head><meta charset="utf-8"><title>SOC 2 Audit Readiness Report — ' + esc(R.companyName || 'Report') + '</title>' +
+      '<!DOCTYPE html><html><head><meta charset="utf-8"><title>SOC 2 Audit Readiness Report: ' + esc(R.companyName || 'Report') + '</title>' +
       '<style>body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;max-width:760px;margin:0 auto;padding:40px 32px;color:#0f172a}' +
       _RPT_CSS + '@media print{body{padding:0}}</style></head><body>' +
       _buildReportHtml(R) +
@@ -2848,7 +2845,7 @@ function renderControls(grouped) {
     const pct = controls.length ? Math.round((verified / controls.length) * 100) : 0;
     html += '<div class="control-group">';
     html += '<div class="control-group-header">';
-    html += '<div class="cg-title">' + esc(cat) + ' — ' + esc(CATEGORY_NAMES[cat] || cat) + '</div>';
+    html += '<div class="cg-title">' + esc(cat) + ': ' + esc(CATEGORY_NAMES[cat] || cat) + '</div>';
     html += '<div class="cg-count">' + verified + '/' + controls.length + '</div>';
     html += '<div class="cg-score">' + pct + '%</div>';
     html += '</div>';
@@ -2885,7 +2882,7 @@ function buildControlDetail(c) {
   // Auto-detect note
   if (c.autoDetectable) {
     html += '<div style="font-size:11px;color:var(--muted);padding:6px 10px;background:var(--surface);border:1px solid var(--border);border-radius:5px;margin-bottom:12px;font-family:var(--mono)">';
-    html += '⚡ Auto-detectable via ' + esc(c.autoSource || 'integration') + ' — run a scan to auto-fill';
+    html += '⚡ Auto-detectable via ' + esc(c.autoSource || 'integration') + '. Run a scan to auto-fill';
     html += '</div>';
   }
   // Existing evidence
@@ -2964,7 +2961,7 @@ function renderEvidence(controlId, items) {
     const isAuto = item.source === 'GITHUB' || item.source === 'GOOGLE_DRIVE' || item.source === 'AWS' || item.type === 'AUTO_DETECTED';
     return '<div class="evidence-item">' +
       '<span class="ev-type-badge">' + esc(item.type) + '</span>' +
-      '<span class="ev-value" title="' + esc(item.value) + '">' + esc(item.value) + (item.note ? ' — ' + esc(item.note) : '') + '</span>' +
+      '<span class="ev-value" title="' + esc(item.value) + '">' + esc(item.value) + (item.note ? ' · ' + esc(item.note) : '') + '</span>' +
       (isAuto ? '<span class="ev-auto">AUTO</span>' : '<button class="ev-del" onclick="deleteEvidence(\'' + controlId + '\',\'' + item.id + '\')">×</button>') +
       '</div>';
   }).join('');
@@ -3246,7 +3243,7 @@ async function loadPublicShare(token) {
   // Add disclaimer banner to public view
   const disclaimer = document.createElement('div');
   disclaimer.style.cssText = 'background:#1c2030;border:1px solid #f59e0b33;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#f59e0b;line-height:1.6;text-align:center';
-  disclaimer.textContent = '⚠️ Self-reported readiness score — not a certified SOC 2 audit. Scores reflect documented controls and may not represent actual compliance.';
+  disclaimer.textContent = '⚠️ Self-reported readiness score, not a certified SOC 2 audit. Scores reflect documented controls and may not represent actual compliance.';
   document.querySelector('.page-inner')?.prepend(disclaimer);
 
   try {
@@ -3314,10 +3311,10 @@ async function loadNextSteps() {
   const PRIORITY = [
     { id: 'CC7.3', reason: 'Incident Response Plan is required by most auditors and enterprise procurement teams.' },
     { id: 'CC6.2', reason: 'MFA enforcement is the #1 question auditors ask. Set it up in your GitHub org or IdP.' },
-    { id: 'CC8.2', reason: 'Enable branch protection with required reviews on your main branch — takes 2 minutes.' },
-    { id: 'CC1.1', reason: 'Information Security Policy is the foundation of your SOC 2 — generate a template below.' },
+    { id: 'CC8.2', reason: 'Enable branch protection with required reviews on your main branch. Takes 2 minutes.' },
+    { id: 'CC1.1', reason: 'Information Security Policy is the foundation of your SOC 2. Generate a template below.' },
     { id: 'CC6.5', reason: 'Offboarding procedure must show access is revoked within 24h of any termination.' },
-    { id: 'CC3.1', reason: 'Risk assessment is required — even a simple spreadsheet satisfies this for Type 1.' },
+    { id: 'CC3.1', reason: 'Risk assessment is required. Even a simple spreadsheet satisfies this for Type 1.' },
     { id: 'CC9.1', reason: 'Vendor risk assessment for your top 3 vendors (AWS, Stripe, etc.) is commonly asked for.' },
     { id: 'CC6.4', reason: 'Quarterly access reviews are a very common audit finding for early-stage companies.' },
     { id: 'CC2.1', reason: 'Security training completion logs are one of the most common document requests.' },
@@ -3341,7 +3338,7 @@ async function loadNextSteps() {
     <div style="display:flex;gap:12px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;align-items:flex-start">
       <div style="background:var(--accent);color:#fff;font-size:10px;font-weight:700;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">${i+1}</div>
       <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:600;color:#0f172a">${esc(s.id)} — ${esc(s.title)}</div>
+        <div style="font-size:12px;font-weight:600;color:#0f172a">${esc(s.id)}: ${esc(s.title)}</div>
         <div style="font-size:11px;color:#64748b;margin-top:2px;line-height:1.5">${esc(s.reason || s.description || '')}</div>
         <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
           <button class="btn btn-primary btn-sm" style="font-size:10px;padding:3px 10px" onclick="nav('controls');setTimeout(()=>{const el=document.getElementById('cr-${esc(s.id)}');if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.click();}},400)">Open Control →</button>
@@ -3575,7 +3572,7 @@ async function submitPricingPayment() {
       toast('🎉 ' + _selectedPlan.name.charAt(0).toUpperCase() + _selectedPlan.name.slice(1) + ' plan activated!', 'success');
     } else {
       // Payment captured but activation is still settling — never imply it failed.
-      toast('Payment received — activating your plan. If features stay locked, refresh in a minute.', 'success');
+      toast('Payment received. Activating your plan. If features stay locked, refresh in a minute.', 'success');
     }
     // Refresh the dashboard so unlocked features reflect immediately.
     if (typeof loadUserMode === 'function') loadUserMode();
@@ -3798,7 +3795,7 @@ function renderTrustPreview(p) {
     '<div style="font-size:11px;color:' + color + '">' + esc(label) + '</div></div>' +
     '<div style="text-align:right"><div style="font-size:10px;color:var(--muted);line-height:1.5">Self-reported<br/>Audit Ready AI<br/>' + new Date().toLocaleDateString('en-US',{month:'short',year:'numeric'}) + '</div></div>' +
     '</div>' +
-    '<div style="font-size:10px;color:var(--muted);margin-top:10px;line-height:1.5">⚠ Self-reported score — not a certified SOC 2 audit. Provided for transparency only.</div>';
+    '<div style="font-size:10px;color:var(--muted);margin-top:10px;line-height:1.5">⚠ Self-reported score, not a certified SOC 2 audit. Provided for transparency only.</div>';
 }
 
 async function loadTrustLinks() {
@@ -4225,7 +4222,7 @@ function renderAdminLogs(logs) {
   if (authEl) {
     const items = logs.auth || [];
     authEl.innerHTML = items.length ? items.map(l =>
-      `<div class="admin-log-row"><span style="color:var(--accent)">${fmtTs(l.ts)}</span> ${esc(l.event||'login')} — ${esc(l.userId||l.email||'?')} (${esc(l.authType||'?')})</div>`
+      `<div class="admin-log-row"><span style="color:var(--accent)">${fmtTs(l.ts)}</span> ${esc(l.event||'login')}: ${esc(l.userId||l.email||'?')} (${esc(l.authType||'?')})</div>`
     ).join('') : '<div style="color:var(--muted)">No auth events yet</div>';
   }
   if (errEl) {
@@ -4355,7 +4352,7 @@ function renderUpgradeCTA() {
   if (sub) {
     sub.textContent = gaps > 0
       ? ('Your assessment found ' + gaps + ' control' + (gaps === 1 ? '' : 's') + ' still missing evidence. Unlock the tools to close them and prove it to your customers:')
-      : 'Unlock the tools to finish your audit prep — and prove it to your customers:';
+      : 'Unlock the tools to finish your audit prep and prove it to your customers:';
   }
   card.style.display = 'block';
 }
@@ -4385,7 +4382,7 @@ async function confirmCancelSubscription() {
     const d = await r.json();
     if (!r.ok) throw new Error(d.error || 'Failed');
     closeCancelModal();
-    toast('Subscription cancelled — you keep access until period end', 'success');
+    toast('Subscription cancelled. You keep access until period end.', 'success');
   } catch (err) { toast(err.message, 'error'); }
   btn.disabled = false; btn.textContent = 'Cancel My Subscription';
 }
@@ -4415,84 +4412,143 @@ async function confirmCancelSubscription() {
   };
 })();
 
-// ── Login page grid animation ─────────────────────────────────
-// The grid is drawn ONCE per resize onto viewport-capped canvases and
-// drifted with a GPU-composited CSS transform — no per-frame JS, no
-// full-page rasterization. (The old version redrew two page-height
-// canvases on every animation frame, forever.)
+// ── Login page digital rain ───────────────────────────────────
+// Falling 0/1 with occasional hidden "SOC 2" streams, in brand blue, as
+// a light texture behind the hero. Kept cheap: integer-row matrix draw,
+// ~22fps throttle, no shadowBlur, DPR capped, trails fade to white via a
+// single translucent fillRect. The loop stops entirely whenever the tab
+// is hidden, a modal is open, reduced-motion is set, or we navigate away
+// from the login page — so it never burns CPU in the background.
 
 (function() {
-  const GRID = 40;
-  const BASE_COL = 'rgba(37,99,235,0.13)';
-  const HOT_COL  = 'rgba(37,99,235,0.6)';
-  const RADIUS = 90;
-  let inited = false;
+  const canvas = document.getElementById('lpRain');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const GLYPHS = '01';
+  const WORD = 'SOC 2';
+  const HEAD = 'rgba(29,78,216,0.92)';   // bright leading char
+  const FADE = 'rgba(255,255,255,0.11)'; // per-frame trail fade
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const FRAME = 1000 / 22;               // ~22fps is plenty for ambient rain
 
-  function drawGrid(canvas, color) {
-    const ctx = canvas.getContext('2d');
-    const W = canvas.width, H = canvas.height;
-    ctx.clearRect(0, 0, W, H);
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 0.8;
-    ctx.beginPath();
-    for (let x = 0; x <= W; x += GRID) { ctx.moveTo(x, 0); ctx.lineTo(x, H); }
-    for (let y = 0; y <= H; y += GRID) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
-    ctx.stroke();
+  let W = 0, H = 0, step = 16, fontStr = '', cols = [];
+  let running = false, rafId = 0, last = 0, resizeT = 0;
+
+  const mobile = () => window.innerWidth <= 640;
+
+  function makeCol(i, seeded) {
+    const rows = Math.max(1, Math.floor(H / step));
+    return {
+      x: i * step,
+      y: seeded ? -Math.floor(Math.random() * rows * 1.6) : -2,
+      word: Math.random() < 0.20 ? WORD : null,
+      wi: 0,
+      slow: Math.random() < 0.4 ? 2 : 1, // some columns fall at half speed
+      tick: 0,
+    };
   }
 
-  function lpResize() {
+  function resize() {
     const pg = document.getElementById('pg-login');
     if (!pg) return;
-    // Every section below the hero has an opaque background, so the grid
-    // is only ever visible near the top — cap the canvas there.
-    const W = pg.offsetWidth + GRID;
-    const H = Math.min(pg.offsetHeight, window.innerHeight * 1.5) + GRID;
-    [['lpGridBase', BASE_COL], ['lpGridHot', HOT_COL]].forEach(([id, color]) => {
-      const c = document.getElementById(id);
-      if (c) { c.width = W; c.height = H; drawGrid(c, color); }
-    });
+    const dpr = Math.min(window.devicePixelRatio || 1, mobile() ? 1.75 : 2);
+    const fontPx = 14;
+    step = Math.round(fontPx * 1.15);
+    W = pg.offsetWidth;
+    // Mobile hero is taller (stacked), so the rain gets a taller band to
+    // fill the space between the nav and the headline.
+    H = Math.min(window.innerHeight * (mobile() ? 0.82 : 0.66), 820);
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    canvas.width = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    fontStr = '500 ' + fontPx + 'px "IBM Plex Mono", ui-monospace, monospace';
+    cols = Array.from({ length: Math.ceil(W / step) }, (_, i) => makeCol(i, true));
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, W, H);
   }
 
-  function initLoginGrid() {
+  function drawFrame() {
+    ctx.fillStyle = FADE;
+    ctx.fillRect(0, 0, W, H);
+    ctx.font = fontStr;
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = HEAD;
+    const rows = Math.floor(H / step) + 2;
+    for (const c of cols) {
+      if (++c.tick < c.slow) continue;
+      c.tick = 0;
+      const yPix = c.y * step;
+      if (yPix >= 0 && yPix < H) {
+        const ch = c.word ? c.word[c.wi++ % c.word.length]
+                          : GLYPHS[(Math.random() * GLYPHS.length) | 0];
+        ctx.fillText(ch, c.x, yPix);
+      }
+      if (++c.y > rows && Math.random() > 0.94) {
+        Object.assign(c, makeCol(Math.round(c.x / step), false));
+      }
+    }
+  }
+
+  function staticFrame() {
+    // reduced-motion: one faint, still frame — no animation at all
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+    ctx.font = fontStr; ctx.textBaseline = 'top';
+    ctx.fillStyle = 'rgba(37,99,235,0.16)';
+    const rows = Math.floor(H / step);
+    for (const c of cols) {
+      for (let r = 0; r < rows; r += 3) {
+        if (Math.random() < 0.5) ctx.fillText(GLYPHS[(Math.random() * 2) | 0], c.x, r * step);
+      }
+    }
+  }
+
+  function tick(now) {
+    if (!running) return;
+    rafId = requestAnimationFrame(tick);
+    if (now - last < FRAME) return;
+    last = now;
+    drawFrame();
+  }
+
+  function canRun() {
+    // Note: the rain intentionally keeps running behind open popups — it
+    // only stops when the tab is hidden or we leave the login page.
     const pg = document.getElementById('pg-login');
-    const spot = document.getElementById('lpGridSpot');
-    if (!pg || !spot) return;
-    lpResize();
-    if (inited) return;
-    inited = true;
-
-    // Spotlight mask updates are rAF-throttled: at most one mask
-    // recompute per frame no matter how fast the mouse moves.
-    let raf = 0, mx = 0, my = 0;
-    pg.addEventListener('mousemove', e => {
-      mx = e.clientX; my = e.clientY;
-      if (raf) return;
-      raf = requestAnimationFrame(() => {
-        raf = 0;
-        const r = pg.getBoundingClientRect();
-        const mask = `radial-gradient(${RADIUS}px circle at ${mx - r.left}px ${my - r.top}px, black 0%, transparent 100%)`;
-        spot.style.webkitMaskImage = mask;
-        spot.style.maskImage = mask;
-        spot.style.opacity = '1';
-      });
-    }, { passive: true });
-
-    pg.addEventListener('mouseleave', () => { spot.style.opacity = '0'; });
-    window.addEventListener('resize', lpResize);
+    return !!pg && pg.classList.contains('on') && !document.hidden;
   }
 
-  // Init when login page becomes visible
-  const origNav = window.nav;
+  function start() {
+    if (running || !canRun()) return;
+    if (reduce.matches) { staticFrame(); return; }
+    running = true; last = 0;
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function stop() {
+    running = false;
+    if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
+  }
+
+  function refresh() { canRun() ? start() : stop(); }
+
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeT);
+    resizeT = setTimeout(() => { resize(); if (!running && reduce.matches) staticFrame(); }, 150);
+  }, { passive: true });
+  document.addEventListener('visibilitychange', refresh);
+  reduce.addEventListener?.('change', () => { stop(); resize(); start(); });
+
+  // Start on the login page, stop everywhere else
+  const _nav = window.nav;
   window.nav = function(page) {
-    origNav(page);
-    if (page === 'login') setTimeout(initLoginGrid, 30);
+    _nav(page);
+    setTimeout(() => { if (page === 'login') { resize(); start(); } else stop(); }, 30);
   };
 
-  // Also init on page load if starting on login
   window.addEventListener('load', () => {
-    if (document.getElementById('pg-login')?.classList.contains('on')) {
-      initLoginGrid();
-    }
+    if (document.getElementById('pg-login')?.classList.contains('on')) { resize(); start(); }
   });
 })();
 
@@ -4658,7 +4714,7 @@ async function quizSubmit() {
   } catch (err) {
     btn.disabled = false;
     txt.textContent = 'Send it over →';
-    toast('Something went wrong — please try again.', 'error');
+    toast('Something went wrong. Please try again.', 'error');
   }
 }
 
@@ -4670,7 +4726,7 @@ function quizDone() {
   stage.innerHTML =
     '<div class="quiz-done">' +
     '<div class="quiz-done-check"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg></div>' +
-    '<div class="quiz-q" style="margin-bottom:6px">Got it — thanks</div>' +
+    '<div class="quiz-q" style="margin-bottom:6px">Got it, thanks</div>' +
     '<p style="font-size:13.5px;color:#64748b;line-height:1.7;max-width:360px;margin:0 auto 20px">' +
     'We\'ll review where <strong style="color:#0f172a">' + esc(_qLead.company) + '</strong> stands and reach out at <strong style="color:#0f172a">' + esc(_qLead.email) + '</strong>. ' +
     'Want your live SOC 2 score now? Connect your stack and see it in minutes.</p>' +
