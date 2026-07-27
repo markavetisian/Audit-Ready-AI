@@ -75,6 +75,107 @@ const ALL_CONTROLS = [
   'CC9.1','CC9.2','CC9.3','CC9.4','CC9.5','CC9.6','CC9.7','CC9.8','CC9.9','CC9.10','CC9.11',
 ];
 
+// ── Readiness-quiz lead capture (PUBLIC, no auth) ─────────────
+// Folded in from the former api/lead.js to stay under Vercel's 12-function
+// Hobby cap. Stores the lead in Redis (never lost) and emails the founder.
+const LEAD_NOTIFY_TO   = process.env.LEAD_NOTIFY_EMAIL || 'vlad@auditready.space';
+const LEAD_NOTIFY_FROM = process.env.RESEND_FROM || 'Audit Ready AI <noreply@auditready.space>';
+
+function leadClientIp(req) {
+  const fwd = (req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+  return fwd || req.headers['x-real-ip'] || 'unknown';
+}
+async function leadRateLimit(ip) {
+  const key = `rl:lead:${ip}`;
+  const WINDOW = 3600, MAX = 8;
+  try {
+    const n = await redis.incr(key);
+    if (n === 1) await redis.expire(key, WINDOW);
+    return n <= MAX;
+  } catch { return true; }
+}
+const leadIsEmail = (s) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s);
+function leadEsc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function leadAlertHtml({ email, company, answers, source, ts }) {
+  const rows = (answers || []).map(a =>
+    `<tr>
+       <td style="padding:8px 12px;border-bottom:1px solid #eef2f7;color:#64748b;font-size:13px;vertical-align:top;width:45%">${leadEsc(a.question)}</td>
+       <td style="padding:8px 12px;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:13px;font-weight:600">${leadEsc(a.answer)}</td>
+     </tr>`
+  ).join('');
+  return `<!DOCTYPE html><html><body style="margin:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+    <div style="max-width:560px;margin:24px auto;background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e2e8f0">
+      <div style="background:linear-gradient(135deg,#1e3a8a,#2563eb);padding:22px 26px;color:#fff">
+        <div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.8">New readiness-quiz lead</div>
+        <div style="font-size:20px;font-weight:700;margin-top:4px">${leadEsc(company)}</div>
+      </div>
+      <div style="padding:22px 26px">
+        <p style="margin:0 0 4px;font-size:13px;color:#64748b">Contact</p>
+        <p style="margin:0 0 18px;font-size:15px;font-weight:600;color:#0f172a">
+          <a href="mailto:${leadEsc(email)}" style="color:#2563eb;text-decoration:none">${leadEsc(email)}</a>
+        </p>
+        <p style="margin:0 0 8px;font-size:13px;color:#64748b">Their answers</p>
+        <table style="width:100%;border-collapse:collapse;border:1px solid #eef2f7;border-radius:8px;overflow:hidden">${rows}</table>
+        <p style="margin:18px 0 0;font-size:11px;color:#94a3b8">
+          Source: ${leadEsc(source || 'readiness-quiz')} · ${leadEsc(ts || new Date().toISOString())}
+        </p>
+      </div>
+    </div>
+  </body></html>`;
+}
+async function leadSendResend({ to, from, subject, html, replyTo }) {
+  if (!process.env.RESEND_API_KEY) throw new Error('RESEND_API_KEY not configured');
+  const r = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + process.env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from, to, subject, html, reply_to: replyTo }),
+  });
+  if (!r.ok) { const b = await r.text().catch(() => ''); throw new Error('Resend error ' + r.status + ' ' + b.slice(0, 200)); }
+  return r.json().catch(() => ({}));
+}
+async function handleLead(req, res) {
+  if (!(await leadRateLimit(leadClientIp(req)))) {
+    return res.status(429).json({ error: 'Too many submissions, please try again later.' });
+  }
+  const body = typeof req.body === 'string' ? (() => { try { return JSON.parse(req.body); } catch { return {}; } })() : (req.body || {});
+  const email   = String(body.email   || '').trim();
+  const company = String(body.company || '').trim();
+  const source  = String(body.source  || 'readiness-quiz').trim();
+  const ts      = String(body.ts      || new Date().toISOString());
+  const answers = Array.isArray(body.answers)
+    ? body.answers.slice(0, 20).map(a => ({
+        question: String(a?.question || '').slice(0, 300),
+        answer:   String(a?.answer   || '').slice(0, 300),
+      }))
+    : [];
+  if (!leadIsEmail(email)) return res.status(400).json({ error: 'A valid email is required.' });
+  if (!company)            return res.status(400).json({ error: 'Company name is required.' });
+
+  const lead = { email, company, answers, source, ts, ip: leadClientIp(req), at: Date.now() };
+  try {
+    await redis.lpush('admin:leads', JSON.stringify(lead));
+    await redis.ltrim('admin:leads', 0, 999);
+    await redis.incr('admin:stats:total_leads');
+  } catch (e) {
+    await logError('lead: redis store failed', { error: String(e), email });
+  }
+  try {
+    await leadSendResend({
+      to: LEAD_NOTIFY_TO, from: LEAD_NOTIFY_FROM, replyTo: email,
+      subject: `New SOC 2 lead: ${company}`,
+      html: leadAlertHtml(lead),
+    });
+    return res.status(200).json({ ok: true });
+  } catch (e) {
+    await logError('lead: email send failed', { error: String(e), email, company });
+    return res.status(200).json({ ok: true, emailed: false });
+  }
+}
+
 export default async function handler(req, res) {
   const _origin = req.headers.origin || '';
   const _originOk = /^https:\/\/(auditready\.space|[a-z0-9-]+\.vercel\.app)$/i.test(_origin);
@@ -82,6 +183,10 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
+
+  // Public (no auth): readiness-quiz lead capture, folded in from api/lead.js.
+  // Must run before the auth gate below since landing visitors are anonymous.
+  if (req.method === 'POST' && req.query.type === 'lead') return handleLead(req, res);
 
   const userId = await getUserId(req.headers.authorization);
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
