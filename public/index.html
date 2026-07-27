@@ -4735,7 +4735,7 @@ async function quizSubmit() {
   const answers = QUIZ.map(q => ({ question: q.q, answer: _qAnswers[q.id] || '(skipped)' }));
 
   try {
-    const r = await fetch('/api/lead', {
+    const r = await fetch('/api/platform?type=lead', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, company, answers, source: 'readiness-quiz', ts: new Date().toISOString() }),
@@ -4872,6 +4872,14 @@ function walkBook() {
   if (typeof gtag === 'function') { try { gtag('event', 'walkthrough_book_click'); } catch {} }
   window.open(WALK_BOOKING_URL, '_blank', 'noopener');
 }
+
+// Until the real Google booking link is set, keep the walkthrough CTA hidden
+// so visitors never reach a dead "Grab a time" button.
+document.addEventListener('DOMContentLoaded', () => {
+  if (WALK_BOOKING_URL.includes('REPLACE')) {
+    document.querySelectorAll('.lp-btn-walk').forEach(b => { b.style.display = 'none'; });
+  }
+});
 
 // ── Init ──────────────────────────────────────────────────────
 
