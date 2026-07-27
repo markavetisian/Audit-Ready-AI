@@ -4867,19 +4867,23 @@ function walkPick(id, idx) {
 }
 
 function walkBook() {
-  if (WALK_BOOKING_URL.includes('REPLACE')) { toast('Booking link not set yet', 'error'); return; }
   try { localStorage.setItem('ar_walk', JSON.stringify(_wAnswers)); } catch {}
   if (typeof gtag === 'function') { try { gtag('event', 'walkthrough_book_click'); } catch {} }
-  window.open(WALK_BOOKING_URL, '_blank', 'noopener');
-}
 
-// Until the real Google booking link is set, keep the walkthrough CTA hidden
-// so visitors never reach a dead "Grab a time" button.
-document.addEventListener('DOMContentLoaded', () => {
-  if (WALK_BOOKING_URL.includes('REPLACE')) {
-    document.querySelectorAll('.lp-btn-walk').forEach(b => { b.style.display = 'none'; });
+  // Preferred: a Google Calendar appointment page (self-service + auto Meet).
+  // Paste your calendar.app.google/... link into WALK_BOOKING_URL above.
+  if (!WALK_BOOKING_URL.includes('REPLACE')) {
+    window.open(WALK_BOOKING_URL, '_blank', 'noopener');
+    return;
   }
-});
+
+  // Fallback until that link is set: open a prefilled email booking request
+  // (with the visitor's answers) so the button is never a dead end.
+  const lines = WALK.map(w => '- ' + w.q + ' ' + (_wAnswers[w.id] || '')).join('%0D%0A');
+  const subject = encodeURIComponent('Book a live walkthrough with Audit Ready AI');
+  const body = 'Hi Vlad,%0D%0A%0D%0AI would like a live walkthrough.%0D%0A%0D%0AMy answers:%0D%0A' + lines + '%0D%0A%0D%0AThanks!';
+  window.location.href = 'mailto:vlad@auditready.space?subject=' + subject + '&body=' + body;
+}
 
 // ── Init ──────────────────────────────────────────────────────
 
