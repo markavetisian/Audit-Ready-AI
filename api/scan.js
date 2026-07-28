@@ -380,7 +380,7 @@ export default async function handler(req, res) {
 
     try {
       const ghToken = getGitHubToken(req.headers.authorization);
-      const { googleToken, driveFolderId } = req.body || {};
+      const { googleToken, driveFolderId, auto } = req.body || {};
       const scanResults = {};
       const allDetectionDetails = {};
       const scanSummary = { github: {}, googleDrive: {} };
@@ -418,7 +418,10 @@ export default async function handler(req, res) {
         detectionDetails: allDetectionDetails,
       }));
 
-      await trackUser(userId, 'scan');
+      // Background auto-rescans (auto:true) keep the score fresh on load but
+      // are NOT user-initiated activity, so they must not inflate the scan
+      // telemetry shown in the admin panel. Only count real, manual scans.
+      if (!auto) await trackUser(userId, 'scan');
 
       // Trigger score recompute (call score.js logic inline to avoid extra HTTP)
       await recomputeScore(userId);
