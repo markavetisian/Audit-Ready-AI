@@ -164,7 +164,8 @@ export default async function handler(req, res) {
       if (!user) user = {};
 
       const ts = Date.now();
-      await adminLog({ action: type, userId, by: process.env.ADMIN_GH, ts });
+      const actor = await resolveIdentity(req.headers.authorization);
+      await adminLog({ action: type, userId, by: actor?.username || actor?.email || 'admin', ts });
 
       if (type === 'suspend') {
         user.status = 'suspended'; user.suspendedAt = ts;
@@ -207,17 +208,31 @@ export default async function handler(req, res) {
         user.mode = 'sandbox';
 
       } else if (type === 'delete') {
-        // Delete all user data
+        // Delete ALL user data. Mirrors the authoritative account-delete in
+        // platform.js so nothing is orphaned — the old version left controls,
+        // evidence, reports, score history, risks, and the scan cache behind.
+        const [controlKeys, evidenceKeys, reportKeys] = await Promise.all([
+          redis.keys(`control:${userId}:*`).catch(() => []),
+          redis.keys(`user:${userId}:evidence:*`).catch(() => []),
+          redis.keys(`user:${userId}:report:*`).catch(() => []),
+        ]);
         const keysToDelete = [
           userKey,
           `blocked:${userId}`,
           `banned:${userId}`,
           `user:${userId}:score`,
+          `user:${userId}:scoreHistory`,
           `user:${userId}:vendors`,
+          `user:${userId}:risks`,
           `user:${userId}:profile`,
           `user:${userId}:shares`,
+          `user:${userId}:lastScan`,
+          `user:${userId}:reports`,
+          `user:${userId}:seeded`,
+          ...controlKeys, ...evidenceKeys, ...reportKeys,
         ];
         await Promise.all(keysToDelete.map(k => redis.del(k).catch(() => {})));
+        await redis.decr('admin:stats:total_users').catch(() => {});
         return res.status(200).json({ ok: true, deleted: true });
 
       } else {

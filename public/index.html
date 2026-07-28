@@ -2777,7 +2777,9 @@ async function triggerScan() {
 async function quietScan() {
   try {
     setChip('scanMeta', 'Auto-scanning…');
-    const body = {};
+    // auto:true tells the API this is a background refresh, so it doesn't
+    // count toward scan telemetry (only manual "Scan Now" does).
+    const body = { auto: true };
     if (ST.user?.googleToken) body.googleToken = ST.user.googleToken;
     const before = _captureControlStatuses();
     const r = await fetch('/api/scan', {
