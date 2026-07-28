@@ -4181,6 +4181,7 @@ function _adminActionButtons(id, u) {
       : `<button class="btn btn-sm btn-secondary" onclick="adminAction('${esc(id)}','suspend')">Suspend</button>
          <button class="btn btn-sm" style="background:var(--red-dim);color:var(--red);border:1px solid rgba(220,38,38,.2);font-size:11px;padding:4px 9px;border-radius:6px" onclick="adminAction('${esc(id)}','ban')">Ban</button>`}
     <button class="btn btn-sm btn-secondary" onclick="adminAction('${esc(id)}','cancel_subscription')" title="Cancel Stripe subscription">↩ Sub</button>
+    <button class="btn btn-sm btn-secondary" onclick="adminResetStats('${esc(id)}')" title="Reset scan/report counters to zero">↺ Stats</button>
     <button class="btn btn-sm" style="background:var(--red-dim);color:var(--red);border:1px solid rgba(220,38,38,.2);font-size:11px;padding:4px 9px;border-radius:6px" onclick="adminDeleteUser('${esc(id)}')">Delete</button>`;
 }
 
@@ -4306,6 +4307,21 @@ async function adminSetMode(userId, mode) {
     const d = await r.json();
     if (!r.ok) throw new Error(d.error || 'Failed');
     toast('Plan updated to ' + mode, 'success');
+    loadAdmin();
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+async function adminResetStats(userId) {
+  if (!confirm('Reset scan/report counters to zero for ' + userId + '?')) return;
+  try {
+    const r = await fetch('/api/admin', {
+      method: 'POST',
+      headers: adminHeaders(),
+      body: JSON.stringify({ userId, type: 'reset_stats' }),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Failed');
+    toast('Stats reset', 'success');
     loadAdmin();
   } catch (err) { toast(err.message, 'error'); }
 }

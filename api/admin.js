@@ -207,6 +207,18 @@ export default async function handler(req, res) {
         }
         user.mode = 'sandbox';
 
+      } else if (type === 'reset_stats') {
+        // Zero a user's scan/report counters (e.g. to clear counts inflated by
+        // past background auto-rescans). Also decrement the global stat totals
+        // by the same amounts so the dashboard aggregates stay consistent.
+        const dScan = Number(user.scanCount || 0);
+        const dReport = Number(user.reportCount || 0);
+        const dFail = Number(user.failedScans || 0);
+        user.scanCount = 0; user.reportCount = 0; user.failedScans = 0;
+        if (dScan)   await redis.decrby('admin:stats:total_scans', dScan).catch(() => {});
+        if (dReport) await redis.decrby('admin:stats:total_reports', dReport).catch(() => {});
+        if (dFail)   await redis.decrby('admin:stats:failed_scans', dFail).catch(() => {});
+
       } else if (type === 'delete') {
         // Delete ALL user data. Mirrors the authoritative account-delete in
         // platform.js so nothing is orphaned — the old version left controls,
