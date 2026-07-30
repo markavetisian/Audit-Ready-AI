@@ -364,9 +364,20 @@ body.signed-in .dropdown{top:auto;bottom:calc(100% + 6px);left:0;right:0;min-wid
   display:flex!important;
   position:relative;
 }
-/* soft indigo radial gradient behind the hero, fading to white as you scroll */
-.lp-grad{position:absolute;top:0;left:0;width:100%;height:100vh;z-index:0;pointer-events:none;
-  background:radial-gradient(125% 125% at 50% 6%,#ffffff 40%,#e0e7ff 62%,#a5b4fc 100%)}
+/* blue mesh gradient with organic "holes" — layered radial blobs over a
+   light base, with lighter gaps between them for a natural, cloudy effect.
+   A white radial behind the headline keeps the hero text crisp. */
+.lp-grad{position:absolute;top:0;left:0;width:100%;height:165vh;z-index:0;pointer-events:none;
+  background-color:#f4f7ff;
+  background-image:
+    radial-gradient(30% 26% at 14% 16%, rgba(37,99,235,.32), transparent 70%),
+    radial-gradient(28% 24% at 86% 11%, rgba(79,70,229,.30), transparent 70%),
+    radial-gradient(32% 27% at 72% 44%, rgba(59,130,246,.26), transparent 72%),
+    radial-gradient(30% 26% at 24% 52%, rgba(99,102,241,.26), transparent 72%),
+    radial-gradient(44% 32% at 50% 82%, rgba(37,99,235,.24), transparent 76%),
+    radial-gradient(26% 22% at 50% 30%, rgba(255,255,255,.94), transparent 62%);
+  -webkit-mask-image:linear-gradient(to bottom,#000 74%,transparent 100%);
+  mask-image:linear-gradient(to bottom,#000 74%,transparent 100%)}
 /* login nav */
 .lp-nav{position:relative;z-index:100;width:100%;max-width:1100px;display:flex;align-items:center;justify-content:space-between;padding:22px 32px;margin:0 auto}
 .lp-logo{display:flex;align-items:center;gap:9px}
@@ -394,12 +405,22 @@ body.modal-open{overflow:hidden}
 .lp-hero h1 em{font-style:normal;color:#2563eb}
 .lp-hero p{font-size:clamp(14px,1.4vw,15.5px);color:#64748b;line-height:1.6;max-width:440px;margin:0 auto 32px;text-wrap:pretty}
 .lp-btns{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
-/* clean, minimal auth buttons (Stripe-style, no pills/emojis) */
-.lp-authrow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
-.lp-btn-primary{height:46px;padding:0 30px;border-radius:8px;background:#0f172a;color:#fff;font-size:14px;font-weight:600;border:none;cursor:pointer;transition:opacity .15s,transform .1s}
-.lp-btn-primary:hover{opacity:.9;transform:translateY(-1px)}
-.lp-btn-ghost{height:46px;padding:0 30px;border-radius:8px;background:#fff;color:#0f172a;font-size:14px;font-weight:600;border:1px solid #d8dee7;cursor:pointer;transition:border-color .15s,transform .1s}
-.lp-btn-ghost:hover{border-color:#94a3b8;transform:translateY(-1px)}
+/* glassy auth buttons — frosted glass over the mesh gradient */
+.lp-authrow{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.lp-btn-primary{height:50px;padding:0 34px;border-radius:13px;
+  background:linear-gradient(135deg,rgba(30,58,138,.9),rgba(37,99,235,.82));
+  -webkit-backdrop-filter:blur(14px) saturate(1.5);backdrop-filter:blur(14px) saturate(1.5);
+  color:#fff;font-size:14.5px;font-weight:600;border:1px solid rgba(255,255,255,.22);cursor:pointer;
+  box-shadow:0 10px 34px rgba(30,58,138,.36),inset 0 1px 0 rgba(255,255,255,.3);
+  transition:transform .12s,box-shadow .2s}
+.lp-btn-primary:hover{transform:translateY(-2px);box-shadow:0 16px 44px rgba(30,58,138,.46),inset 0 1px 0 rgba(255,255,255,.36)}
+.lp-btn-ghost{height:50px;padding:0 34px;border-radius:13px;
+  background:rgba(255,255,255,.55);
+  -webkit-backdrop-filter:blur(14px) saturate(1.5);backdrop-filter:blur(14px) saturate(1.5);
+  color:#0f172a;font-size:14.5px;font-weight:600;border:1px solid rgba(255,255,255,.75);cursor:pointer;
+  box-shadow:0 8px 28px rgba(15,23,42,.1),inset 0 1px 0 rgba(255,255,255,.7);
+  transition:transform .12s,box-shadow .2s,background .15s}
+.lp-btn-ghost:hover{transform:translateY(-2px);background:rgba(255,255,255,.72);box-shadow:0 12px 36px rgba(15,23,42,.15)}
 /* ── Auth modal (email + password) ── */
 .auth-card{background:#fff;border-radius:14px;max-width:400px;width:100%;padding:30px 30px 26px;box-shadow:0 24px 70px rgba(15,23,42,.22);position:relative}
 .auth-x{position:absolute;top:14px;right:15px;background:none;border:none;font-size:22px;line-height:1;color:#94a3b8;cursor:pointer;padding:4px}
@@ -952,7 +973,7 @@ body.modal-open{overflow:hidden}
 }
 .quiz-opt:hover .quiz-opt-key{background:#dbe8ff;color:#2563eb}
 .quiz-opt.chosen .quiz-opt-key{background:#2563eb;color:#fff}
-.quiz-opt-emoji{flex-shrink:0;font-size:16px;width:16px;text-align:center;color:#cbd5e1;line-height:1}
+.quiz-opt-emoji{flex-shrink:0;font-size:17px;width:24px;text-align:center;line-height:1;filter:grayscale(1);opacity:.7}
 .quiz-field{
   width:100%;padding:14px 15px;border-radius:12px;border:1.5px solid #e5e9f0;background:#fff;
   font-size:15px;color:#0f172a;transition:border-color .16s,box-shadow .16s;margin-bottom:12px;
@@ -4615,7 +4636,7 @@ function quizRender() {
       item.opts.map((o, idx) =>
         '<button class="quiz-opt' + (_qAnswers[item.id] === o.t ? ' chosen' : '') + '" onclick="quizPick(\'' +
         item.id + '\',' + idx + ')">' +
-        '<span class="quiz-opt-emoji">•</span>' +
+        '<span class="quiz-opt-emoji">' + o.e + '</span>' +
         '<span style="flex:1">' + o.t + '</span>' +
         '<span class="quiz-opt-key">' + String.fromCharCode(65 + idx) + '</span>' +
         '</button>'
@@ -4788,7 +4809,7 @@ function walkRender() {
       '<div class="quiz-opts">' +
       item.opts.map((o, idx) =>
         '<button class="quiz-opt" onclick="walkPick(\'' + item.id + '\',' + idx + ')">' +
-        '<span class="quiz-opt-emoji">•</span>' +
+        '<span class="quiz-opt-emoji">' + o.e + '</span>' +
         '<span style="flex:1">' + o.t + '</span>' +
         '<span class="quiz-opt-key">' + String.fromCharCode(65 + idx) + '</span>' +
         '</button>'
