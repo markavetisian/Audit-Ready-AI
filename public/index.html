@@ -351,7 +351,7 @@ body.signed-in .dropdown{top:auto;bottom:calc(100% + 6px);left:0;right:0;min-wid
   flex-wrap:wrap;
 }
 
-/* ── Login page — light theme with grid ──── */
+/* ── Login / landing page — clean, minimal (Stripe-style) ──── */
 #pg-login{
   min-height:100dvh;
   flex-direction:column;
@@ -363,27 +363,6 @@ body.signed-in .dropdown{top:auto;bottom:calc(100% + 6px);left:0;right:0;min-wid
 #pg-login.on{
   display:flex!important;
   position:relative;
-}
-/* digital rain — falling 0/1 (with hidden "SOC 2" streams) in brand blue,
-   as a light texture behind the hero. The canvas is capped to a top band
-   and CSS-masked so it dissolves before it reaches the sign-in buttons. */
-.lp-rain{position:absolute;top:0;left:0;width:100%;z-index:0;pointer-events:none;
-  -webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 50%,transparent 100%);
-  mask-image:linear-gradient(to bottom,#000 0%,#000 50%,transparent 100%)}
-/* white halo behind the headline so the rain never competes with the text */
-.lp-veil{position:absolute;top:0;left:50%;transform:translateX(-50%);
-  width:min(1000px,140%);height:420px;z-index:1;pointer-events:none;
-  background:radial-gradient(58% 62% at 50% 40%,#fff 40%,rgba(255,255,255,.72) 60%,transparent 100%)}
-@media (max-width:640px){
-  /* fuller rain on mobile: full opacity + the mask fades out later so the
-     rain fills the band between the nav and the headline */
-  .lp-rain{-webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 62%,transparent 100%);
-    mask-image:linear-gradient(to bottom,#000 0%,#000 62%,transparent 100%)}
-  /* halo sits lower, over the stacked mobile headline */
-  .lp-veil{top:230px;height:480px;background:radial-gradient(78% 56% at 50% 46%,#fff 44%,rgba(255,255,255,.8) 66%,transparent 100%)}
-}
-@media (prefers-reduced-motion:reduce){
-  .lp-rain{opacity:.5}
 }
 /* login nav */
 .lp-nav{position:relative;z-index:100;width:100%;max-width:1100px;display:flex;align-items:center;justify-content:space-between;padding:22px 32px;margin:0 auto}
@@ -412,12 +391,34 @@ body.modal-open{overflow:hidden}
 .lp-hero h1 em{font-style:normal;color:#2563eb}
 .lp-hero p{font-size:clamp(14px,1.4vw,15.5px);color:#64748b;line-height:1.6;max-width:440px;margin:0 auto 32px;text-wrap:pretty}
 .lp-btns{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
-.lp-btn-gh{height:46px;padding:0 26px;border-radius:23px;background:#0f172a;color:#fff;font-size:14px;font-weight:500;border:none;cursor:pointer;display:flex;align-items:center;gap:8px;transition:opacity .15s,transform .1s}
-.lp-btn-gh:hover{opacity:.88;transform:translateY(-1px)}
-.lp-btn-gg{height:46px;padding:0 26px;border-radius:23px;background:#fff;color:#0f172a;font-size:14px;font-weight:500;border:1px solid #e2e8f0;cursor:pointer;display:flex;align-items:center;gap:8px;transition:border-color .15s,transform .1s}
-.lp-btn-gg:hover{border-color:#94a3b8;transform:translateY(-1px)}
-.lp-btn-sl{height:46px;padding:0 26px;border-radius:23px;background:#fff;color:#0f172a;font-size:14px;font-weight:500;border:1px solid #e2e8f0;cursor:pointer;display:flex;align-items:center;gap:8px;transition:border-color .15s,transform .1s}
-.lp-btn-sl:hover{border-color:#94a3b8;transform:translateY(-1px)}
+/* clean, minimal auth buttons (Stripe-style, no pills/emojis) */
+.lp-authrow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.lp-btn-primary{height:46px;padding:0 30px;border-radius:8px;background:#0f172a;color:#fff;font-size:14px;font-weight:600;border:none;cursor:pointer;transition:opacity .15s,transform .1s}
+.lp-btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+.lp-btn-ghost{height:46px;padding:0 30px;border-radius:8px;background:#fff;color:#0f172a;font-size:14px;font-weight:600;border:1px solid #d8dee7;cursor:pointer;transition:border-color .15s,transform .1s}
+.lp-btn-ghost:hover{border-color:#94a3b8;transform:translateY(-1px)}
+/* ── Auth modal (email + password) ── */
+.auth-card{background:#fff;border-radius:14px;max-width:400px;width:100%;padding:30px 30px 26px;box-shadow:0 24px 70px rgba(15,23,42,.22);position:relative}
+.auth-x{position:absolute;top:14px;right:15px;background:none;border:none;font-size:22px;line-height:1;color:#94a3b8;cursor:pointer;padding:4px}
+.auth-x:hover{color:#475569}
+.auth-title{font-family:var(--display);font-size:22px;font-weight:700;letter-spacing:-.02em;color:#0f172a}
+.auth-sub{font-size:13px;color:#64748b;margin-top:4px;margin-bottom:22px}
+.auth-label{display:block;font-size:12px;font-weight:600;color:#334155;margin:0 0 6px}
+.auth-input{width:100%;height:42px;padding:0 12px;border:1px solid #d8dee7;border-radius:8px;font-size:14px;color:#0f172a;margin-bottom:15px;outline:none;transition:border-color .15s,box-shadow .15s;font-family:inherit}
+.auth-input:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.auth-err{color:#dc2626;font-size:12.5px;min-height:15px;margin:-6px 0 10px}
+.auth-submit{width:100%;height:44px;background:#0f172a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s}
+.auth-submit:hover{opacity:.9}
+.auth-submit:disabled{opacity:.6;cursor:default}
+.auth-divider{display:flex;align-items:center;gap:12px;margin:18px 0;color:#94a3b8;font-size:12px}
+.auth-divider::before,.auth-divider::after{content:"";flex:1;height:1px;background:#e2e8f0}
+.auth-oauth{width:100%;height:42px;background:#fff;border:1px solid #d8dee7;border-radius:8px;font-size:14px;font-weight:500;color:#0f172a;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:10px;transition:border-color .15s}
+.auth-oauth:hover{border-color:#94a3b8}
+.auth-oauth svg{width:16px;height:16px}
+.auth-toggle{text-align:center;font-size:13px;color:#64748b;margin-top:10px}
+.auth-toggle a{color:#2563eb;font-weight:600;cursor:pointer}
+.auth-legal{text-align:center;font-size:10.5px;color:#cbd5e1;margin-top:14px;line-height:1.5}
+.auth-legal a{color:#94a3b8;text-decoration:underline}
 /* preview-the-trust-page button under the oauth row */
 .lp-btn-trust{margin:16px auto 0;height:40px;padding:0 20px;border-radius:20px;background:rgba(37,99,235,.08);color:#1d4ed8;font-size:13px;font-weight:500;border:1px solid rgba(37,99,235,.35);cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background .15s,transform .1s,border-color .15s}
 .lp-btn-trust:hover{background:rgba(37,99,235,.16);border-color:rgba(37,99,235,.6);transform:translateY(-1px)}
@@ -1100,9 +1101,6 @@ body.modal-open{overflow:hidden}
 <!-- ── Login ────────────────────────────────────────────────── -->
 <div class="page" id="pg-login">
 
-  <!-- background: digital rain + white halo behind the headline -->
-  <canvas class="lp-rain" id="lpRain"></canvas>
-  <div class="lp-veil"></div>
 
   <!-- nav -->
   <nav class="lp-nav">
@@ -1117,26 +1115,16 @@ body.modal-open{overflow:hidden}
       <div class="lp-nav-link" onclick="openSoc2Modal()">SOC 2 Guide</div>
       <div class="lp-nav-link lp-nav-founder" onclick="location.href='/founder.html'">Founder</div>
     </div>
-    <button class="lp-nav-signin" onclick="location.href='/api/auth?provider=github'">Sign in</button>
+    <button class="lp-nav-signin" onclick="openAuth('login')">Sign in</button>
   </nav>
 
   <!-- hero -->
   <div class="lp-hero" style="padding-top:48px">
     <h1>No SOC 2, <em>no enterprise deal</em>.</h1>
     <p>For AI startups and B2B teams facing their first security review. Connect GitHub, get your SOC 2 score, and know what to fix.</p>
-    <div class="lp-btns">
-      <button class="lp-btn-gh" onclick="location.href='/api/auth?provider=github'">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12"/></svg>
-        Continue with GitHub
-      </button>
-      <button class="lp-btn-gg" onclick="location.href='/api/auth?provider=google'">
-        <svg width="15" height="15" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-        Continue with Google
-      </button>
-      <button class="lp-btn-sl" onclick="location.href='/api/auth?provider=slack'">
-        <svg width="15" height="15" viewBox="0 0 54 54"><path fill="#E01E5A" d="M19.712 0a5.355 5.355 0 0 0-5.354 5.354 5.355 5.355 0 0 0 5.354 5.355h5.355V5.354A5.355 5.355 0 0 0 19.712 0m0 14.28H5.355A5.355 5.355 0 0 0 0 19.637a5.355 5.355 0 0 0 5.355 5.355h14.357a5.355 5.355 0 0 0 5.355-5.355 5.355 5.355 0 0 0-5.355-5.356"/><path fill="#36C5F0" d="M54 19.637a5.355 5.355 0 0 0-5.355-5.357 5.355 5.355 0 0 0-5.354 5.357v5.355h5.354A5.355 5.355 0 0 0 54 19.637m-14.28 0V5.354A5.355 5.355 0 0 0 34.365 0a5.355 5.355 0 0 0-5.356 5.354v14.283a5.355 5.355 0 0 0 5.356 5.355 5.355 5.355 0 0 0 5.355-5.355"/><path fill="#2EB67D" d="M34.365 54a5.355 5.355 0 0 0 5.355-5.355 5.355 5.355 0 0 0-5.355-5.354h-5.356v5.354A5.355 5.355 0 0 0 34.365 54m0-14.28h14.28A5.355 5.355 0 0 0 54 34.364a5.355 5.355 0 0 0-5.355-5.355H34.365a5.355 5.355 0 0 0-5.356 5.355 5.355 5.355 0 0 0 5.356 5.356"/><path fill="#ECB22E" d="M0 34.364a5.355 5.355 0 0 0 5.355 5.356 5.355 5.355 0 0 0 5.354-5.356v-5.355H5.355A5.355 5.355 0 0 0 0 34.364m14.28 0v14.28A5.355 5.355 0 0 0 19.712 54a5.355 5.355 0 0 0 5.355-5.355V34.364a5.355 5.355 0 0 0-5.355-5.355 5.355 5.355 0 0 0-5.431 5.355"/></svg>
-        Continue with Slack
-      </button>
+    <div class="lp-authrow">
+      <button class="lp-btn-primary" onclick="openAuth('signup')">Get started</button>
+      <button class="lp-btn-ghost" onclick="openAuth('login')">Sign in</button>
     </div>
     <div style="text-align:center">
       <button class="lp-btn-walk" onclick="openWalk()">
@@ -1150,8 +1138,7 @@ body.modal-open{overflow:hidden}
         See the Trust Page your customers get
       </button>
     </div>
-    <p style="font-size:11px;color:#94a3b8;margin-top:14px">GitHub required. It's where your evidence already lives.</p>
-    <p style="font-size:10.5px;color:#cbd5e1;margin-top:6px">By clicking "Continue", you agree to our <a href="/terms.html" target="_blank" style="color:#94a3b8;text-decoration:underline">Terms of Service</a> and <a href="/privacy.html" target="_blank" style="color:#94a3b8;text-decoration:underline">Privacy Policy</a>.</p>
+    <p style="font-size:11px;color:#94a3b8;margin-top:14px">Free to start. No credit card required.</p>
   </div>
 
   <!-- dashboard mockup -->
@@ -1656,6 +1643,34 @@ body.modal-open{overflow:hidden}
       <div class="walk-step-label" id="walkStepLabel">Question 1 of 3</div>
     </div>
     <div id="walkStage"></div>
+  </div>
+</div>
+
+<!-- ── Auth modal: email + password (with GitHub/Slack fallback) ── -->
+<div id="authModal" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeAuth()">
+  <div class="auth-card">
+    <button class="auth-x" onclick="closeAuth()" aria-label="Close">&times;</button>
+    <div class="auth-title" id="authTitle">Create your account</div>
+    <div class="auth-sub" id="authSub">Start your SOC 2 readiness in minutes.</div>
+    <form id="authForm" onsubmit="submitAuth(event)" novalidate>
+      <label class="auth-label" for="authEmail">Email</label>
+      <input class="auth-input" id="authEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@company.com"/>
+      <label class="auth-label" for="authPass">Password</label>
+      <input class="auth-input" id="authPass" type="password" autocomplete="new-password" placeholder="At least 8 characters"/>
+      <div class="auth-err" id="authErr"></div>
+      <button class="auth-submit" id="authSubmit" type="submit">Create account</button>
+    </form>
+    <div class="auth-divider"><span>or</span></div>
+    <button class="auth-oauth" onclick="location.href='/api/auth?provider=github'">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12"/></svg>
+      Continue with GitHub
+    </button>
+    <button class="auth-oauth" onclick="location.href='/api/auth?provider=slack'">
+      <svg viewBox="0 0 54 54"><path fill="#E01E5A" d="M19.712 0a5.355 5.355 0 0 0-5.354 5.354 5.355 5.355 0 0 0 5.354 5.355h5.355V5.354A5.355 5.355 0 0 0 19.712 0m0 14.28H5.355A5.355 5.355 0 0 0 0 19.637a5.355 5.355 0 0 0 5.355 5.355h14.357a5.355 5.355 0 0 0 5.355-5.355 5.355 5.355 0 0 0-5.355-5.356"/><path fill="#36C5F0" d="M54 19.637a5.355 5.355 0 0 0-5.355-5.357 5.355 5.355 0 0 0-5.354 5.357v5.355h5.354A5.355 5.355 0 0 0 54 19.637m-14.28 0V5.354A5.355 5.355 0 0 0 34.365 0a5.355 5.355 0 0 0-5.356 5.354v14.283a5.355 5.355 0 0 0 5.356 5.355 5.355 5.355 0 0 0 5.355-5.355"/><path fill="#2EB67D" d="M34.365 54a5.355 5.355 0 0 0 5.355-5.355 5.355 5.355 0 0 0-5.355-5.354h-5.356v5.354A5.355 5.355 0 0 0 34.365 54m0-14.28h14.28A5.355 5.355 0 0 0 54 34.364a5.355 5.355 0 0 0-5.355-5.355H34.365a5.355 5.355 0 0 0-5.356 5.355 5.355 5.355 0 0 0 5.356 5.356"/><path fill="#ECB22E" d="M0 34.364a5.355 5.355 0 0 0 5.355 5.356 5.355 5.355 0 0 0 5.354-5.356v-5.355H5.355A5.355 5.355 0 0 0 0 34.364m14.28 0v14.28A5.355 5.355 0 0 0 19.712 54a5.355 5.355 0 0 0 5.355-5.355V34.364a5.355 5.355 0 0 0-5.355-5.355 5.355 5.355 0 0 0-5.431 5.355"/></svg>
+      Continue with Slack
+    </button>
+    <div class="auth-toggle" id="authToggle">Already have an account? <a onclick="toggleAuthMode()">Sign in</a></div>
+    <div class="auth-legal">By continuing you agree to our <a href="/terms.html" target="_blank">Terms</a> and <a href="/privacy.html" target="_blank">Privacy Policy</a>.</div>
   </div>
 </div>
 
@@ -2204,6 +2219,66 @@ function authHeaders() {
 })();
 
 function saveUser() { if (ST.user) sessionStorage.setItem('ar_user', JSON.stringify(ST.user)); }
+
+// ── Email + password auth modal ──────────────────────────────
+let _authMode = 'signup';
+function openAuth(mode) {
+  _authMode = mode === 'login' ? 'login' : 'signup';
+  applyAuthMode();
+  const m = document.getElementById('authModal');
+  if (m) m.style.display = 'flex';
+  setTimeout(() => document.getElementById('authEmail')?.focus(), 90);
+}
+function closeAuth() {
+  const m = document.getElementById('authModal'); if (m) m.style.display = 'none';
+}
+function toggleAuthMode() {
+  _authMode = _authMode === 'signup' ? 'login' : 'signup';
+  applyAuthMode();
+}
+function applyAuthMode() {
+  const signup = _authMode === 'signup';
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('authTitle', signup ? 'Create your account' : 'Welcome back');
+  set('authSub', signup ? 'Start your SOC 2 readiness in minutes.' : 'Sign in to your dashboard.');
+  set('authSubmit', signup ? 'Create account' : 'Sign in');
+  const pass = document.getElementById('authPass');
+  if (pass) pass.setAttribute('autocomplete', signup ? 'new-password' : 'current-password');
+  const tog = document.getElementById('authToggle');
+  if (tog) tog.innerHTML = signup
+    ? 'Already have an account? <a onclick="toggleAuthMode()">Sign in</a>'
+    : 'New here? <a onclick="toggleAuthMode()">Create an account</a>';
+  const err = document.getElementById('authErr'); if (err) err.textContent = '';
+}
+async function submitAuth(e) {
+  if (e) e.preventDefault();
+  const email = (document.getElementById('authEmail')?.value || '').trim();
+  const pass = document.getElementById('authPass')?.value || '';
+  const err = document.getElementById('authErr');
+  const btn = document.getElementById('authSubmit');
+  if (err) err.textContent = '';
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)) { if (err) err.textContent = 'Please enter a valid email address.'; return; }
+  if (pass.length < 8) { if (err) err.textContent = 'Password must be at least 8 characters.'; return; }
+  const label = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = _authMode === 'signup' ? 'Creating…' : 'Signing in…'; }
+  try {
+    const r = await fetch('/api/auth?action=' + _authMode, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Something went wrong. Please try again.');
+    ST.user = { name: d.name || email.split('@')[0], email: d.email || email, type: 'email', githubToken: null, sessionToken: d.sessionToken };
+    saveUser();
+    closeAuth();
+    if (typeof updateHeader === 'function') updateHeader();
+    nav('dashboard');
+  } catch (ex) {
+    if (err) err.textContent = ex.message || 'Something went wrong. Please try again.';
+    if (btn) { btn.disabled = false; btn.textContent = label; }
+  }
+}
 function loadUser() {
   try { const s = sessionStorage.getItem('ar_user'); if (s) ST.user = JSON.parse(s); } catch {}
   // Drop stale google/slack sessions that predate signed session tokens so the
@@ -4452,146 +4527,6 @@ async function confirmCancelSubscription() {
     _origNav(page);
     if (page === 'login') setTimeout(observeReveals, 30);
   };
-})();
-
-// ── Login page digital rain ───────────────────────────────────
-// Falling 0/1 with occasional hidden "SOC 2" streams, in brand blue, as
-// a light texture behind the hero. Kept cheap: integer-row matrix draw,
-// ~22fps throttle, no shadowBlur, DPR capped, trails fade to white via a
-// single translucent fillRect. The loop stops entirely whenever the tab
-// is hidden, a modal is open, reduced-motion is set, or we navigate away
-// from the login page — so it never burns CPU in the background.
-
-(function() {
-  const canvas = document.getElementById('lpRain');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const GLYPHS = '01';
-  const WORD = 'SOC 2';
-  const HEAD = 'rgba(29,78,216,0.92)';   // bright leading char
-  const FADE = 'rgba(255,255,255,0.11)'; // per-frame trail fade
-  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const FRAME = 1000 / 22;               // ~22fps is plenty for ambient rain
-
-  let W = 0, H = 0, step = 16, fontStr = '', cols = [];
-  let running = false, rafId = 0, last = 0, resizeT = 0;
-
-  const mobile = () => window.innerWidth <= 640;
-
-  function makeCol(i, seeded) {
-    const rows = Math.max(1, Math.floor(H / step));
-    return {
-      x: i * step,
-      y: seeded ? -Math.floor(Math.random() * rows * 1.6) : -2,
-      word: Math.random() < 0.20 ? WORD : null,
-      wi: 0,
-      slow: Math.random() < 0.4 ? 2 : 1, // some columns fall at half speed
-      tick: 0,
-    };
-  }
-
-  function resize() {
-    const pg = document.getElementById('pg-login');
-    if (!pg) return;
-    const dpr = Math.min(window.devicePixelRatio || 1, mobile() ? 1.75 : 2);
-    const fontPx = 14;
-    step = Math.round(fontPx * 1.15);
-    W = pg.offsetWidth;
-    // Mobile hero is taller (stacked), so the rain gets a taller band to
-    // fill the space between the nav and the headline.
-    H = Math.min(window.innerHeight * (mobile() ? 0.82 : 0.66), 820);
-    canvas.style.width = W + 'px';
-    canvas.style.height = H + 'px';
-    canvas.width = Math.floor(W * dpr);
-    canvas.height = Math.floor(H * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    fontStr = '500 ' + fontPx + 'px "IBM Plex Mono", ui-monospace, monospace';
-    cols = Array.from({ length: Math.ceil(W / step) }, (_, i) => makeCol(i, true));
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, W, H);
-  }
-
-  function drawFrame() {
-    ctx.fillStyle = FADE;
-    ctx.fillRect(0, 0, W, H);
-    ctx.font = fontStr;
-    ctx.textBaseline = 'top';
-    ctx.fillStyle = HEAD;
-    const rows = Math.floor(H / step) + 2;
-    for (const c of cols) {
-      if (++c.tick < c.slow) continue;
-      c.tick = 0;
-      const yPix = c.y * step;
-      if (yPix >= 0 && yPix < H) {
-        const ch = c.word ? c.word[c.wi++ % c.word.length]
-                          : GLYPHS[(Math.random() * GLYPHS.length) | 0];
-        ctx.fillText(ch, c.x, yPix);
-      }
-      if (++c.y > rows && Math.random() > 0.94) {
-        Object.assign(c, makeCol(Math.round(c.x / step), false));
-      }
-    }
-  }
-
-  function staticFrame() {
-    // reduced-motion: one faint, still frame — no animation at all
-    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
-    ctx.font = fontStr; ctx.textBaseline = 'top';
-    ctx.fillStyle = 'rgba(37,99,235,0.16)';
-    const rows = Math.floor(H / step);
-    for (const c of cols) {
-      for (let r = 0; r < rows; r += 3) {
-        if (Math.random() < 0.5) ctx.fillText(GLYPHS[(Math.random() * 2) | 0], c.x, r * step);
-      }
-    }
-  }
-
-  function tick(now) {
-    if (!running) return;
-    rafId = requestAnimationFrame(tick);
-    if (now - last < FRAME) return;
-    last = now;
-    drawFrame();
-  }
-
-  function canRun() {
-    // Note: the rain intentionally keeps running behind open popups — it
-    // only stops when the tab is hidden or we leave the login page.
-    const pg = document.getElementById('pg-login');
-    return !!pg && pg.classList.contains('on') && !document.hidden;
-  }
-
-  function start() {
-    if (running || !canRun()) return;
-    if (reduce.matches) { staticFrame(); return; }
-    running = true; last = 0;
-    rafId = requestAnimationFrame(tick);
-  }
-
-  function stop() {
-    running = false;
-    if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
-  }
-
-  function refresh() { canRun() ? start() : stop(); }
-
-  window.addEventListener('resize', () => {
-    clearTimeout(resizeT);
-    resizeT = setTimeout(() => { resize(); if (!running && reduce.matches) staticFrame(); }, 150);
-  }, { passive: true });
-  document.addEventListener('visibilitychange', refresh);
-  reduce.addEventListener?.('change', () => { stop(); resize(); start(); });
-
-  // Start on the login page, stop everywhere else
-  const _nav = window.nav;
-  window.nav = function(page) {
-    _nav(page);
-    setTimeout(() => { if (page === 'login') { resize(); start(); } else stop(); }, 30);
-  };
-
-  window.addEventListener('load', () => {
-    if (document.getElementById('pg-login')?.classList.contains('on')) { resize(); start(); }
-  });
 })();
 
 // ── Readiness quiz ────────────────────────────────────────────

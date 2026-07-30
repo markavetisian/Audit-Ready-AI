@@ -11,6 +11,58 @@
 // ─────────────────────────────────────────────────────────────
 
 import { trackUser, mintSession, stashAuthCode, takeAuthCode, verifySession, revokeSessions } from './_telemetry.js';
+import { Redis } from '@upstash/redis';
+import { scryptSync, randomBytes, timingSafeEqual } from 'crypto';
+
+const redis = new Redis({ url: process.env.KV_REST_API_URL, token: process.env.KV_REST_API_TOKEN });
+
+// ── Email + password helpers (self-contained, no external services) ──
+// Disposable / temporary email domains blocked at signup.
+const DISPOSABLE_DOMAINS = new Set([
+  '10minutemail.com','10minutemail.net','20minutemail.com','10mail.org','minuteinbox.com',
+  'mailinator.com','mailinator.net','guerrillamail.com','guerrillamail.net','guerrillamail.org',
+  'guerrillamail.info','guerrillamail.biz','guerrillamailblock.com','grr.la','sharklasers.com',
+  'yopmail.com','yopmail.net','yopmail.fr','tempmail.com','temp-mail.org','tempmail.net','tempmailo.com',
+  'tempr.email','tempinbox.com','tempail.com','throwawaymail.com','getnada.com','nada.email',
+  'trashmail.com','trashmail.net','maildrop.cc','dispostable.com','fakeinbox.com','fake-mail.net',
+  'mailnesia.com','mytemp.email','emailondeck.com','mohmal.com','spamgourmet.com','mintemail.com',
+  'discard.email','discardmail.com','mailcatch.com','inboxkitten.com','tempmailaddress.com',
+  'burnermail.io','moakt.com','wegwerfmail.de','einrot.com','spam4.me','spambox.us','anonbox.net',
+  'maileater.com','33mail.com','emltmp.com','mail-temp.com','luxusmail.org','tmail.ws','mailto.plus',
+]);
+
+function isValidEmailFormat(email) {
+  if (typeof email !== 'string' || email.length > 254) return false;
+  if (email.includes('..')) return false;
+  return /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email);
+}
+function isDisposableEmail(email) {
+  return DISPOSABLE_DOMAINS.has((email.split('@')[1] || '').toLowerCase());
+}
+function hashPassword(password) {
+  const salt = randomBytes(16).toString('hex');
+  return `${salt}:${scryptSync(password, salt, 64).toString('hex')}`;
+}
+function verifyPassword(password, stored) {
+  try {
+    const [salt, hash] = String(stored).split(':');
+    if (!salt || !hash) return false;
+    const test = scryptSync(password, salt, 64);
+    const a = Buffer.from(hash, 'hex');
+    return a.length === test.length && timingSafeEqual(a, test);
+  } catch { return false; }
+}
+function clientIp(req) {
+  const fwd = (req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+  return fwd || req.headers['x-real-ip'] || 'unknown';
+}
+async function authRateLimit(ip) {
+  try {
+    const n = await redis.incr(`rl:auth:${ip}`);
+    if (n === 1) await redis.expire(`rl:auth:${ip}`, 3600);
+    return n <= 12; // 12 signup/login attempts per hour per IP
+  } catch { return true; }
+}
 
 export default async function handler(req, res) {
   const { provider, code, state } = req.query;
@@ -45,6 +97,56 @@ export default async function handler(req, res) {
       if (uid) await revokeSessions(uid);
     }
     return res.status(200).json({ ok: true });
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // EMAIL + PASSWORD — self-contained signup / login (no OAuth).
+  //   POST /api/auth?action=signup { email, password }
+  //   POST /api/auth?action=login  { email, password }
+  // Returns { sessionToken, email, name } on success.
+  // ─────────────────────────────────────────────────────────────
+  if (req.method === 'POST' && (req.query.action === 'signup' || req.query.action === 'login')) {
+    const isSignup = req.query.action === 'signup';
+    if (!(await authRateLimit(clientIp(req)))) {
+      return res.status(429).json({ error: 'Too many attempts. Please try again in a little while.' });
+    }
+    const body = typeof req.body === 'string'
+      ? (() => { try { return JSON.parse(req.body); } catch { return {}; } })()
+      : (req.body || {});
+    const email = String(body.email || '').trim().toLowerCase();
+    const password = String(body.password || '');
+
+    if (!isValidEmailFormat(email)) return res.status(400).json({ error: 'Please enter a valid email address.' });
+    if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+
+    const key = `auth:email:${email}`;
+    try {
+      if (isSignup) {
+        if (isDisposableEmail(email)) {
+          return res.status(400).json({ error: 'Please use a permanent email address. Disposable addresses are not allowed.' });
+        }
+        if (await redis.get(key)) {
+          return res.status(409).json({ error: 'An account with this email already exists. Try signing in.' });
+        }
+        const name = email.split('@')[0];
+        await redis.set(key, JSON.stringify({ email, name, passHash: hashPassword(password), createdAt: Date.now() }));
+        const uid = 'email:' + email;
+        try { await trackUser(uid, 'login', email, 'email'); } catch {}
+        return res.status(200).json({ ok: true, email, name, sessionToken: mintSession(uid) });
+      }
+      // login
+      const raw = await redis.get(key);
+      const record = raw ? (typeof raw === 'object' ? raw : JSON.parse(raw)) : null;
+      // Generic error either way, so we never reveal which emails are registered.
+      if (!record || !verifyPassword(password, record.passHash)) {
+        return res.status(401).json({ error: 'Invalid email or password.' });
+      }
+      const uid = 'email:' + email;
+      try { await trackUser(uid, 'login', email, 'email'); } catch {}
+      return res.status(200).json({ ok: true, email, name: record.name || email.split('@')[0], sessionToken: mintSession(uid) });
+    } catch (err) {
+      return res.status(500).json({ error: 'Server error. Please try again.' });
+    }
   }
 
   // ── Detect which provider this callback belongs to ──────────
