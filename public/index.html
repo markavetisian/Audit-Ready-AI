@@ -1014,8 +1014,9 @@ body.modal-open{overflow:hidden}
 .lp-btn-cta:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.22)}
 
 /* Scroll reveal */
-.reveal{opacity:0;transform:translateY(22px);transition:opacity .55s ease,transform .55s ease;transition-delay:var(--d,0s)}
-.reveal.visible{opacity:1;transform:translateY(0)}
+/* scroll-reveal animations disabled — elements are always visible */
+.reveal{opacity:1;transform:none}
+.reveal.visible{opacity:1;transform:none}
 
 /* ── Admin panel ───────────────────── */
 .admin-stat{background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px 14px;box-shadow:0 1px 3px rgba(15,23,42,.04)}
