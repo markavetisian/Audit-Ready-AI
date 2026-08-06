@@ -69,7 +69,7 @@ async function authRateLimit(ip) {
 function genCode() { return String(Math.floor(100000 + Math.random() * 900000)); }
 async function sendVerifyEmail(to, code) {
   if (!process.env.RESEND_API_KEY) throw new Error('RESEND_API_KEY not configured');
-  const from = process.env.RESEND_FROM || 'Audit Ready AI <noreply@auditready.space>';
+  const from = process.env.RESEND_FROM || 'Audit Ready AI <vlad@auditready.space>';
   const html = `<!DOCTYPE html><html><body style="margin:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
     <div style="max-width:460px;margin:24px auto;background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e2e8f0">
       <div style="background:linear-gradient(135deg,#1e3a8a,#2563eb);padding:20px 26px;color:#fff;font-size:15px;font-weight:600">Audit Ready AI</div>
