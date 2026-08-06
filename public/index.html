@@ -1680,6 +1680,7 @@ body.modal-open{overflow:hidden}
 <div id="authModal" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeAuth()">
   <div class="auth-card">
     <button class="auth-x" onclick="closeAuth()" aria-label="Close">&times;</button>
+    <div id="authMain">
     <div class="auth-title" id="authTitle">Create your account</div>
     <div class="auth-sub" id="authSub">Start your SOC 2 readiness in minutes.</div>
     <form id="authForm" onsubmit="submitAuth(event)" novalidate>
@@ -1701,6 +1702,15 @@ body.modal-open{overflow:hidden}
     </button>
     <div class="auth-toggle" id="authToggle">Already have an account? <a onclick="toggleAuthMode()">Sign in</a></div>
     <div class="auth-legal">By continuing you agree to our <a href="/terms.html" target="_blank">Terms</a> and <a href="/privacy.html" target="_blank">Privacy Policy</a>.</div>
+    </div>
+    <div id="authVerify" style="display:none">
+      <div class="auth-title">Check your email</div>
+      <div class="auth-sub">Enter the 6-digit code we sent to <b id="verifyEmail" style="color:#0f172a"></b>.</div>
+      <input class="auth-input" id="verifyCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" style="letter-spacing:6px;text-align:center;font-size:18px;font-weight:600"/>
+      <div class="auth-err" id="verifyErr"></div>
+      <button class="auth-submit" id="verifySubmit" onclick="submitVerify()">Verify and continue</button>
+      <div class="auth-toggle">Didn't get the email? <a onclick="resendCode()">Resend code</a> &nbsp;·&nbsp; <a onclick="backToAuth()">Back</a></div>
+    </div>
   </div>
 </div>
 
@@ -2255,6 +2265,9 @@ let _authMode = 'signup';
 function openAuth(mode) {
   _authMode = mode === 'login' ? 'login' : 'signup';
   applyAuthMode();
+  // always open on the main view, not the verification step
+  const mainV = document.getElementById('authMain'); if (mainV) mainV.style.display = 'block';
+  const verV = document.getElementById('authVerify'); if (verV) verV.style.display = 'none';
   const m = document.getElementById('authModal');
   if (m) m.style.display = 'flex';
   setTimeout(() => document.getElementById('authEmail')?.focus(), 90);
@@ -2299,14 +2312,69 @@ async function submitAuth(e) {
     });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(d.error || 'Something went wrong. Please try again.');
-    ST.user = { name: d.name || email.split('@')[0], email: d.email || email, type: 'email', githubToken: null, sessionToken: d.sessionToken };
-    saveUser();
-    closeAuth();
-    if (typeof updateHeader === 'function') updateHeader();
-    nav('dashboard');
+    // Signup returns verify:true — collect the emailed code before creating the account.
+    if (d.verify) { showVerify(email); if (btn) { btn.disabled = false; btn.textContent = label; } return; }
+    signInWithSession(d, email);
   } catch (ex) {
     if (err) err.textContent = ex.message || 'Something went wrong. Please try again.';
     if (btn) { btn.disabled = false; btn.textContent = label; }
+  }
+}
+let _verifyEmail = '';
+function signInWithSession(d, email) {
+  ST.user = { name: d.name || email.split('@')[0], email: d.email || email, type: 'email', githubToken: null, sessionToken: d.sessionToken };
+  saveUser();
+  closeAuth();
+  if (typeof updateHeader === 'function') updateHeader();
+  nav('dashboard');
+}
+function showVerify(email) {
+  _verifyEmail = email;
+  const mainV = document.getElementById('authMain'); if (mainV) mainV.style.display = 'none';
+  const verV = document.getElementById('authVerify'); if (verV) verV.style.display = 'block';
+  const ve = document.getElementById('verifyEmail'); if (ve) ve.textContent = email;
+  const err = document.getElementById('verifyErr'); if (err) { err.style.color = ''; err.textContent = ''; }
+  const inp = document.getElementById('verifyCode'); if (inp) inp.value = '';
+  setTimeout(() => document.getElementById('verifyCode')?.focus(), 90);
+}
+function backToAuth() {
+  const verV = document.getElementById('authVerify'); if (verV) verV.style.display = 'none';
+  const mainV = document.getElementById('authMain'); if (mainV) mainV.style.display = 'block';
+}
+async function submitVerify() {
+  const code = (document.getElementById('verifyCode')?.value || '').trim();
+  const err = document.getElementById('verifyErr');
+  const btn = document.getElementById('verifySubmit');
+  if (err) { err.style.color = ''; err.textContent = ''; }
+  if (!/^\d{6}$/.test(code)) { if (err) err.textContent = 'Enter the 6-digit code.'; return; }
+  const label = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Verifying…'; }
+  try {
+    const r = await fetch('/api/auth?action=verify', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: _verifyEmail, code }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Verification failed.');
+    signInWithSession(d, _verifyEmail);
+  } catch (ex) {
+    if (err) err.textContent = ex.message || 'Verification failed.';
+    if (btn) { btn.disabled = false; btn.textContent = label; }
+  }
+}
+async function resendCode() {
+  const err = document.getElementById('verifyErr');
+  if (err) { err.style.color = ''; err.textContent = ''; }
+  try {
+    const r = await fetch('/api/auth?action=resend', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: _verifyEmail }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Could not resend.');
+    if (err) { err.style.color = '#16a34a'; err.textContent = 'A new code is on its way.'; }
+  } catch (ex) {
+    if (err) err.textContent = ex.message || 'Could not resend.';
   }
 }
 function loadUser() {
