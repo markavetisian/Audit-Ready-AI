@@ -79,7 +79,7 @@ const ALL_CONTROLS = [
 // Folded in from the former api/lead.js to stay under Vercel's 12-function
 // Hobby cap. Stores the lead in Redis (never lost) and emails the founder.
 const LEAD_NOTIFY_TO   = process.env.LEAD_NOTIFY_EMAIL || 'vlad@auditready.space';
-const LEAD_NOTIFY_FROM = process.env.RESEND_FROM || 'Audit Ready AI <noreply@auditready.space>';
+const LEAD_NOTIFY_FROM = process.env.RESEND_FROM || 'Audit Ready AI <vlad@auditready.space>';
 
 function leadClientIp(req) {
   const fwd = (req.headers['x-forwarded-for'] || '').split(',')[0].trim();

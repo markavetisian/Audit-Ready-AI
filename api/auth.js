@@ -11,6 +11,83 @@
 // ─────────────────────────────────────────────────────────────
 
 import { trackUser, mintSession, stashAuthCode, takeAuthCode, verifySession, revokeSessions } from './_telemetry.js';
+import { Redis } from '@upstash/redis';
+import { scryptSync, randomBytes, timingSafeEqual } from 'crypto';
+
+const redis = new Redis({ url: process.env.KV_REST_API_URL, token: process.env.KV_REST_API_TOKEN });
+
+// ── Email + password helpers (self-contained, no external services) ──
+// Disposable / temporary email domains blocked at signup.
+const DISPOSABLE_DOMAINS = new Set([
+  '10minutemail.com','10minutemail.net','20minutemail.com','10mail.org','minuteinbox.com',
+  'mailinator.com','mailinator.net','guerrillamail.com','guerrillamail.net','guerrillamail.org',
+  'guerrillamail.info','guerrillamail.biz','guerrillamailblock.com','grr.la','sharklasers.com',
+  'yopmail.com','yopmail.net','yopmail.fr','tempmail.com','temp-mail.org','tempmail.net','tempmailo.com',
+  'tempr.email','tempinbox.com','tempail.com','throwawaymail.com','getnada.com','nada.email',
+  'trashmail.com','trashmail.net','maildrop.cc','dispostable.com','fakeinbox.com','fake-mail.net',
+  'mailnesia.com','mytemp.email','emailondeck.com','mohmal.com','spamgourmet.com','mintemail.com',
+  'discard.email','discardmail.com','mailcatch.com','inboxkitten.com','tempmailaddress.com',
+  'burnermail.io','moakt.com','wegwerfmail.de','einrot.com','spam4.me','spambox.us','anonbox.net',
+  'maileater.com','33mail.com','emltmp.com','mail-temp.com','luxusmail.org','tmail.ws','mailto.plus',
+]);
+
+function isValidEmailFormat(email) {
+  if (typeof email !== 'string' || email.length > 254) return false;
+  if (email.includes('..')) return false;
+  return /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email);
+}
+function isDisposableEmail(email) {
+  return DISPOSABLE_DOMAINS.has((email.split('@')[1] || '').toLowerCase());
+}
+function hashPassword(password) {
+  const salt = randomBytes(16).toString('hex');
+  return `${salt}:${scryptSync(password, salt, 64).toString('hex')}`;
+}
+function verifyPassword(password, stored) {
+  try {
+    const [salt, hash] = String(stored).split(':');
+    if (!salt || !hash) return false;
+    const test = scryptSync(password, salt, 64);
+    const a = Buffer.from(hash, 'hex');
+    return a.length === test.length && timingSafeEqual(a, test);
+  } catch { return false; }
+}
+function clientIp(req) {
+  const fwd = (req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+  return fwd || req.headers['x-real-ip'] || 'unknown';
+}
+async function authRateLimit(ip) {
+  try {
+    const n = await redis.incr(`rl:auth:${ip}`);
+    if (n === 1) await redis.expire(`rl:auth:${ip}`, 3600);
+    return n <= 12; // 12 signup/login attempts per hour per IP
+  } catch { return true; }
+}
+
+// Email verification: 6-digit code delivered via Resend (already configured
+// for lead emails). Free tier easily covers signup volume.
+function genCode() { return String(Math.floor(100000 + Math.random() * 900000)); }
+async function sendVerifyEmail(to, code) {
+  if (!process.env.RESEND_API_KEY) throw new Error('RESEND_API_KEY not configured');
+  const from = process.env.RESEND_FROM || 'Audit Ready AI <vlad@auditready.space>';
+  const html = `<!DOCTYPE html><html><body style="margin:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+    <div style="max-width:460px;margin:24px auto;background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e2e8f0">
+      <div style="background:linear-gradient(135deg,#1e3a8a,#2563eb);padding:20px 26px;color:#fff;font-size:15px;font-weight:600">Audit Ready AI</div>
+      <div style="padding:26px">
+        <p style="margin:0 0 6px;font-size:15px;color:#0f172a;font-weight:600">Confirm your email</p>
+        <p style="margin:0 0 18px;font-size:13px;color:#64748b;line-height:1.6">Enter this code to finish creating your account. It expires in 15 minutes.</p>
+        <div style="font-size:30px;font-weight:800;letter-spacing:8px;color:#1d4ed8;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px;text-align:center">${code}</div>
+        <p style="margin:18px 0 0;font-size:11px;color:#94a3b8">If you didn't request this, you can safely ignore this email.</p>
+      </div>
+    </div>
+  </body></html>`;
+  const r = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + process.env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from, to, subject: 'Your Audit Ready AI verification code', html }),
+  });
+  if (!r.ok) { const b = await r.text().catch(() => ''); throw new Error('Resend error ' + r.status + ' ' + b.slice(0, 160)); }
+}
 
 export default async function handler(req, res) {
   const { provider, code, state } = req.query;
@@ -45,6 +122,120 @@ export default async function handler(req, res) {
       if (uid) await revokeSessions(uid);
     }
     return res.status(200).json({ ok: true });
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // EMAIL + PASSWORD — self-contained signup / login (no OAuth).
+  //   POST /api/auth?action=signup { email, password }
+  //   POST /api/auth?action=login  { email, password }
+  // Returns { sessionToken, email, name } on success.
+  // ─────────────────────────────────────────────────────────────
+  if (req.method === 'POST' && (req.query.action === 'signup' || req.query.action === 'login')) {
+    const isSignup = req.query.action === 'signup';
+    if (!(await authRateLimit(clientIp(req)))) {
+      return res.status(429).json({ error: 'Too many attempts. Please try again in a little while.' });
+    }
+    const body = typeof req.body === 'string'
+      ? (() => { try { return JSON.parse(req.body); } catch { return {}; } })()
+      : (req.body || {});
+    const email = String(body.email || '').trim().toLowerCase();
+    const password = String(body.password || '');
+
+    if (!isValidEmailFormat(email)) return res.status(400).json({ error: 'Please enter a valid email address.' });
+    if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+
+    const key = `auth:email:${email}`;
+    try {
+      if (isSignup) {
+        if (isDisposableEmail(email)) {
+          return res.status(400).json({ error: 'Please use a permanent email address. Disposable addresses are not allowed.' });
+        }
+        if (await redis.get(key)) {
+          return res.status(409).json({ error: 'An account with this email already exists. Try signing in.' });
+        }
+        // Don't create the account yet. Email a 6-digit code and stash a
+        // pending record; the account is created only after verification.
+        const name = email.split('@')[0];
+        const code = genCode();
+        await redis.set(`auth:pending:${email}`, JSON.stringify({
+          email, name, passHash: hashPassword(password), code, attempts: 0, createdAt: Date.now(),
+        }), { ex: 900 });
+        try {
+          await sendVerifyEmail(email, code);
+        } catch (e) {
+          return res.status(500).json({ error: 'Could not send the verification email. Please try again in a moment.' });
+        }
+        return res.status(200).json({ ok: true, verify: true, email });
+      }
+      // login
+      const raw = await redis.get(key);
+      const record = raw ? (typeof raw === 'object' ? raw : JSON.parse(raw)) : null;
+      // Generic error either way, so we never reveal which emails are registered.
+      if (!record || !verifyPassword(password, record.passHash)) {
+        return res.status(401).json({ error: 'Invalid email or password.' });
+      }
+      const uid = 'email:' + email;
+      try { await trackUser(uid, 'login', email, 'email'); } catch {}
+      return res.status(200).json({ ok: true, email, name: record.name || email.split('@')[0], sessionToken: mintSession(uid) });
+    } catch (err) {
+      return res.status(500).json({ error: 'Server error. Please try again.' });
+    }
+  }
+
+  // ── EMAIL VERIFY — confirm the 6-digit code, then create the account ──
+  if (req.method === 'POST' && req.query.action === 'verify') {
+    if (!(await authRateLimit(clientIp(req)))) {
+      return res.status(429).json({ error: 'Too many attempts. Please try again in a little while.' });
+    }
+    const body = typeof req.body === 'string' ? (() => { try { return JSON.parse(req.body); } catch { return {}; } })() : (req.body || {});
+    const email = String(body.email || '').trim().toLowerCase();
+    const code = String(body.code || '').trim();
+    if (!isValidEmailFormat(email) || !/^\d{6}$/.test(code)) {
+      return res.status(400).json({ error: 'Enter the 6-digit code we emailed you.' });
+    }
+    try {
+      const pkey = `auth:pending:${email}`;
+      const raw = await redis.get(pkey);
+      const pending = raw ? (typeof raw === 'object' ? raw : JSON.parse(raw)) : null;
+      if (!pending) return res.status(400).json({ error: 'That code expired. Please sign up again to get a new one.' });
+      if ((pending.attempts || 0) >= 5) { await redis.del(pkey); return res.status(429).json({ error: 'Too many incorrect attempts. Please sign up again.' }); }
+      if (String(pending.code) !== code) {
+        pending.attempts = (pending.attempts || 0) + 1;
+        await redis.set(pkey, JSON.stringify(pending), { ex: 900 });
+        return res.status(400).json({ error: 'Incorrect code. Please try again.' });
+      }
+      // Verified — create the real account and sign the user in.
+      await redis.set(`auth:email:${email}`, JSON.stringify({ email, name: pending.name, passHash: pending.passHash, createdAt: Date.now(), verified: true }));
+      await redis.del(pkey);
+      const uid = 'email:' + email;
+      try { await trackUser(uid, 'login', email, 'email'); } catch {}
+      return res.status(200).json({ ok: true, email, name: pending.name, sessionToken: mintSession(uid) });
+    } catch (err) {
+      return res.status(500).json({ error: 'Server error. Please try again.' });
+    }
+  }
+
+  // ── RESEND — issue a fresh verification code for a pending signup ──
+  if (req.method === 'POST' && req.query.action === 'resend') {
+    if (!(await authRateLimit(clientIp(req)))) {
+      return res.status(429).json({ error: 'Too many attempts. Please try again in a little while.' });
+    }
+    const body = typeof req.body === 'string' ? (() => { try { return JSON.parse(req.body); } catch { return {}; } })() : (req.body || {});
+    const email = String(body.email || '').trim().toLowerCase();
+    if (!isValidEmailFormat(email)) return res.status(400).json({ error: 'Please enter a valid email address.' });
+    try {
+      const pkey = `auth:pending:${email}`;
+      const raw = await redis.get(pkey);
+      const pending = raw ? (typeof raw === 'object' ? raw : JSON.parse(raw)) : null;
+      if (!pending) return res.status(400).json({ error: 'Please sign up again to get a new code.' });
+      const code = genCode();
+      pending.code = code; pending.attempts = 0;
+      await redis.set(pkey, JSON.stringify(pending), { ex: 900 });
+      try { await sendVerifyEmail(email, code); } catch (e) { return res.status(500).json({ error: 'Could not resend the email. Please try again.' }); }
+      return res.status(200).json({ ok: true });
+    } catch (err) {
+      return res.status(500).json({ error: 'Server error. Please try again.' });
+    }
   }
 
   // ── Detect which provider this callback belongs to ──────────

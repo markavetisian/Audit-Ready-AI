@@ -351,7 +351,7 @@ body.signed-in .dropdown{top:auto;bottom:calc(100% + 6px);left:0;right:0;min-wid
   flex-wrap:wrap;
 }
 
-/* ── Login page — light theme with grid ──── */
+/* ── Login / landing page — clean, minimal (Stripe-style) ──── */
 #pg-login{
   min-height:100dvh;
   flex-direction:column;
@@ -364,27 +364,21 @@ body.signed-in .dropdown{top:auto;bottom:calc(100% + 6px);left:0;right:0;min-wid
   display:flex!important;
   position:relative;
 }
-/* digital rain — falling 0/1 (with hidden "SOC 2" streams) in brand blue,
-   as a light texture behind the hero. The canvas is capped to a top band
-   and CSS-masked so it dissolves before it reaches the sign-in buttons. */
-.lp-rain{position:absolute;top:0;left:0;width:100%;z-index:0;pointer-events:none;
-  -webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 50%,transparent 100%);
-  mask-image:linear-gradient(to bottom,#000 0%,#000 50%,transparent 100%)}
-/* white halo behind the headline so the rain never competes with the text */
-.lp-veil{position:absolute;top:0;left:50%;transform:translateX(-50%);
-  width:min(1000px,140%);height:420px;z-index:1;pointer-events:none;
-  background:radial-gradient(58% 62% at 50% 40%,#fff 40%,rgba(255,255,255,.72) 60%,transparent 100%)}
-@media (max-width:640px){
-  /* fuller rain on mobile: full opacity + the mask fades out later so the
-     rain fills the band between the nav and the headline */
-  .lp-rain{-webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 62%,transparent 100%);
-    mask-image:linear-gradient(to bottom,#000 0%,#000 62%,transparent 100%)}
-  /* halo sits lower, over the stacked mobile headline */
-  .lp-veil{top:230px;height:480px;background:radial-gradient(78% 56% at 50% 46%,#fff 44%,rgba(255,255,255,.8) 66%,transparent 100%)}
-}
-@media (prefers-reduced-motion:reduce){
-  .lp-rain{opacity:.5}
-}
+/* blue mesh gradient with organic "holes" — layered radial blobs over a
+   light base, with lighter gaps between them for a natural, cloudy effect.
+   A white radial behind the headline keeps the hero text crisp. */
+.lp-grad{position:absolute;top:0;left:0;width:100%;height:210vh;z-index:0;pointer-events:none;
+  background-color:#f6f8ff;
+  background-image:
+    radial-gradient(42% 34% at 12% 14%, rgba(37,99,235,.26), transparent 78%),
+    radial-gradient(40% 32% at 88% 10%, rgba(79,70,229,.24), transparent 78%),
+    radial-gradient(46% 36% at 74% 40%, rgba(59,130,246,.22), transparent 80%),
+    radial-gradient(44% 36% at 22% 50%, rgba(99,102,241,.22), transparent 80%),
+    radial-gradient(56% 40% at 52% 74%, rgba(37,99,235,.18), transparent 82%),
+    radial-gradient(34% 28% at 50% 28%, rgba(255,255,255,.92), transparent 66%);
+  /* long, multi-stop dissolve so the gradient never ends in a hard line */
+  -webkit-mask-image:linear-gradient(to bottom,#000 30%,rgba(0,0,0,.55) 62%,rgba(0,0,0,.2) 84%,transparent 100%);
+  mask-image:linear-gradient(to bottom,#000 30%,rgba(0,0,0,.55) 62%,rgba(0,0,0,.2) 84%,transparent 100%)}
 /* login nav */
 .lp-nav{position:relative;z-index:100;width:100%;max-width:1100px;display:flex;align-items:center;justify-content:space-between;padding:22px 32px;margin:0 auto}
 .lp-logo{display:flex;align-items:center;gap:9px}
@@ -412,12 +406,44 @@ body.modal-open{overflow:hidden}
 .lp-hero h1 em{font-style:normal;color:#2563eb}
 .lp-hero p{font-size:clamp(14px,1.4vw,15.5px);color:#64748b;line-height:1.6;max-width:440px;margin:0 auto 32px;text-wrap:pretty}
 .lp-btns{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
-.lp-btn-gh{height:46px;padding:0 26px;border-radius:23px;background:#0f172a;color:#fff;font-size:14px;font-weight:500;border:none;cursor:pointer;display:flex;align-items:center;gap:8px;transition:opacity .15s,transform .1s}
-.lp-btn-gh:hover{opacity:.88;transform:translateY(-1px)}
-.lp-btn-gg{height:46px;padding:0 26px;border-radius:23px;background:#fff;color:#0f172a;font-size:14px;font-weight:500;border:1px solid #e2e8f0;cursor:pointer;display:flex;align-items:center;gap:8px;transition:border-color .15s,transform .1s}
-.lp-btn-gg:hover{border-color:#94a3b8;transform:translateY(-1px)}
-.lp-btn-sl{height:46px;padding:0 26px;border-radius:23px;background:#fff;color:#0f172a;font-size:14px;font-weight:500;border:1px solid #e2e8f0;cursor:pointer;display:flex;align-items:center;gap:8px;transition:border-color .15s,transform .1s}
-.lp-btn-sl:hover{border-color:#94a3b8;transform:translateY(-1px)}
+/* glassy auth buttons — frosted glass over the mesh gradient */
+.lp-authrow{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.lp-btn-primary{height:50px;padding:0 34px;border-radius:13px;
+  background:rgba(255,255,255,.72);
+  -webkit-backdrop-filter:blur(14px) saturate(1.5);backdrop-filter:blur(14px) saturate(1.5);
+  color:#0f172a;font-size:14.5px;font-weight:600;border:1px solid rgba(255,255,255,.9);cursor:pointer;
+  box-shadow:0 10px 30px rgba(30,58,138,.16),inset 0 1px 0 rgba(255,255,255,.95);
+  transition:transform .12s,box-shadow .2s,background .15s}
+.lp-btn-primary:hover{transform:translateY(-2px);background:rgba(255,255,255,.86);box-shadow:0 16px 42px rgba(30,58,138,.22),inset 0 1px 0 rgba(255,255,255,.95)}
+.lp-btn-ghost{height:50px;padding:0 34px;border-radius:13px;
+  background:rgba(255,255,255,.45);
+  -webkit-backdrop-filter:blur(14px) saturate(1.5);backdrop-filter:blur(14px) saturate(1.5);
+  color:#0f172a;font-size:14.5px;font-weight:600;border:1px solid rgba(255,255,255,.7);cursor:pointer;
+  box-shadow:0 8px 24px rgba(15,23,42,.08),inset 0 1px 0 rgba(255,255,255,.75);
+  transition:transform .12s,box-shadow .2s,background .15s}
+.lp-btn-ghost:hover{transform:translateY(-2px);background:rgba(255,255,255,.6);box-shadow:0 12px 32px rgba(15,23,42,.12)}
+/* ── Auth modal (email + password) ── */
+.auth-card{background:#fff;border-radius:14px;max-width:400px;width:100%;padding:30px 30px 26px;box-shadow:0 24px 70px rgba(15,23,42,.22);position:relative}
+.auth-x{position:absolute;top:14px;right:15px;background:none;border:none;font-size:22px;line-height:1;color:#94a3b8;cursor:pointer;padding:4px}
+.auth-x:hover{color:#475569}
+.auth-title{font-family:var(--display);font-size:22px;font-weight:700;letter-spacing:-.02em;color:#0f172a}
+.auth-sub{font-size:13px;color:#64748b;margin-top:4px;margin-bottom:22px}
+.auth-label{display:block;font-size:12px;font-weight:600;color:#334155;margin:0 0 6px}
+.auth-input{width:100%;height:42px;padding:0 12px;border:1px solid #d8dee7;border-radius:8px;font-size:14px;color:#0f172a;margin-bottom:15px;outline:none;transition:border-color .15s,box-shadow .15s;font-family:inherit}
+.auth-input:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.auth-err{color:#dc2626;font-size:12.5px;min-height:15px;margin:-6px 0 10px}
+.auth-submit{width:100%;height:44px;background:#0f172a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s}
+.auth-submit:hover{opacity:.9}
+.auth-submit:disabled{opacity:.6;cursor:default}
+.auth-divider{display:flex;align-items:center;gap:12px;margin:18px 0;color:#94a3b8;font-size:12px}
+.auth-divider::before,.auth-divider::after{content:"";flex:1;height:1px;background:#e2e8f0}
+.auth-oauth{width:100%;height:42px;background:#fff;border:1px solid #d8dee7;border-radius:8px;font-size:14px;font-weight:500;color:#0f172a;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:10px;transition:border-color .15s}
+.auth-oauth:hover{border-color:#94a3b8}
+.auth-oauth svg{width:16px;height:16px}
+.auth-toggle{text-align:center;font-size:13px;color:#64748b;margin-top:10px}
+.auth-toggle a{color:#2563eb;font-weight:600;cursor:pointer}
+.auth-legal{text-align:center;font-size:10.5px;color:#cbd5e1;margin-top:14px;line-height:1.5}
+.auth-legal a{color:#94a3b8;text-decoration:underline}
 /* preview-the-trust-page button under the oauth row */
 .lp-btn-trust{margin:16px auto 0;height:40px;padding:0 20px;border-radius:20px;background:rgba(37,99,235,.08);color:#1d4ed8;font-size:13px;font-weight:500;border:1px solid rgba(37,99,235,.35);cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background .15s,transform .1s,border-color .15s}
 .lp-btn-trust:hover{background:rgba(37,99,235,.16);border-color:rgba(37,99,235,.6);transform:translateY(-1px)}
@@ -781,7 +807,7 @@ body.modal-open{overflow:hidden}
 .lp-section-sub{font-size:15px;color:#64748b;line-height:1.7;max-width:520px;margin:0 auto 48px}
 
 /* Pain cards */
-.lp-pain{background:#f8fafc}
+.lp-pain{background:transparent}
 .lp-pain-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;text-align:left;margin-top:8px}
 @media(max-width:640px){.lp-pain-grid{grid-template-columns:1fr}}
 .lp-pain-card{
@@ -948,7 +974,9 @@ body.modal-open{overflow:hidden}
 }
 .quiz-opt:hover .quiz-opt-key{background:#dbe8ff;color:#2563eb}
 .quiz-opt.chosen .quiz-opt-key{background:#2563eb;color:#fff}
-.quiz-opt-emoji{flex-shrink:0;font-size:18px;width:22px;text-align:center}
+.quiz-opt-emoji{flex-shrink:0;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;color:#94a3b8}
+.quiz-opt-emoji svg{width:19px;height:19px}
+.quiz-opt.chosen .quiz-opt-emoji{color:#2563eb}
 .quiz-field{
   width:100%;padding:14px 15px;border-radius:12px;border:1.5px solid #e5e9f0;background:#fff;
   font-size:15px;color:#0f172a;transition:border-color .16s,box-shadow .16s;margin-bottom:12px;
@@ -986,8 +1014,9 @@ body.modal-open{overflow:hidden}
 .lp-btn-cta:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.22)}
 
 /* Scroll reveal */
-.reveal{opacity:0;transform:translateY(22px);transition:opacity .55s ease,transform .55s ease;transition-delay:var(--d,0s)}
-.reveal.visible{opacity:1;transform:translateY(0)}
+/* scroll-reveal animations disabled — elements are always visible */
+.reveal{opacity:1;transform:none}
+.reveal.visible{opacity:1;transform:none}
 
 /* ── Admin panel ───────────────────── */
 .admin-stat{background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px 14px;box-shadow:0 1px 3px rgba(15,23,42,.04)}
@@ -1100,9 +1129,8 @@ body.modal-open{overflow:hidden}
 <!-- ── Login ────────────────────────────────────────────────── -->
 <div class="page" id="pg-login">
 
-  <!-- background: digital rain + white halo behind the headline -->
-  <canvas class="lp-rain" id="lpRain"></canvas>
-  <div class="lp-veil"></div>
+  <!-- subtle radial gradient behind the hero (top viewport only) -->
+  <div class="lp-grad"></div>
 
   <!-- nav -->
   <nav class="lp-nav">
@@ -1117,26 +1145,16 @@ body.modal-open{overflow:hidden}
       <div class="lp-nav-link" onclick="openSoc2Modal()">SOC 2 Guide</div>
       <div class="lp-nav-link lp-nav-founder" onclick="location.href='/founder.html'">Founder</div>
     </div>
-    <button class="lp-nav-signin" onclick="location.href='/api/auth?provider=github'">Sign in</button>
+    <button class="lp-nav-signin" onclick="openAuth('login')">Sign in</button>
   </nav>
 
   <!-- hero -->
   <div class="lp-hero" style="padding-top:48px">
     <h1>No SOC 2, <em>no enterprise deal</em>.</h1>
     <p>For AI startups and B2B teams facing their first security review. Connect GitHub, get your SOC 2 score, and know what to fix.</p>
-    <div class="lp-btns">
-      <button class="lp-btn-gh" onclick="location.href='/api/auth?provider=github'">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12"/></svg>
-        Continue with GitHub
-      </button>
-      <button class="lp-btn-gg" onclick="location.href='/api/auth?provider=google'">
-        <svg width="15" height="15" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-        Continue with Google
-      </button>
-      <button class="lp-btn-sl" onclick="location.href='/api/auth?provider=slack'">
-        <svg width="15" height="15" viewBox="0 0 54 54"><path fill="#E01E5A" d="M19.712 0a5.355 5.355 0 0 0-5.354 5.354 5.355 5.355 0 0 0 5.354 5.355h5.355V5.354A5.355 5.355 0 0 0 19.712 0m0 14.28H5.355A5.355 5.355 0 0 0 0 19.637a5.355 5.355 0 0 0 5.355 5.355h14.357a5.355 5.355 0 0 0 5.355-5.355 5.355 5.355 0 0 0-5.355-5.356"/><path fill="#36C5F0" d="M54 19.637a5.355 5.355 0 0 0-5.355-5.357 5.355 5.355 0 0 0-5.354 5.357v5.355h5.354A5.355 5.355 0 0 0 54 19.637m-14.28 0V5.354A5.355 5.355 0 0 0 34.365 0a5.355 5.355 0 0 0-5.356 5.354v14.283a5.355 5.355 0 0 0 5.356 5.355 5.355 5.355 0 0 0 5.355-5.355"/><path fill="#2EB67D" d="M34.365 54a5.355 5.355 0 0 0 5.355-5.355 5.355 5.355 0 0 0-5.355-5.354h-5.356v5.354A5.355 5.355 0 0 0 34.365 54m0-14.28h14.28A5.355 5.355 0 0 0 54 34.364a5.355 5.355 0 0 0-5.355-5.355H34.365a5.355 5.355 0 0 0-5.356 5.355 5.355 5.355 0 0 0 5.356 5.356"/><path fill="#ECB22E" d="M0 34.364a5.355 5.355 0 0 0 5.355 5.356 5.355 5.355 0 0 0 5.354-5.356v-5.355H5.355A5.355 5.355 0 0 0 0 34.364m14.28 0v14.28A5.355 5.355 0 0 0 19.712 54a5.355 5.355 0 0 0 5.355-5.355V34.364a5.355 5.355 0 0 0-5.355-5.355 5.355 5.355 0 0 0-5.431 5.355"/></svg>
-        Continue with Slack
-      </button>
+    <div class="lp-authrow">
+      <button class="lp-btn-primary" onclick="openAuth('signup')">Get started</button>
+      <button class="lp-btn-ghost" onclick="openAuth('login')">Sign in</button>
     </div>
     <div style="text-align:center">
       <button class="lp-btn-walk" onclick="openWalk()">
@@ -1150,8 +1168,7 @@ body.modal-open{overflow:hidden}
         See the Trust Page your customers get
       </button>
     </div>
-    <p style="font-size:11px;color:#94a3b8;margin-top:14px">GitHub required. It's where your evidence already lives.</p>
-    <p style="font-size:10.5px;color:#cbd5e1;margin-top:6px">By clicking "Continue", you agree to our <a href="/terms.html" target="_blank" style="color:#94a3b8;text-decoration:underline">Terms of Service</a> and <a href="/privacy.html" target="_blank" style="color:#94a3b8;text-decoration:underline">Privacy Policy</a>.</p>
+    <p style="font-size:11px;color:#94a3b8;margin-top:14px">One platform for your entire SOC 2 program. No credit card required to get started.</p>
   </div>
 
   <!-- dashboard mockup -->
@@ -1656,6 +1673,44 @@ body.modal-open{overflow:hidden}
       <div class="walk-step-label" id="walkStepLabel">Question 1 of 3</div>
     </div>
     <div id="walkStage"></div>
+  </div>
+</div>
+
+<!-- ── Auth modal: email + password (with GitHub/Slack fallback) ── -->
+<div id="authModal" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeAuth()">
+  <div class="auth-card">
+    <button class="auth-x" onclick="closeAuth()" aria-label="Close">&times;</button>
+    <div id="authMain">
+    <div class="auth-title" id="authTitle">Create your account</div>
+    <div class="auth-sub" id="authSub">Start your SOC 2 readiness in minutes.</div>
+    <form id="authForm" onsubmit="submitAuth(event)" novalidate>
+      <label class="auth-label" for="authEmail">Email</label>
+      <input class="auth-input" id="authEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@company.com"/>
+      <label class="auth-label" for="authPass">Password</label>
+      <input class="auth-input" id="authPass" type="password" autocomplete="new-password" placeholder="At least 8 characters"/>
+      <div class="auth-err" id="authErr"></div>
+      <button class="auth-submit" id="authSubmit" type="submit">Create account</button>
+    </form>
+    <div class="auth-divider"><span>or</span></div>
+    <button class="auth-oauth" onclick="location.href='/api/auth?provider=github'">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12"/></svg>
+      Continue with GitHub
+    </button>
+    <button class="auth-oauth" onclick="location.href='/api/auth?provider=slack'">
+      <svg viewBox="0 0 54 54"><path fill="#E01E5A" d="M19.712 0a5.355 5.355 0 0 0-5.354 5.354 5.355 5.355 0 0 0 5.354 5.355h5.355V5.354A5.355 5.355 0 0 0 19.712 0m0 14.28H5.355A5.355 5.355 0 0 0 0 19.637a5.355 5.355 0 0 0 5.355 5.355h14.357a5.355 5.355 0 0 0 5.355-5.355 5.355 5.355 0 0 0-5.355-5.356"/><path fill="#36C5F0" d="M54 19.637a5.355 5.355 0 0 0-5.355-5.357 5.355 5.355 0 0 0-5.354 5.357v5.355h5.354A5.355 5.355 0 0 0 54 19.637m-14.28 0V5.354A5.355 5.355 0 0 0 34.365 0a5.355 5.355 0 0 0-5.356 5.354v14.283a5.355 5.355 0 0 0 5.356 5.355 5.355 5.355 0 0 0 5.355-5.355"/><path fill="#2EB67D" d="M34.365 54a5.355 5.355 0 0 0 5.355-5.355 5.355 5.355 0 0 0-5.355-5.354h-5.356v5.354A5.355 5.355 0 0 0 34.365 54m0-14.28h14.28A5.355 5.355 0 0 0 54 34.364a5.355 5.355 0 0 0-5.355-5.355H34.365a5.355 5.355 0 0 0-5.356 5.355 5.355 5.355 0 0 0 5.356 5.356"/><path fill="#ECB22E" d="M0 34.364a5.355 5.355 0 0 0 5.355 5.356 5.355 5.355 0 0 0 5.354-5.356v-5.355H5.355A5.355 5.355 0 0 0 0 34.364m14.28 0v14.28A5.355 5.355 0 0 0 19.712 54a5.355 5.355 0 0 0 5.355-5.355V34.364a5.355 5.355 0 0 0-5.355-5.355 5.355 5.355 0 0 0-5.431 5.355"/></svg>
+      Continue with Slack
+    </button>
+    <div class="auth-toggle" id="authToggle">Already have an account? <a onclick="toggleAuthMode()">Sign in</a></div>
+    <div class="auth-legal">By continuing you agree to our <a href="/terms.html" target="_blank">Terms</a> and <a href="/privacy.html" target="_blank">Privacy Policy</a>.</div>
+    </div>
+    <div id="authVerify" style="display:none">
+      <div class="auth-title">Check your email</div>
+      <div class="auth-sub">Enter the 6-digit code we sent to <b id="verifyEmail" style="color:#0f172a"></b>.</div>
+      <input class="auth-input" id="verifyCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" style="letter-spacing:6px;text-align:center;font-size:18px;font-weight:600"/>
+      <div class="auth-err" id="verifyErr"></div>
+      <button class="auth-submit" id="verifySubmit" onclick="submitVerify()">Verify and continue</button>
+      <div class="auth-toggle">Didn't get the email? <a onclick="resendCode()">Resend code</a> &nbsp;·&nbsp; <a onclick="backToAuth()">Back</a></div>
+    </div>
   </div>
 </div>
 
@@ -2204,6 +2259,124 @@ function authHeaders() {
 })();
 
 function saveUser() { if (ST.user) sessionStorage.setItem('ar_user', JSON.stringify(ST.user)); }
+
+// ── Email + password auth modal ──────────────────────────────
+let _authMode = 'signup';
+function openAuth(mode) {
+  _authMode = mode === 'login' ? 'login' : 'signup';
+  applyAuthMode();
+  // always open on the main view, not the verification step
+  const mainV = document.getElementById('authMain'); if (mainV) mainV.style.display = 'block';
+  const verV = document.getElementById('authVerify'); if (verV) verV.style.display = 'none';
+  const m = document.getElementById('authModal');
+  if (m) m.style.display = 'flex';
+  setTimeout(() => document.getElementById('authEmail')?.focus(), 90);
+}
+function closeAuth() {
+  const m = document.getElementById('authModal'); if (m) m.style.display = 'none';
+}
+function toggleAuthMode() {
+  _authMode = _authMode === 'signup' ? 'login' : 'signup';
+  applyAuthMode();
+}
+function applyAuthMode() {
+  const signup = _authMode === 'signup';
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('authTitle', signup ? 'Create your account' : 'Welcome back');
+  set('authSub', signup ? 'Start your SOC 2 readiness in minutes.' : 'Sign in to your dashboard.');
+  set('authSubmit', signup ? 'Create account' : 'Sign in');
+  const pass = document.getElementById('authPass');
+  if (pass) pass.setAttribute('autocomplete', signup ? 'new-password' : 'current-password');
+  const tog = document.getElementById('authToggle');
+  if (tog) tog.innerHTML = signup
+    ? 'Already have an account? <a onclick="toggleAuthMode()">Sign in</a>'
+    : 'New here? <a onclick="toggleAuthMode()">Create an account</a>';
+  const err = document.getElementById('authErr'); if (err) err.textContent = '';
+}
+async function submitAuth(e) {
+  if (e) e.preventDefault();
+  const email = (document.getElementById('authEmail')?.value || '').trim();
+  const pass = document.getElementById('authPass')?.value || '';
+  const err = document.getElementById('authErr');
+  const btn = document.getElementById('authSubmit');
+  if (err) err.textContent = '';
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)) { if (err) err.textContent = 'Please enter a valid email address.'; return; }
+  if (pass.length < 8) { if (err) err.textContent = 'Password must be at least 8 characters.'; return; }
+  const label = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = _authMode === 'signup' ? 'Creating…' : 'Signing in…'; }
+  try {
+    const r = await fetch('/api/auth?action=' + _authMode, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Something went wrong. Please try again.');
+    // Signup returns verify:true — collect the emailed code before creating the account.
+    if (d.verify) { showVerify(email); if (btn) { btn.disabled = false; btn.textContent = label; } return; }
+    signInWithSession(d, email);
+  } catch (ex) {
+    if (err) err.textContent = ex.message || 'Something went wrong. Please try again.';
+    if (btn) { btn.disabled = false; btn.textContent = label; }
+  }
+}
+let _verifyEmail = '';
+function signInWithSession(d, email) {
+  ST.user = { name: d.name || email.split('@')[0], email: d.email || email, type: 'email', githubToken: null, sessionToken: d.sessionToken };
+  saveUser();
+  closeAuth();
+  if (typeof updateHeader === 'function') updateHeader();
+  nav('dashboard');
+}
+function showVerify(email) {
+  _verifyEmail = email;
+  const mainV = document.getElementById('authMain'); if (mainV) mainV.style.display = 'none';
+  const verV = document.getElementById('authVerify'); if (verV) verV.style.display = 'block';
+  const ve = document.getElementById('verifyEmail'); if (ve) ve.textContent = email;
+  const err = document.getElementById('verifyErr'); if (err) { err.style.color = ''; err.textContent = ''; }
+  const inp = document.getElementById('verifyCode'); if (inp) inp.value = '';
+  setTimeout(() => document.getElementById('verifyCode')?.focus(), 90);
+}
+function backToAuth() {
+  const verV = document.getElementById('authVerify'); if (verV) verV.style.display = 'none';
+  const mainV = document.getElementById('authMain'); if (mainV) mainV.style.display = 'block';
+}
+async function submitVerify() {
+  const code = (document.getElementById('verifyCode')?.value || '').trim();
+  const err = document.getElementById('verifyErr');
+  const btn = document.getElementById('verifySubmit');
+  if (err) { err.style.color = ''; err.textContent = ''; }
+  if (!/^\d{6}$/.test(code)) { if (err) err.textContent = 'Enter the 6-digit code.'; return; }
+  const label = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Verifying…'; }
+  try {
+    const r = await fetch('/api/auth?action=verify', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: _verifyEmail, code }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Verification failed.');
+    signInWithSession(d, _verifyEmail);
+  } catch (ex) {
+    if (err) err.textContent = ex.message || 'Verification failed.';
+    if (btn) { btn.disabled = false; btn.textContent = label; }
+  }
+}
+async function resendCode() {
+  const err = document.getElementById('verifyErr');
+  if (err) { err.style.color = ''; err.textContent = ''; }
+  try {
+    const r = await fetch('/api/auth?action=resend', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: _verifyEmail }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Could not resend.');
+    if (err) { err.style.color = '#16a34a'; err.textContent = 'A new code is on its way.'; }
+  } catch (ex) {
+    if (err) err.textContent = ex.message || 'Could not resend.';
+  }
+}
 function loadUser() {
   try { const s = sessionStorage.getItem('ar_user'); if (s) ST.user = JSON.parse(s); } catch {}
   // Drop stale google/slack sessions that predate signed session tokens so the
@@ -4454,146 +4627,6 @@ async function confirmCancelSubscription() {
   };
 })();
 
-// ── Login page digital rain ───────────────────────────────────
-// Falling 0/1 with occasional hidden "SOC 2" streams, in brand blue, as
-// a light texture behind the hero. Kept cheap: integer-row matrix draw,
-// ~22fps throttle, no shadowBlur, DPR capped, trails fade to white via a
-// single translucent fillRect. The loop stops entirely whenever the tab
-// is hidden, a modal is open, reduced-motion is set, or we navigate away
-// from the login page — so it never burns CPU in the background.
-
-(function() {
-  const canvas = document.getElementById('lpRain');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const GLYPHS = '01';
-  const WORD = 'SOC 2';
-  const HEAD = 'rgba(29,78,216,0.92)';   // bright leading char
-  const FADE = 'rgba(255,255,255,0.11)'; // per-frame trail fade
-  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const FRAME = 1000 / 22;               // ~22fps is plenty for ambient rain
-
-  let W = 0, H = 0, step = 16, fontStr = '', cols = [];
-  let running = false, rafId = 0, last = 0, resizeT = 0;
-
-  const mobile = () => window.innerWidth <= 640;
-
-  function makeCol(i, seeded) {
-    const rows = Math.max(1, Math.floor(H / step));
-    return {
-      x: i * step,
-      y: seeded ? -Math.floor(Math.random() * rows * 1.6) : -2,
-      word: Math.random() < 0.20 ? WORD : null,
-      wi: 0,
-      slow: Math.random() < 0.4 ? 2 : 1, // some columns fall at half speed
-      tick: 0,
-    };
-  }
-
-  function resize() {
-    const pg = document.getElementById('pg-login');
-    if (!pg) return;
-    const dpr = Math.min(window.devicePixelRatio || 1, mobile() ? 1.75 : 2);
-    const fontPx = 14;
-    step = Math.round(fontPx * 1.15);
-    W = pg.offsetWidth;
-    // Mobile hero is taller (stacked), so the rain gets a taller band to
-    // fill the space between the nav and the headline.
-    H = Math.min(window.innerHeight * (mobile() ? 0.82 : 0.66), 820);
-    canvas.style.width = W + 'px';
-    canvas.style.height = H + 'px';
-    canvas.width = Math.floor(W * dpr);
-    canvas.height = Math.floor(H * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    fontStr = '500 ' + fontPx + 'px "IBM Plex Mono", ui-monospace, monospace';
-    cols = Array.from({ length: Math.ceil(W / step) }, (_, i) => makeCol(i, true));
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, W, H);
-  }
-
-  function drawFrame() {
-    ctx.fillStyle = FADE;
-    ctx.fillRect(0, 0, W, H);
-    ctx.font = fontStr;
-    ctx.textBaseline = 'top';
-    ctx.fillStyle = HEAD;
-    const rows = Math.floor(H / step) + 2;
-    for (const c of cols) {
-      if (++c.tick < c.slow) continue;
-      c.tick = 0;
-      const yPix = c.y * step;
-      if (yPix >= 0 && yPix < H) {
-        const ch = c.word ? c.word[c.wi++ % c.word.length]
-                          : GLYPHS[(Math.random() * GLYPHS.length) | 0];
-        ctx.fillText(ch, c.x, yPix);
-      }
-      if (++c.y > rows && Math.random() > 0.94) {
-        Object.assign(c, makeCol(Math.round(c.x / step), false));
-      }
-    }
-  }
-
-  function staticFrame() {
-    // reduced-motion: one faint, still frame — no animation at all
-    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
-    ctx.font = fontStr; ctx.textBaseline = 'top';
-    ctx.fillStyle = 'rgba(37,99,235,0.16)';
-    const rows = Math.floor(H / step);
-    for (const c of cols) {
-      for (let r = 0; r < rows; r += 3) {
-        if (Math.random() < 0.5) ctx.fillText(GLYPHS[(Math.random() * 2) | 0], c.x, r * step);
-      }
-    }
-  }
-
-  function tick(now) {
-    if (!running) return;
-    rafId = requestAnimationFrame(tick);
-    if (now - last < FRAME) return;
-    last = now;
-    drawFrame();
-  }
-
-  function canRun() {
-    // Note: the rain intentionally keeps running behind open popups — it
-    // only stops when the tab is hidden or we leave the login page.
-    const pg = document.getElementById('pg-login');
-    return !!pg && pg.classList.contains('on') && !document.hidden;
-  }
-
-  function start() {
-    if (running || !canRun()) return;
-    if (reduce.matches) { staticFrame(); return; }
-    running = true; last = 0;
-    rafId = requestAnimationFrame(tick);
-  }
-
-  function stop() {
-    running = false;
-    if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
-  }
-
-  function refresh() { canRun() ? start() : stop(); }
-
-  window.addEventListener('resize', () => {
-    clearTimeout(resizeT);
-    resizeT = setTimeout(() => { resize(); if (!running && reduce.matches) staticFrame(); }, 150);
-  }, { passive: true });
-  document.addEventListener('visibilitychange', refresh);
-  reduce.addEventListener?.('change', () => { stop(); resize(); start(); });
-
-  // Start on the login page, stop everywhere else
-  const _nav = window.nav;
-  window.nav = function(page) {
-    _nav(page);
-    setTimeout(() => { if (page === 'login') { resize(); start(); } else stop(); }, 30);
-  };
-
-  window.addEventListener('load', () => {
-    if (document.getElementById('pg-login')?.classList.contains('on')) { resize(); start(); }
-  });
-})();
-
 // ── Readiness quiz ────────────────────────────────────────────
 
 const QUIZ = [
@@ -4652,6 +4685,52 @@ const _qAnswers = {};
 let _qLead = { email: '', company: '' };
 const _qTotal = QUIZ.length + 1; // + contact slide
 
+// Clean monochrome line-icons for quiz/walkthrough options (real SVG
+// symbols mapped to each option, replacing the emojis).
+const OPT_ICONS = {
+  '🌱':'<path d="M12 22V11"/><path d="M12 11C9 11 7 9 7 6c3 0 5 2 5 5Z"/><path d="M12 13c3 0 5-2 5-5-3 0-5 2-5 5Z"/>',
+  '🧭':'<circle cx="12" cy="12" r="9"/><path d="m14.5 9.5-2 5-3 1 2-5z"/>',
+  '🛠️':'<path d="M14.5 6.5a4 4 0 0 0 5 5l-8 8a2.1 2.1 0 0 1-3-3z"/><path d="m5 5 3.5 3.5"/>',
+  '📋':'<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M9 10h6M9 14h5"/>',
+  '✅':'<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
+  '🤝':'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 12h18"/>',
+  '📝':'<path d="M6 3h9l3 3v15H6z"/><path d="M9 9h6M9 13h6M9 17h4"/>',
+  '💰':'<circle cx="12" cy="12" r="9"/><path d="M12 7v10"/><path d="M14.5 9.3c-.4-.8-1.4-1.3-2.5-1.3-1.5 0-2.5.8-2.5 1.8s1 1.7 2.5 1.7 2.5.7 2.5 1.7-1 1.8-2.5 1.8c-1.1 0-2.1-.5-2.5-1.3"/>',
+  '🏢':'<rect x="6" y="3" width="12" height="18" rx="1"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"/>',
+  '🔮':'<circle cx="12" cy="10" r="7"/><path d="M5 21h14"/>',
+  '🚀':'<path d="M12 3c3 2 5 5 5 9l-2 4H9l-2-4c0-4 2-7 5-9z"/><path d="M9 16l-2 5 3.5-2M15 16l2 5-3.5-2"/><circle cx="12" cy="9" r="1.4"/>',
+  '👥':'<circle cx="9" cy="8" r="3"/><path d="M4 20c0-3 2.2-5 5-5s5 2 5 5"/><path d="M16 6a3 3 0 0 1 0 6"/><path d="M20 20c0-2.2-1.2-4-3-4.7"/>',
+  '📈':'<path d="M4 5v14h16"/><path d="m7 14 4-4 3 3 5-6"/>',
+  '🏗️':'<path d="M4 21h16"/><path d="M6 21V8l6-3 6 3v13"/><path d="M10 21v-5h4v5"/>',
+  '🏛️':'<path d="M3 21h18"/><path d="M5 21V10M9 21V10M15 21V10M19 21V10"/><path d="m12 3 8 5H4z"/>',
+  '🔥':'<path d="M12 3c3 4 5 6 5 9a5 5 0 0 1-10 0c0-1.6.6-2.7 1.7-3.7C9 10 9.3 12 10.3 12 10 9 11 6 12 3z"/>',
+  '⏱️':'<circle cx="12" cy="13" r="8"/><path d="M12 13V9"/><path d="M10 2h4"/>',
+  '📆':'<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 9h16M8 3v4M16 3v4"/>',
+  '🗓️':'<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 9h16M8 3v4M16 3v4M8 13h.5M12 13h.5M16 13h.5M8 17h.5M12 17h.5"/>',
+  '🧊':'<path d="M12 3v18M4 7.5l16 9M20 7.5l-16 9"/>',
+  '🤷':'<circle cx="12" cy="12" r="9"/><path d="M9.5 10a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7"/><path d="M12 17h.01"/>',
+  '📄':'<path d="M7 3h8l4 4v14H7z"/><path d="M15 3v4h4"/>',
+  '🧑‍💼':'<circle cx="12" cy="8" r="4"/><path d="M6 21v-1a6 6 0 0 1 12 0v1"/>',
+  '🧰':'<rect x="3" y="8" width="18" height="12" rx="2"/><path d="M8 8V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 13h18"/>',
+  '🔗':'<path d="M9 12h6"/><path d="M10 8H8a4 4 0 0 0 0 8h2"/><path d="M14 8h2a4 4 0 0 1 0 8h-2"/>',
+  '👑':'<path d="m3 8 4 3.5L12 5l5 6.5L21 8l-1.5 11h-15z"/>',
+  '💻':'<rect x="3" y="5" width="18" height="12" rx="2"/><path d="M2 21h20"/>',
+  '🛡️':'<path d="M12 3 5 6v5c0 4.2 3 7.4 7 9 4-1.6 7-4.8 7-9V6z"/>',
+  '⚙️':'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
+  '🙋':'<circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/>',
+  '🤖':'<rect x="5" y="8" width="14" height="11" rx="2"/><path d="M12 8V5M9 3h6"/><path d="M9.5 13h.01M14.5 13h.01"/>',
+  '📦':'<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/>',
+  '✨':'<path d="m12 3 1.6 4.9L18 9l-4.4 1.1L12 15l-1.6-4.9L6 9l4.4-1.1z"/><path d="m18 14 .8 2.2L21 17l-2.2.8L18 20l-.8-2.2L15 17l2.2-.8z"/>',
+  '👀':'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="2.6"/>',
+  '😅':'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.4"/><path d="m5.6 5.6 3.2 3.2M15.2 15.2l3.2 3.2M18.4 5.6l-3.2 3.2M8.8 15.2l-3.2 3.2"/>',
+  '💸':'<circle cx="12" cy="12" r="9"/><path d="M12 7v10"/><path d="M14.5 9.3c-.4-.8-1.4-1.3-2.5-1.3-1.5 0-2.5.8-2.5 1.8s1 1.7 2.5 1.7 2.5.7 2.5 1.7-1 1.8-2.5 1.8c-1.1 0-2.1-.5-2.5-1.3"/>',
+  '⏳':'<path d="M6 3h12M6 21h12"/><path d="M8 3c0 4 8 5 8 9s-8 5-8 9M16 3c0 4-8 5-8 9s8 5 8 9"/>',
+};
+function optIcon(e){
+  const p = OPT_ICONS[e] || '<circle cx="12" cy="12" r="3"/>';
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + p + '</svg>';
+}
+
 function quizRender() {
   const stage = document.getElementById('quizStage');
   const fill = document.getElementById('quizProgFill');
@@ -4675,7 +4754,7 @@ function quizRender() {
       item.opts.map((o, idx) =>
         '<button class="quiz-opt' + (_qAnswers[item.id] === o.t ? ' chosen' : '') + '" onclick="quizPick(\'' +
         item.id + '\',' + idx + ')">' +
-        '<span class="quiz-opt-emoji">' + o.e + '</span>' +
+        '<span class="quiz-opt-emoji">' + optIcon(o.e) + '</span>' +
         '<span style="flex:1">' + o.t + '</span>' +
         '<span class="quiz-opt-key">' + String.fromCharCode(65 + idx) + '</span>' +
         '</button>'
@@ -4848,7 +4927,7 @@ function walkRender() {
       '<div class="quiz-opts">' +
       item.opts.map((o, idx) =>
         '<button class="quiz-opt" onclick="walkPick(\'' + item.id + '\',' + idx + ')">' +
-        '<span class="quiz-opt-emoji">' + o.e + '</span>' +
+        '<span class="quiz-opt-emoji">' + optIcon(o.e) + '</span>' +
         '<span style="flex:1">' + o.t + '</span>' +
         '<span class="quiz-opt-key">' + String.fromCharCode(65 + idx) + '</span>' +
         '</button>'
@@ -4859,7 +4938,7 @@ function walkRender() {
     label.textContent = 'Last step';
     stage.innerHTML =
       '<div class="quiz-slide" style="text-align:center">' +
-      '<div style="font-size:34px;margin-bottom:6px">📅</div>' +
+      '<div style="display:flex;justify-content:center;margin-bottom:8px"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>' +
       '<div class="quiz-q">Perfect. Let\'s do it live.</div>' +
       '<div class="quiz-q-sub">Grab a time and I\'ll walk you through your SOC 2 readiness, live over Google Meet. 15 minutes, no slides.</div>' +
       '<button class="walk-book-btn" onclick="walkBook()">Grab a time →</button>' +
