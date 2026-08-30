@@ -336,7 +336,7 @@ ${JSON.stringify(REPORT_SCHEMA)}`;
         controlsSummary,
         report: parsed,
         aiGenerated: true,
-        generatedBy: 'Groq llama-3.3-70b-versatile',
+        generatedBy: 'Groq gpt-oss-120b',
       };
 
       await redis.set(`user:${userId}:report:${reportId}`, JSON.stringify(reportData));
@@ -352,7 +352,7 @@ ${JSON.stringify(REPORT_SCHEMA)}`;
         score,
         generatedAt: timestamp,
         aiGenerated: true,
-        generatedBy: 'Groq llama-3.3-70b-versatile',
+        generatedBy: 'Groq gpt-oss-120b',
       });
 
     } catch (err) {
