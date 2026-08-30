@@ -359,33 +359,13 @@ body.signed-in .dropdown{top:auto;bottom:calc(100% + 6px);left:0;right:0;min-wid
   overflow:hidden;
   color:#0f172a;
   background:
-    radial-gradient(1200px 520px at 50% -8%, rgba(37,99,235,.10), transparent 62%),
-    linear-gradient(180deg, #f8fafc 0%, #ffffff 58%);
+    radial-gradient(1100px 600px at 12% -5%, rgba(37,99,235,.20), transparent 58%),
+    radial-gradient(1000px 620px at 90% 0%, rgba(139,92,246,.18), transparent 60%),
+    linear-gradient(165deg, #e8edff 0%, #eef2fb 40%, #f8fafc 72%, #ffffff 100%);
 }
 #pg-login.on{
   display:flex!important;
   position:relative;
-}
-/* digital rain — falling 0/1 (with hidden "SOC 2" streams) in brand blue,
-   as a light texture behind the hero. The canvas is capped to a top band
-   and CSS-masked so it dissolves before it reaches the sign-in buttons. */
-.lp-rain{position:absolute;top:0;left:0;width:100%;z-index:0;pointer-events:none;
-  -webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 50%,transparent 100%);
-  mask-image:linear-gradient(to bottom,#000 0%,#000 50%,transparent 100%)}
-/* white halo behind the headline so the rain never competes with the text */
-.lp-veil{position:absolute;top:0;left:50%;transform:translateX(-50%);
-  width:min(1000px,140%);height:420px;z-index:1;pointer-events:none;
-  background:radial-gradient(58% 62% at 50% 40%,#fff 40%,rgba(255,255,255,.72) 60%,transparent 100%)}
-@media (max-width:640px){
-  /* fuller rain on mobile: full opacity + the mask fades out later so the
-     rain fills the band between the nav and the headline */
-  .lp-rain{-webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 62%,transparent 100%);
-    mask-image:linear-gradient(to bottom,#000 0%,#000 62%,transparent 100%)}
-  /* halo sits lower, over the stacked mobile headline */
-  .lp-veil{top:230px;height:480px;background:radial-gradient(78% 56% at 50% 46%,#fff 44%,rgba(255,255,255,.8) 66%,transparent 100%)}
-}
-@media (prefers-reduced-motion:reduce){
-  .lp-rain{opacity:.5}
 }
 /* login nav */
 .lp-nav{position:relative;z-index:100;width:100%;max-width:1100px;display:flex;align-items:center;justify-content:space-between;padding:22px 32px;margin:0 auto}
@@ -757,12 +737,28 @@ body.modal-open{overflow:hidden}
 .pm-later:hover{border-color:#94a3b8}
 .pm-free-note{text-align:center;font-size:11px;color:#94a3b8;margin-top:8px}
 @media(max-width:680px){
-  .pm-box{padding:20px 14px 18px;border-radius:16px}
-  .pm-cards{grid-template-columns:1fr;gap:10px}
-  .pm-card-side{transform:none;opacity:1}
-  .pm-card-center{transform:none;box-shadow:0 4px 20px rgba(37,99,235,.12)}
+  .pm-box{padding:20px 10px 18px;border-radius:16px}
+  .pm-cards{grid-template-columns:repeat(3,1fr);gap:6px}
+  .pm-card{padding:16px 7px 14px;border-radius:13px}
+  .pm-card-side{transform:scale(.95) translateY(8px);opacity:.92}
+  .pm-card-center{transform:translateY(-6px) scale(1.03)}
+  .pm-plan-name{font-size:8.5px;letter-spacing:.05em;margin-bottom:10px}
+  .pm-price-num{font-size:22px}
+  .pm-price-per{font-size:9px}
+  .pm-billing-note{font-size:8.5px;min-height:12px;margin-bottom:10px}
+  .pm-popular{font-size:7.5px;padding:4px 7px 4px 8px;gap:3px}
+  .pm-feats{gap:5px;margin-bottom:12px}
+  .pm-feats li,.pm-check{font-size:8.5px;gap:5px;line-height:1.35}
+  .pm-check::before{font-size:9px}
+  .pm-desc{font-size:8px;padding-top:7px}
+  .pm-cta{padding:9px 0;font-size:10px;border-radius:8px}
   .pm-title{font-size:20px}
-  .pm-price-num{font-size:36px}
+}
+@media(max-width:400px){
+  .pm-card{padding:13px 5px 12px}
+  .pm-price-num{font-size:19px}
+  .pm-feats li,.pm-check{font-size:8px}
+  .pm-cta{font-size:9px}
 }
 .upgrade-btn{width:100%;padding:9px 16px;border-radius:var(--r);background:linear-gradient(135deg,var(--accent),#1d4ed8);color:#fff;font-size:12px;font-weight:600;border:none;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .15s}
 .upgrade-btn:hover{opacity:.9}
@@ -988,8 +984,8 @@ body.modal-open{overflow:hidden}
 .lp-btn-cta:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.22)}
 
 /* Scroll reveal */
-.reveal{opacity:0;transform:translateY(22px);transition:opacity .55s ease,transform .55s ease;transition-delay:var(--d,0s)}
-.reveal.visible{opacity:1;transform:translateY(0)}
+.reveal{opacity:1;transform:none;transition:none}
+.reveal.visible{opacity:1;transform:none}
 
 /* ── Admin panel ───────────────────── */
 .admin-stat{background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px 14px;box-shadow:0 1px 3px rgba(15,23,42,.04)}
@@ -1128,10 +1124,6 @@ body.modal-open{overflow:hidden}
       <button class="lp-btn-gh" onclick="location.href='/api/auth?provider=github'">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12"/></svg>
         Continue with GitHub
-      </button>
-      <button class="lp-btn-gg" onclick="location.href='/api/auth?provider=google'">
-        <svg width="15" height="15" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-        Continue with Google
       </button>
       <button class="lp-btn-sl" onclick="location.href='/api/auth?provider=slack'">
         <svg width="15" height="15" viewBox="0 0 54 54"><path fill="#E01E5A" d="M19.712 0a5.355 5.355 0 0 0-5.354 5.354 5.355 5.355 0 0 0 5.354 5.355h5.355V5.354A5.355 5.355 0 0 0 19.712 0m0 14.28H5.355A5.355 5.355 0 0 0 0 19.637a5.355 5.355 0 0 0 5.355 5.355h14.357a5.355 5.355 0 0 0 5.355-5.355 5.355 5.355 0 0 0-5.355-5.356"/><path fill="#36C5F0" d="M54 19.637a5.355 5.355 0 0 0-5.355-5.357 5.355 5.355 0 0 0-5.354 5.357v5.355h5.354A5.355 5.355 0 0 0 54 19.637m-14.28 0V5.354A5.355 5.355 0 0 0 34.365 0a5.355 5.355 0 0 0-5.356 5.354v14.283a5.355 5.355 0 0 0 5.356 5.355 5.355 5.355 0 0 0 5.355-5.355"/><path fill="#2EB67D" d="M34.365 54a5.355 5.355 0 0 0 5.355-5.355 5.355 5.355 0 0 0-5.355-5.354h-5.356v5.354A5.355 5.355 0 0 0 34.365 54m0-14.28h14.28A5.355 5.355 0 0 0 54 34.364a5.355 5.355 0 0 0-5.355-5.355H34.365a5.355 5.355 0 0 0-5.356 5.355 5.355 5.355 0 0 0 5.356 5.356"/><path fill="#ECB22E" d="M0 34.364a5.355 5.355 0 0 0 5.355 5.356 5.355 5.355 0 0 0 5.354-5.356v-5.355H5.355A5.355 5.355 0 0 0 0 34.364m14.28 0v14.28A5.355 5.355 0 0 0 19.712 54a5.355 5.355 0 0 0 5.355-5.355V34.364a5.355 5.355 0 0 0-5.355-5.355 5.355 5.355 0 0 0-5.431 5.355"/></svg>
@@ -2985,6 +2977,7 @@ async function toggleControl(id) {
 async function loadEvidenceForControl(controlId) {
   const el = document.getElementById('evList-' + controlId);
   if (!el) return;
+  el.innerHTML = skelRows(2);
   try {
     const r = await fetch('/api/evidence?controlId=' + controlId, { headers: authHeaders() });
     if (!r.ok) { el.innerHTML = '<div style="font-size:11px;color:var(--muted)">Could not load evidence. <button onclick="loadEvidenceForControl(\'' + controlId + '\')" style="font-size:11px;color:#2563eb;background:none;border:none;cursor:pointer;text-decoration:underline">Retry</button></div>'; return; }
@@ -4454,13 +4447,10 @@ async function confirmCancelSubscription() {
   };
 })();
 
-// ── Login page digital rain ───────────────────────────────────
-// Falling 0/1 with occasional hidden "SOC 2" streams, in brand blue, as
-// a light texture behind the hero. Kept cheap: integer-row matrix draw,
-// ~22fps throttle, no shadowBlur, DPR capped, trails fade to white via a
-// single translucent fillRect. The loop stops entirely whenever the tab
-// is hidden, a modal is open, reduced-motion is set, or we navigate away
-// from the login page — so it never burns CPU in the background.
+// ── Login page digital rain (removed) ─────────────────────────
+// The falling-numbers background has been removed in favor of a static
+// gradient (see #pg-login). This guarded stub is kept inert in case any
+// leftover markup references it.
 
 (function() {
   const canvas = document.getElementById('lpRain');
